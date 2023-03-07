@@ -7,7 +7,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.IntStream;
 
@@ -62,8 +65,8 @@ import net.pzdcrp.game.world.elements.entities.Entity;
 
 public class World {// implements RenderableProvider {
 	public static Player player;
-	public List<Column> loadedColumns = new CopyOnWriteArrayList<>();
-	public List<Column> memoriedColumns = new CopyOnWriteArrayList<>();
+	public Map<ColCoords,Column> loadedColumns = new ConcurrentHashMap<>();
+	public Map<ColCoords,Column> memoriedColumns = new ConcurrentHashMap<>();
 	public List<ModelInstance> additional = new CopyOnWriteArrayList<>();
 	public int time = 0;
 	public Environment env;
@@ -78,9 +81,9 @@ public class World {// implements RenderableProvider {
     public Vector3 lightDirection = new Vector3();
 
     private static final int DAY_LENGTH = 60000;
-    private static final float DISTANCE_FROM_CENTER = 90f;
+    private static final float DISTANCE_FROM_CENTER = 200f;
     public static final boolean load = true;
-    int renderRad = 3;
+    int renderRad = 5;
     Material skymaterial;
     ColorAttribute envcolor;
 	
@@ -94,7 +97,7 @@ public class World {// implements RenderableProvider {
 			updateLoadedColumns();
 		} else {
 			player = new Player(5,chunks*16,5);
-			loadedColumns.add(new Column(0,0,true));
+			loadedColumns.put(new ColCoords(0,0),new Column(0,0,true));
 			for (int y = (int)player.pos.y; y > 0; y--) {
 				if (getBlock(new Vector3D((int)Math.floor(player.pos.x), y-1, (int)Math.floor(player.pos.z))).getType() != BlockType.air) {
 					player.pos.y = y;
@@ -106,8 +109,7 @@ public class World {// implements RenderableProvider {
 		System.out.println("loading enviroment");
 		ModelBuilder modelBuilder = new ModelBuilder();
 		skymaterial = new Material(ColorAttribute.createDiffuse(0, 0, 255, 255), IntAttribute.createCullFace(GL20.GL_NONE));
-		float ss = 190f;
-		Model model = modelBuilder.createSphere(ss, ss, ss, 20, 20,skymaterial, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
+		Model model = modelBuilder.createSphere(DISTANCE_FROM_CENTER*2, DISTANCE_FROM_CENTER*2, DISTANCE_FROM_CENTER*2, 20, 20,skymaterial, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
 		sky = new ModelInstance(model);
 		Matrix4 transform = new Matrix4();
 		transform.translate((float)player.pos.x,(float)player.pos.y,(float)player.pos.z);
@@ -125,14 +127,6 @@ public class World {// implements RenderableProvider {
 		
 		
 		model = ModelUtils.createCubeModel(false,false,true,false,false,false,"stone",false,new Vector3((float)player.pos.x,(float)player.pos.y,(float)player.pos.z));
-		//model = ModelUtils.createCubeModel(false,false,true,false,false,false,"stone",false);
-		
-		//Matrix4 transformm = new Matrix4();
-		//transformm.translate((float)player.pos.x,(float)player.pos.y,(float)player.pos.z);
-
-		//for (Mesh meshh : model.meshes) {
-		//    meshh.transform(transformm);
-		//}
 		
 		ModelInstance test = new ModelInstance(model);
 		additional.add(test);
@@ -145,8 +139,8 @@ public class World {// implements RenderableProvider {
 		if (v.y < 0 || v.y >= maxHeight) return;
 		Column col = getColumn(v.x,v.z);
 		Block b = Block.blockById(id, v);
-		for (Column tcol : loadedColumns) {
-			for (Entity en : tcol.entites) {
+		for (Entry<ColCoords, Column> tcol : loadedColumns.entrySet()) {
+			for (Entity en : tcol.getValue().entites) {
 				if (b.collide(en.getHitbox())) return;
 			}
 		}
@@ -156,17 +150,17 @@ public class World {// implements RenderableProvider {
 	public Column getColumn(double x, double z) {
 		int cx = (int)Math.floor(x) >> 4;
 		int cz = (int)Math.floor(z) >> 4;
-		for (Column col : loadedColumns) {
-			if (col.coords.columnX == cx && col.coords.columnZ == cz) {
-				return col;
+		for (Entry<ColCoords, Column> col : loadedColumns.entrySet()) {
+			if (col.getValue().coords.columnX == cx && col.getValue().coords.columnZ == cz) {
+				return col.getValue();
 			}
 		}
 		return null;
 	}
 	public Column getColumn(ColCoords cc) {
-		for (Column col : loadedColumns) {
-			if (col.coords.equals(cc)) {
-				return col;
+		for (Entry<ColCoords, Column> col : loadedColumns.entrySet()) {
+			if (col.getValue().coords.equals(cc)) {
+				return col.getValue();
 			}
 		}
 		return null;
@@ -174,9 +168,9 @@ public class World {// implements RenderableProvider {
 	public Column getUnloadedColumn(double x, double z) {
 		int cx = (int)Math.floor(x) >> 4;
 		int cz = (int)Math.floor(z) >> 4;
-		for (Column col : loadedColumns) {
-			if (col.coords.columnX == cx && col.coords.columnZ == cz) {
-				return col;
+		for (Entry<ColCoords, Column> col : loadedColumns.entrySet()) {
+			if (col.getValue().coords.columnX == cx && col.getValue().coords.columnZ == cz) {
+				return col.getValue();
 			}
 		}
 		return null;
@@ -199,9 +193,9 @@ public class World {// implements RenderableProvider {
 	}
 	
 	public Column genOrLoad(int cx, int cz) {
-		for (Column col : memoriedColumns) {
-			if (col.coords.columnX == cx && col.coords.columnZ == cz) {
-				return col;
+		for (Entry<ColCoords, Column> col : memoriedColumns.entrySet()) {
+			if (col.getValue().coords.columnX == cx && col.getValue().coords.columnZ == cz) {
+				return col.getValue();
 			}
 		}
 		return new Column(cx,cz,true);
@@ -244,10 +238,11 @@ public class World {// implements RenderableProvider {
 		if (!ready) return;
 		time++;
 		if (time > DAY_LENGTH) time = 0;
-		for (Column column : loadedColumns) {
-			column.tick();
+		for (Entry<ColCoords, Column> column : loadedColumns.entrySet()) {
+			column.getValue().tick();
 		}
 		player.tick();
+		updateLoadedColumns();
 	}
 	static long beforetime = System.currentTimeMillis();
 	static long now;
@@ -265,25 +260,28 @@ public class World {// implements RenderableProvider {
 		    }
 	    }
 	    //чекаем какие есть и убирает из cl то что есть
-	    for (Column col : loadedColumns) {
-	    	if (cl.contains(col.coords)) {
-	    		cl.remove(col.coords);
+	    for (Entry<ColCoords, Column> col : loadedColumns.entrySet()) {
+	    	if (cl.contains(col.getValue().coords)) {
+	    		cl.remove(col.getValue().coords);
 	    	} else {//отгружаем чанки которых нет в cl
-	    		loadedColumns.remove(col);
-	    		memoriedColumns.add(col);
+	    		loadedColumns.remove(col.getKey());
+	    		memoriedColumns.put(col.getKey(), col.getValue());
 	    	}
 	    }
 	    //подгружаем недостдавшиеся
+	    int i = 0;
 	    for (ColCoords c : cl) {
-	    	loadedColumns.add(genOrLoad(c));
+	    	//System.out.println("managing columns: "+i+++"/"+cl.size());
+	    	loadedColumns.put(c,genOrLoad(c));
+	    	
 	    }
 	}
 	
 	public Column genOrLoad(ColCoords need) {
 		//System.out.println("creatednew");
-		for (Column col : memoriedColumns) {
-			if (col.coords.equals(need)) {
-				return col;
+		for (Entry<ColCoords, Column> col : memoriedColumns.entrySet()) {
+			if (col.getValue().coords.equals(need)) {
+				return col.getValue();
 			}
 		}
 		return new Column(need, true);
@@ -293,15 +291,16 @@ public class World {// implements RenderableProvider {
 	public void render() {
 		renderSky();
 		//List<Model> world = new ArrayList<>();
-		for (Column col : loadedColumns) {
-			col.render();
+		//int i = 0;
+		for (Entry<ColCoords, Column> col : loadedColumns.entrySet()) {
+			col.getValue().render();
+			//System.out.println(i+++"/"+loadedColumns.size()+" rendering");
 		}
 		//GameInstance.modelBatch.render(ModelUtils.combineModels(world), GameInstance.world.env);
 		for (ModelInstance a : additional) {
 			GameInstance.modelBatch.render(a, env);
 		}
 		player.render();
-		updateLoadedColumns();
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -330,7 +329,7 @@ public class World {// implements RenderableProvider {
 			    }
 				//entities
 				JsonArray entities = jcol.get("entities").getAsJsonArray();
-				memoriedColumns.add(column);
+				memoriedColumns.put(column.coords,column);
 				for (JsonElement jene : entities) {
 					JsonObject jen = jene.getAsJsonObject();
 					
@@ -377,12 +376,15 @@ public class World {// implements RenderableProvider {
 			
 			worldData.add("columns", new JsonArray());
 			worldData.add("time", new JsonPrimitive(this.time));
-			for (Column col : loadedColumns) {
-				loadedColumns.remove(col);
-				memoriedColumns.add(col);
+			List<Column> tcols = new ArrayList<>();
+			for (Column col : loadedColumns.values()) {
+				tcols.add(col);
+			}
+			for (Column col : memoriedColumns.values()) {
+				tcols.add(col);
 			}
 			int i = 1;
-			for (Column column : GameInstance.world.memoriedColumns) {
+			for (Column column : tcols) {
 				System.out.println("saving columns "+i+"/"+GameInstance.world.memoriedColumns.size());
 				i++;
 				JsonObject jcol = new JsonObject();

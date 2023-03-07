@@ -124,7 +124,7 @@ public class GameInstance extends ApplicationAdapter {
 		builder.append(" col: ").append(world.loadedColumns.size());
 		builder.append(" | pos: ").append("x:"+String.format("%.2f",World.player.pos.x)+" y:"+String.format("%.2f",World.player.pos.y)+" z:"+String.format("%.2f",World.player.pos.z));
 		int en = 0;
-		for (Column col : world.loadedColumns) {
+		for (Column col : world.loadedColumns.values()) {
 			en += col.entites.size();
 		}
 		builder.append(" | ent: ").append(en);

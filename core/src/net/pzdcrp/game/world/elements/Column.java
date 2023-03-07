@@ -33,7 +33,7 @@ public class Column {
 	public List<Entity> entites = new CopyOnWriteArrayList<>();
 	public ColCoords coords;
 	public Chunk[] chunks = new Chunk[World.chunks];
-	public boolean flat = true;
+	public boolean flat = false;
 	
 	public Column(int x, int z, boolean gen) {
 		this(new ColCoords(x,z), gen);
@@ -51,7 +51,7 @@ public class Column {
 	public void generate() {
 	    for (int px = 0; px < World.chunkWidht; px++) {
 	        for (int pz = 0; pz < World.chunkWidht; pz++) {
-	        	float noise = Noise.get((World.chunkWidht*coords.columnX+px)*0.01f, (World.chunkWidht*coords.columnZ+pz)*0.01f,0);
+	        	double noise = Noise.get((World.chunkWidht*coords.columnX+px)*0.01f, 0, (World.chunkWidht*coords.columnZ+pz)*0.01f);
 	        	int maxy = (int) (noise * (World.maxHeight*0.5));
 	        	for (int py = 0; py < World.maxHeight; py++) {
 	        		if (flat) {

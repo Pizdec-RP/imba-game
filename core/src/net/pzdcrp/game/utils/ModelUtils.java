@@ -14,6 +14,7 @@ import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
+import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector3;
@@ -22,6 +23,7 @@ import net.pzdcrp.game.GameInstance;
 import net.pzdcrp.game.data.Vector3D;
 
 public class ModelUtils {
+	@Deprecated
 	public static Model createCubeModel(boolean top, boolean bottom, boolean left, boolean right, boolean front, boolean back, String materialName, boolean transparent) {
 	    ModelBuilder modelBuilder = new ModelBuilder();
 	    modelBuilder.begin();
@@ -187,6 +189,71 @@ public class ModelUtils {
 	    }
 
 	    return modelBuilder.end();
+	}
+	
+	public static void addCubeModel(boolean top, boolean bottom, boolean left, boolean right, boolean front, boolean back, MeshPartBuilder builder, Vector3 pos) {
+	    
+	    //Vector3 normal = new Vector3();
+	    builder.setUVRange(0, 0, 1, 1);
+	    // bottom
+	    if (!bottom) {
+	    	builder.rect(
+	    			pos.x-0.5f, pos.y-0.5f, pos.z+0.5f, 
+	    			pos.x+0.5f, pos.y-0.5f, pos.z-0.5f, 
+	    			pos.x+0.5f, pos.y-0.5f, pos.z-0.5f,// 0.5f, -0.5f, -0.5f, 
+	    			pos.x-0.5f, pos.y-0.5f, pos.z-0.5f,// -0.5f, -0.5f, -0.5f, 
+	    			0, -1, 0);
+	    }
+
+	    // top
+	    if (!top) {
+	        builder.rect(
+	        		pos.x-0.5f, pos.y+0.5f, pos.z-0.5f,// -0.5f, 0.5f, -0.5f,
+	        		pos.x+0.5f, pos.y+0.5f, pos.z-0.5f,//  0.5f, 0.5f, -0.5f,
+	        		pos.x+0.5f, pos.y+0.5f, pos.z+0.5f,//  0.5f, 0.5f,  0.5f,
+	        		pos.x-0.5f, pos.y+0.5f, pos.z+0.5f,// -0.5f, 0.5f,  0.5f,
+	                0, 1, 0);
+	    }
+
+	    // left
+	    if (!left) {
+	        builder.rect(
+	        		pos.x-0.5f, pos.y-0.5f, pos.z+0.5f,// -0.5f, -0.5f,  0.5f,
+	        		pos.x-0.5f, pos.y-0.5f, pos.z-0.5f,// -0.5f, -0.5f, -0.5f,
+	        		pos.x-0.5f, pos.y+0.5f, pos.z-0.5f,// -0.5f,  0.5f, -0.5f,
+	        		pos.x-0.5f, pos.y+0.5f, pos.z+0.5f,// -0.5f,  0.5f,  0.5f,
+	                -1, 0, 0);
+	    }
+
+	    // right
+	    if (!right) {
+	        builder.rect(
+	        		pos.x+0.5f, pos.y-0.5f, pos.z-0.5f,// 0.5f, -0.5f, -0.5f,
+	        		pos.x+0.5f, pos.y-0.5f, pos.z+0.5f,// 0.5f, -0.5f,  0.5f,
+	        		pos.x+0.5f, pos.y+0.5f, pos.z+0.5f,// 0.5f,  0.5f,  0.5f,
+	        		pos.x+0.5f, pos.y+0.5f, pos.z-0.5f,// 0.5f,  0.5f, -0.5f,
+	                 1, 0, 0);
+	    }
+
+	    // front
+	    if (!front) {
+	        builder.rect(
+	        		pos.x-0.5f, pos.y-0.5f, pos.z-0.5f,// -0.5f, -0.5f, -0.5f,
+	        		pos.x+0.5f, pos.y-0.5f, pos.z-0.5f,//  0.5f, -0.5f, -0.5f,
+	        		pos.x+0.5f, pos.y+0.5f, pos.z-0.5f,//  0.5f,  0.5f, -0.5f,
+	        		pos.x-0.5f, pos.y+0.5f, pos.z-0.5f,// -0.5f,  0.5f, -0.5f,
+	                0, 0, -1);
+	    }
+
+	    // back
+	    if (!back) {
+	        builder.rect(
+	        		pos.x+0.5f, pos.y-0.5f, pos.z+0.5f,// 0.5f, -0.5f,  0.5f,
+	        		pos.x-0.5f, pos.y-0.5f, pos.z+0.5f,// -0.5f, -0.5f,  0.5f,
+	        		pos.x-0.5f, pos.y+0.5f, pos.z+0.5f,// -0.5f,  0.5f,  0.5f,
+	        		pos.x+0.5f, pos.y+0.5f, pos.z+0.5f,//  0.5f,  0.5f,  0.5f,
+	                 0, 0, 1);
+	    }
 	}
 	
 	

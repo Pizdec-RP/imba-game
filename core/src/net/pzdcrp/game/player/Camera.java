@@ -23,7 +23,7 @@ public class Camera {
 	}
 	
 	public void setpos(Vector3D pos) {
-		this.setpos(pos.x,pos.y-0.5,pos.z);
+		this.setpos(pos.x,pos.y,pos.z);
 	}
 	
 	public Vector3D getDirection() {

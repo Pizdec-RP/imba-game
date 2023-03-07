@@ -142,6 +142,10 @@ public class Vector3D {
 	public Vector3D add(double x, double y, double z) {
 		return new Vector3D(this.x + x, this.y + y, this.z + z);
 	}
+	
+	public Vector3D add(double s) {
+		return new Vector3D(this.x + s, this.y + s, this.z + s);
+	}
 
 	public Vector3D subtract(Vector3D other) {
 		if (other == null) throw new IllegalArgumentException("other cannot be NULL");

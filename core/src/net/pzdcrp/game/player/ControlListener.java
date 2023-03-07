@@ -45,8 +45,8 @@ public class ControlListener implements InputProcessor {
 
 	@Override
 	public boolean touchDragged(int screenX, int screenY, int pointer) {
-		// TODO Auto-generated method stub
-		return false;
+		World.player.handleMM(screenX, screenY);
+		return true;
 	}
 
 	@Override

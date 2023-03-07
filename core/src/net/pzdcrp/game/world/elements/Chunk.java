@@ -1,15 +1,23 @@
 package net.pzdcrp.game.world.elements;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.VertexAttributes;
+import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute;
+import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
+import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.graphics.g3d.utils.MeshBuilder;
+import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
@@ -50,22 +58,36 @@ public class Chunk {
 	}
 
 	private void lUpdateModel() {
-		//Map<Integer, Model> modelsById = new HashMap<>();
-		int render = 0, not = 0;
-		ModelBuilder modelBuilder = new ModelBuilder();
-		modelBuilder.begin();
+		Map<Integer, Pair> modelsById = new HashMap<>();
 		for(int xx = 0; xx < World.chunkWidht; xx++) {
 			for(int yy = 0; yy < World.chunkWidht; yy++) {
 				for(int zz = 0; zz < World.chunkWidht; zz++) {
 					int id = blocks[xx][yy][zz];
-					//Model m = 
-					/*for (Entry<Integer, Model> entry : modelsById.entrySet()) {
-						if ()
-					}*/
 					Class<? extends Block> block = Block.blocks.get(id);
 					try {
 						Block clas = (Block)block.getConstructor(Vector3D.class).newInstance(new Vector3D(motherCol.coords.columnX*16+xx,height+yy,motherCol.coords.columnZ*16+zz));
 						if (clas.isRenderable()) {
+							if (!modelsById.containsKey(id)) {
+								ModelBuilder mb = new ModelBuilder();
+								mb.begin();
+								modelsById.put(
+										id,
+										new Pair(
+												mb.part(
+													"cube", 
+													GL20.GL_TRIANGLES, 
+													VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates,
+													new Material(
+												    		TextureAttribute.createDiffuse(GameInstance.getTexture(clas.texture)),
+											    			IntAttribute.createCullFace(GL20.GL_FRONT),
+											    			new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+												    )
+												),
+												mb
+										)
+								);
+							}
+							
 							boolean n1,n2,n3,n4,n5,n6;
 							n1 = antirender(xx,yy+1,zz, clas.getType());
 							n2 = antirender(xx,yy-1,zz, clas.getType());
@@ -74,19 +96,10 @@ public class Chunk {
 							n5 = antirender(xx,yy,zz-1, clas.getType());
 							n6 = antirender(xx,yy,zz+1, clas.getType());
 							if (!n1 || !n2 || !n3 || !n4 || !n5 || !n6) {
-								Model model = ModelUtils.createCubeModel(n1,n2,n3,n4,n5,n6,
-									clas.texture,
-									clas.getType().equals(BlockType.glass),
-									new Vector3((float)(clas.pos.x+clas.xsize/2),(float)clas.pos.y,(float)(clas.pos.z+clas.zsize/2))
-								);
-								int i = 0;
-								for (MeshPart mesh : model.meshParts) {
-								    modelBuilder.part(mesh, model.materials.get(i));
-								    i++;
-								}
-								render++;
-							} else {
-								not++;
+								Pair pair = modelsById.get(id);
+								ModelUtils.addCubeModel(n1, n2, n3, n4, n5, n6, pair.mpb, clas.pos.add(0.5).translate());
+								//System.out.println(clas.pos.translate().toString());
+								//System.out.println(clas.pos.toString());
 							}
 						}
 					} catch (Exception e) {
@@ -96,8 +109,11 @@ public class Chunk {
 				}
 			}
 		}
-		
-		allModels = new ModelInstance(modelBuilder.end());
+		List<Model> models = new ArrayList<>();
+		for (Pair pair : modelsById.values()) {
+			models.add(pair.mb.end());
+		}
+		allModels = ModelUtils.combineModels(models);
 		if (allModels.model.meshes.size > 1) {
 			MeshBuilder builder = new MeshBuilder();
 			builder.begin(VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);
@@ -107,14 +123,9 @@ public class Chunk {
 				allModels.model.meshes.removeIndex(i);
 				i++;
 			}
-			//System.out.println(allModels.model.meshes.size);
 			Mesh m1 = builder.end();
 			allModels.model.meshes.add(m1);
 		}
-		
-		System.out.println("meshes: "+allModels.model.meshes.size+
-				" mesh parts: "+allModels.model.meshParts.size+
-				" rendering blocks: "+render+" not rendering: "+not);
 	}
 	
 	public void render() {
@@ -149,5 +160,14 @@ public class Chunk {
 		return World.player.cam.cam.frustum.boundsInFrustum(min, max);
 		//return World.player.cam.cam.frustum.sphereInFrustum((min.x + max.x) / 2f, (min.y + max.y) / 2f, (min.z + max.z) / 2f, box.getDimensions(GameInstance.forAnyReason).len() / 2f);
 		//return test;
+	}
+}
+
+class Pair {
+	public final MeshPartBuilder mpb;
+	public final ModelBuilder mb;
+	public Pair(MeshPartBuilder one, ModelBuilder two) {
+		this.mpb = one;
+		this.mb = two;
 	}
 }
