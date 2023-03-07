@@ -5,9 +5,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.badlogic.gdx.graphics.Mesh;
+import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
+import com.badlogic.gdx.graphics.g3d.utils.MeshBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
@@ -49,7 +51,7 @@ public class Chunk {
 
 	private void lUpdateModel() {
 		//Map<Integer, Model> modelsById = new HashMap<>();
-		
+		int render = 0, not = 0;
 		ModelBuilder modelBuilder = new ModelBuilder();
 		modelBuilder.begin();
 		for(int xx = 0; xx < World.chunkWidht; xx++) {
@@ -71,35 +73,20 @@ public class Chunk {
 							n4 = antirender(xx+1,yy,zz, clas.getType());
 							n5 = antirender(xx,yy,zz-1, clas.getType());
 							n6 = antirender(xx,yy,zz+1, clas.getType());
-							/*if (clas.pos.VecToInt().equals(new Vector3D(10,19,11).VecToInt())) {
-								System.out.println(n1+" "+n2+" "+n3+" "+n4+" "+n5+" "+n6);
-								System.out.println(new Vector3D(motherCol.coords.columnX*World.chunkWidht+xx,this.height+yy,motherCol.coords.columnX*World.chunkWidht+zz));
-								System.out.println(GameInstance.world.getBlock(new Vector3D(motherCol.coords.columnX*World.chunkWidht+xx,this.height+yy+1,motherCol.coords.columnX*World.chunkWidht+zz)).getType());
-								System.out.println(GameInstance.world.getBlock(new Vector3D(motherCol.coords.columnX*World.chunkWidht+xx,this.height+yy-1,motherCol.coords.columnX*World.chunkWidht+zz)).getType());
-								System.out.println(GameInstance.world.getBlock(new Vector3D(motherCol.coords.columnX*World.chunkWidht+xx-1,this.height+yy,motherCol.coords.columnX*World.chunkWidht+zz)).getType());
-								System.out.println(GameInstance.world.getBlock(new Vector3D(motherCol.coords.columnX*World.chunkWidht+xx+1,this.height+yy,motherCol.coords.columnX*World.chunkWidht+zz)).getType());
-								System.out.println(GameInstance.world.getBlock(new Vector3D(motherCol.coords.columnX*World.chunkWidht+xx,this.height+yy,motherCol.coords.columnX*World.chunkWidht+zz-1)).getType());
-								System.out.println(GameInstance.world.getBlock(new Vector3D(motherCol.coords.columnX*World.chunkWidht+xx,this.height+yy,motherCol.coords.columnX*World.chunkWidht+zz+1)).getType());
-							}*/
 							if (!n1 || !n2 || !n3 || !n4 || !n5 || !n6) {
-								Model model;
-								model = ModelUtils.createCubeModel(n1,n2,n3,n4,n5,n6,
+								Model model = ModelUtils.createCubeModel(n1,n2,n3,n4,n5,n6,
 									clas.texture,
-									clas.getType().equals(BlockType.glass)
+									clas.getType().equals(BlockType.glass),
+									new Vector3((float)(clas.pos.x+clas.xsize/2),(float)clas.pos.y,(float)(clas.pos.z+clas.zsize/2))
 								);
-								
-								Matrix4 transform = new Matrix4();
-								transform.translate((float)(clas.pos.x+clas.xsize/2),(float)clas.pos.y,(float)(clas.pos.z+clas.zsize/2));
-								for (Mesh mesh : model.meshes) {
-								    mesh.transform(transform);
-								}
-								
 								int i = 0;
 								for (MeshPart mesh : model.meshParts) {
-									//System.out.println("mesh: "+i);
 								    modelBuilder.part(mesh, model.materials.get(i));
 								    i++;
 								}
+								render++;
+							} else {
+								not++;
 							}
 						}
 					} catch (Exception e) {
@@ -109,7 +96,25 @@ public class Chunk {
 				}
 			}
 		}
+		
 		allModels = new ModelInstance(modelBuilder.end());
+		if (allModels.model.meshes.size > 1) {
+			MeshBuilder builder = new MeshBuilder();
+			builder.begin(VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);
+			int i = 0;
+			for (Mesh mesh : allModels.model.meshes) {
+				builder.addMesh(mesh);
+				allModels.model.meshes.removeIndex(i);
+				i++;
+			}
+			//System.out.println(allModels.model.meshes.size);
+			Mesh m1 = builder.end();
+			allModels.model.meshes.add(m1);
+		}
+		
+		System.out.println("meshes: "+allModels.model.meshes.size+
+				" mesh parts: "+allModels.model.meshParts.size+
+				" rendering blocks: "+render+" not rendering: "+not);
 	}
 	
 	public void render() {

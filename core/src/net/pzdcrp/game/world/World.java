@@ -65,7 +65,7 @@ public class World {// implements RenderableProvider {
 	public List<Column> loadedColumns = new CopyOnWriteArrayList<>();
 	public List<Column> memoriedColumns = new CopyOnWriteArrayList<>();
 	public List<ModelInstance> additional = new CopyOnWriteArrayList<>();
-	public int time = 0; //day - 60 000
+	public int time = 0;
 	public Environment env;
 	public static final int chunks = 6, chunkWidht = 16, maxHeight = chunkWidht*chunks;
 	public static boolean ready = false;
@@ -77,7 +77,7 @@ public class World {// implements RenderableProvider {
     public ModelInstance moon;
     public Vector3 lightDirection = new Vector3();
 
-    private static final int DAY_LENGTH = 10000;
+    private static final int DAY_LENGTH = 60000;
     private static final float DISTANCE_FROM_CENTER = 90f;
     public static final boolean load = true;
     int renderRad = 3;
@@ -124,14 +124,15 @@ public class World {// implements RenderableProvider {
 		moon = new ModelInstance(model);
 		
 		
-		model = ModelUtils.createCubeModel(false,false,true,false,false,false,"stone",false);
+		model = ModelUtils.createCubeModel(false,false,true,false,false,false,"stone",false,new Vector3((float)player.pos.x,(float)player.pos.y,(float)player.pos.z));
+		//model = ModelUtils.createCubeModel(false,false,true,false,false,false,"stone",false);
 		
-		Matrix4 transformm = new Matrix4();
-		transformm.translate((float)player.pos.x,(float)player.pos.y,(float)player.pos.z);
+		//Matrix4 transformm = new Matrix4();
+		//transformm.translate((float)player.pos.x,(float)player.pos.y,(float)player.pos.z);
 
-		for (Mesh meshh : model.meshes) {
-		    meshh.transform(transformm);
-		}
+		//for (Mesh meshh : model.meshes) {
+		//    meshh.transform(transformm);
+		//}
 		
 		ModelInstance test = new ModelInstance(model);
 		additional.add(test);
@@ -219,16 +220,16 @@ public class World {// implements RenderableProvider {
         //moon.transform.setToTranslation(x, y, (float) player.pos.z);
 		GameInstance.modelBatch.render(sun);
 		float sunpossc = (float) player.pos.y-y;
-		if (sunpossc <= 20 && sunpossc >= -20) {
+		if (sunpossc <= 40 && sunpossc >= -40) {
 			float a = sunpossc*0.1f;
-			envcolor.color.r = 1.1f-a/2;
-			envcolor.color.g = 1.1f-a/2;
-			envcolor.color.b = 1.1f-a/2;
-		} else if (sunpossc >= -20) {
+			envcolor.color.r = 1.1f-a/4;
+			envcolor.color.g = 1.1f-a/4;
+			envcolor.color.b = 1.1f-a/4;
+		} else if (sunpossc >= -40) {
 			envcolor.color.r = 0.1f;
 			envcolor.color.g = 0.1f;
 			envcolor.color.b = 0.1f;
-		} else if (sunpossc <= 20) {
+		} else if (sunpossc <= 40) {
 			envcolor.color.r = 1.1f;
 			envcolor.color.g = 1.1f;
 			envcolor.color.b = 1.1f;
