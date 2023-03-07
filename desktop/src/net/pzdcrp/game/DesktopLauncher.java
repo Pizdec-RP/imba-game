@@ -15,7 +15,7 @@ import com.badlogic.gdx.Graphics;
 public class DesktopLauncher {
 	public static void main (String[] arg) {
 		Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
-		config.setForegroundFPS(0);
+		config.setForegroundFPS(60);
 		config.setWindowedMode(1200, 800);
 		config.setTitle("testgame");
 		//new Lwjgl3Application(new VoxelTest(), config);
