@@ -64,7 +64,7 @@ import net.pzdcrp.wildland.world.elements.blocks.Block.BlockType;
 import net.pzdcrp.wildland.world.elements.entities.Entity;
 
 public class World {// implements RenderableProvider {
-	public static Player player;
+	public Player player;
 	public Map<ColCoords,Column> loadedColumns = new ConcurrentHashMap<>();
 	public Map<ColCoords,Column> memoriedColumns = new ConcurrentHashMap<>();
 	public List<ModelInstance> additional = new CopyOnWriteArrayList<>();
@@ -75,21 +75,29 @@ public class World {// implements RenderableProvider {
 	public Matrix4 temp = new Matrix4();
 	public Vector3 sunPosition = new Vector3();
 	public ModelInstance sun;
-	public DirectionalLight sunlight;
+	public Environment sunlight;
+	public DirectionalLight sundl;
     public Vector3 moonPosition = new Vector3();
     public ModelInstance moon;
     public Vector3 lightDirection = new Vector3();
+    
 
     private static final int DAY_LENGTH = 60000;
     private static final float DISTANCE_FROM_CENTER = 200f;
     public static final boolean load = true;
-    int renderRad = 8;
+    int renderRad = 4;
     Material skymaterial;
     ColorAttribute envcolor;
 	
 	public World() {
 		env = new Environment();
 		env.set(envcolor = new ColorAttribute(ColorAttribute.AmbientLight, 0.8f, 0.8f, 0.8f, 1f));
+		
+		sunlight = new Environment();
+		sunlight.set(new ColorAttribute(ColorAttribute.Diffuse, 0.7f,0.7f,0.7f,1f));
+		sunlight.add(sundl = new DirectionalLight());
+		sundl.set(Color.WHITE,0,0,0);
+		sundl.setColor(0.3f,0.3f,0.3f,1);
 		
 		if (load) {
 			System.out.println("loading world");
@@ -135,6 +143,17 @@ public class World {// implements RenderableProvider {
 		ready = true;
 	}
 	
+	public void setBlock(Block block) {
+		if (block.pos.y < 0 || block.pos.y >= maxHeight) return;
+		Column col = getColumn(block.pos.x,block.pos.z);
+		for (Entry<ColCoords, Column> tcol : loadedColumns.entrySet()) {
+			for (Entity en : tcol.getValue().entites) {
+				if (block.collide(en.getHitbox())) return;
+			}
+		}
+		col.setBlock((int)block.pos.x&15,(int)block.pos.y,(int)block.pos.z&15, Block.idByBlock(block));
+	}
+	
 	public void setBlock(Vector3D v, int id) {
 		if (v.y < 0 || v.y >= maxHeight) return;
 		Column col = getColumn(v.x,v.z);
@@ -177,10 +196,10 @@ public class World {// implements RenderableProvider {
 	}
 	
 	public Block getBlock(Vector3D v) {
-		if (v.y < 0 || v.y >= maxHeight) return new Voed(v);
+		if (v.y < 0 || v.y >= maxHeight) return new Voed(v,null);
 		Column col = getColumn(v.x,v.z);
 		if (col == null) col = getUnloadedColumn(v.x,v.z);
-		if (col == null) return new Voed(v);
+		if (col == null) return new Voed(v,null);
 		try {
 			Block c = Block.blockById(col.getBlock((int)v.x&15,(int)v.y,(int)v.z&15), v);
 			return c;
@@ -229,9 +248,9 @@ public class World {// implements RenderableProvider {
 			envcolor.color.b = 1.1f;
 		}
 		//GameInstance.modelBatch.render(moon);
+		sundl.direction.set(-x, -y, (float) player.pos.z);
 		GameInstance.modelBatch.render(sky,env);
         //lightDirection.set(player.pos.translate()).sub(sunPosition).nor();
-        //sunlight.direction.set(x, y, (float) player.pos.z);
 	}
 	
 	public void tick() {
@@ -385,7 +404,7 @@ public class World {// implements RenderableProvider {
 			}
 			int i = 1;
 			for (Column column : tcols) {
-				System.out.println("saving columns "+i+"/"+GameInstance.world.memoriedColumns.size());
+				System.out.println("saving columns "+i+"/"+tcols.size());
 				i++;
 				JsonObject jcol = new JsonObject();
 				//pos

@@ -14,22 +14,24 @@ import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Matrix4;
 
 import net.pzdcrp.wildland.GameInstance;
+import net.pzdcrp.wildland.data.BlockFace;
 import net.pzdcrp.wildland.data.Vector3D;
 import net.pzdcrp.wildland.world.elements.blocks.Block.BlockType;
 
 public class Dirt extends Block {
 	static String tname = "dirt";
-	public Dirt(Vector3D pos) {
-		super(pos,1d,1d,1d, tname);
-		//System.out.println("crtd");
+	public Dirt(Vector3D pos,BlockFace blockface) {
+		super(pos,tname);
 	}
 	
-	public static int id() {
-		return 1;
-	}
 	
 	@Override
 	public BlockType getType() {
 		return BlockType.solid;
+	}
+	
+	@Override
+	public Block clone() {
+		return new Dirt(this.pos,null);
 	}
 }	

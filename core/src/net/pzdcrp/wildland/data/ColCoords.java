@@ -1,5 +1,6 @@
 package net.pzdcrp.wildland.data;
 
+import net.pzdcrp.wildland.GameInstance;
 import net.pzdcrp.wildland.world.World;
 
 public class ColCoords {
@@ -25,7 +26,7 @@ public class ColCoords {
 	}
 	
 	public Vector3D toVec() {
-		return new Vector3D(columnX*World.chunkWidht+World.chunkWidht/2,World.player.pos.y,columnZ*World.chunkWidht+World.chunkWidht/2);
+		return new Vector3D(columnX*World.chunkWidht+World.chunkWidht/2,GameInstance.world.player.pos.y,columnZ*World.chunkWidht+World.chunkWidht/2);
 	}
 	
 	@Override

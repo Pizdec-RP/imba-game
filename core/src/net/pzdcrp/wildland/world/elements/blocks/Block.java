@@ -1,82 +1,58 @@
 package net.pzdcrp.wildland.world.elements.blocks;
 
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Mesh;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.VertexAttributes;
-import com.badlogic.gdx.graphics.VertexAttributes.Usage;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.g3d.Material;
-import com.badlogic.gdx.graphics.g3d.Model;
-import com.badlogic.gdx.graphics.g3d.ModelInstance;
-import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
-import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
-import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
-import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
-import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.math.collision.Ray;
-
-import net.pzdcrp.wildland.GameInstance;
 import net.pzdcrp.wildland.data.AABB;
+import net.pzdcrp.wildland.data.BlockFace;
+import net.pzdcrp.wildland.data.Pair;
 import net.pzdcrp.wildland.data.Vector3D;
-import net.pzdcrp.wildland.world.World;
 
 public class Block {
 	
 	public Vector3D pos;
-	public double xsize, ysize, zsize;
-	public static Map<Integer, Class<? extends Block>> blocks = new ConcurrentHashMap<Integer, Class<? extends Block>>( ) {
+	private static Map<Integer, Block> blocks = new ConcurrentHashMap<Integer, Block>( ) {
 	private static final long serialVersionUID = 3707964282902670945L;
 	{
-		put(0, Air.class);
-		put(1, Dirt.class);
-		put(2, Stone.class);
-		put(3, Glass.class);
-		put(4, RedSand.class);
-		put(5, Voed.class);
-		put(6, Grass.class);
+		put(0, new Air(new Vector3D(),null));
+		put(1, new Dirt(new Vector3D(),null));
+		put(2, new Stone(new Vector3D(),null));
+		put(3, new Glass(new Vector3D(),null));
+		put(4, new RedSand(new Vector3D(),null));
+		put(5, new Voed(new Vector3D(),null));
+		put(6, new Grass(new Vector3D(),null));
+		put(7, new OakLog(new Vector3D(),BlockFace.PX));//px
+		put(8, new OakLog(new Vector3D(),BlockFace.PY));//py
+		put(9, new OakLog(new Vector3D(),BlockFace.PZ));//pz
+		put(10, new OakLog(new Vector3D(),BlockFace.NX));//nx
+		put(11, new OakLog(new Vector3D(),BlockFace.NY));//ny
+		put(12, new OakLog(new Vector3D(),BlockFace.NZ));//nz
 	}};
 	public enum BlockType {
 		air, Void, solid, sandy, glass, nonfull;
 	}
 	public String texture;
 	
-	public Block(Vector3D pos, double xsize, double ysize, double zsize, String texture) {
-		this.pos = pos;
-		this.xsize = xsize;
-		this.ysize = ysize;
-		this.zsize = zsize;
+	public Block(Vector3D pos, String texture) {
+		this.pos = pos.VecToInt();
 		this.texture = texture;
-		//ModelBuilder mb = new ModelBuilder();
-		//TextureRegion tr = new TextureRegion(new Texture(Gdx.files.internal("dirt.png")),0,0,16,16);
-		/*if (texture != null) {
-			Material material = new Material(TextureAttribute.createDiffuse(texture));
-			ModelBuilder modelBuilder = new ModelBuilder();
-			modelBuilder.begin();
-			MeshPartBuilder meshBuilder = modelBuilder.part("box", GL20.GL_TRIANGLES, Usage.Position | Usage.Normal | Usage.TextureCoordinates, material);
-			
-			meshBuilder.box((float)xsize, (float)ysize, (float)zsize);
-			
-			Model model = modelBuilder.end();
-			Matrix4 transform = new Matrix4();
-			transform.translate((float)(pos.x+xsize/2),(float)pos.y,(float)(pos.z+zsize/2));
-
-			for (Mesh mesh : model.meshes) {
-			    mesh.transform(transform);
-			}
-			this.model = new ModelInstance(model);
-		}*/
+	}
+	
+	public static int idByBlock(Block block) {
+		for (Entry<Integer, Block> entry : blocks.entrySet()) {
+			if (entry.getValue().equals(block)) return entry.getKey();
+		}
+		System.out.println("unregistered block: "+block.toString());
+		System.exit(0);
+		return 0;
 	}
 	
 	public static Block blockById(int id, Vector3D v) {
 		try {
-			return (Block)Block.blocks.get(id).getConstructor(Vector3D.class).newInstance(v);
+			Block block = Block.blocks.get(id).clone();
+			block.pos = v;
+			return block;
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(0);
@@ -93,14 +69,40 @@ public class Block {
 	}
 	
 	public boolean collide(AABB with) {
-		return new AABB(pos.x,pos.y,pos.z, pos.x+xsize,pos.y+ysize,pos.z+zsize).collide(with);
+		return new AABB(pos.x,pos.y,pos.z, pos.x+1,pos.y+1,pos.z+1).collide(with);
 	}
 	
 	public AABB getHitbox() {
-		return new AABB(pos.x,pos.y,pos.z, pos.x+xsize,pos.y+ysize,pos.z+zsize);
+		return new AABB(pos.x,pos.y,pos.z, pos.x+1,pos.y+1,pos.z+1);
 	}
 	
 	public BlockType getType() {
 		return BlockType.solid;
+	}
+	
+	public boolean isCustonModel() {
+		return false;
+	}
+	
+	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, Map<String, Pair> modelsById) {
+		
+	}
+	
+	public BlockFace getFace() {
+		return BlockFace.PX;
+	}
+	
+	public Block clone() {
+		return null;
+	}
+	
+	@Override
+	public boolean equals(Object block) {
+		if (block instanceof Block) {
+			Block b = (Block) block;
+			if (block.getClass() == this.getClass() && b.getFace() == this.getFace()) return true;
+			
+		}
+		return false;
 	}
 }

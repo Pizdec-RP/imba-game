@@ -9,6 +9,7 @@ import com.google.gson.JsonObject;
 
 import net.pzdcrp.wildland.GameInstance;
 import net.pzdcrp.wildland.data.AABB;
+import net.pzdcrp.wildland.data.BlockFace;
 import net.pzdcrp.wildland.data.ColCoords;
 import net.pzdcrp.wildland.data.EntityType;
 import net.pzdcrp.wildland.data.Physics;
@@ -17,9 +18,13 @@ import net.pzdcrp.wildland.player.Player;
 import net.pzdcrp.wildland.world.World;
 import net.pzdcrp.wildland.world.elements.Column;
 import net.pzdcrp.wildland.world.elements.blocks.Block;
+import net.pzdcrp.wildland.world.elements.blocks.Dirt;
+import net.pzdcrp.wildland.world.elements.inventory.EntityInventory;
+import net.pzdcrp.wildland.world.elements.inventory.IInventory;
+import net.pzdcrp.wildland.world.elements.inventory.PlayerInventory;
 
 public class Entity {
-	public Vector3D pos;
+	public Vector3D pos, beforepos;
 	public EntityType type;
 	public AABB hitbox;
 	public double velX=0, velY=0, velZ=0;
@@ -27,6 +32,11 @@ public class Entity {
 	public float yaw = 0,pitch = 0;
 	public ColCoords beforeechc;
 	public boolean firsttick = true;
+	
+	//not saving
+	public Vector3D currentAimBlock = new Vector3D();
+	public BlockFace currentAimFace = BlockFace.PX;//TODO need to update
+	public IInventory inventory;
 	
 	public Map<EntityType, Class<? extends Entity>> entities = new HashMap<EntityType, Class<? extends Entity>>() {
 	private static final long serialVersionUID = 5611014785520178934L;
@@ -37,12 +47,19 @@ public class Entity {
 	public Entity(Vector3D pos, AABB hitbox, EntityType type) {
 		this.type = type;
 		this.pos=pos;
+		this.beforepos=pos;
 		this.hitbox=hitbox;
 		this.beforeechc = new ColCoords(pos.x,pos.z);
+		if (type == EntityType.player) {
+			inventory = new PlayerInventory(this);
+		} else {
+			inventory = new EntityInventory(this);
+		}
 	}
 	
 	public void tick() {
 		updateGravity();
+		if (type == EntityType.player) updateFacingBlock();
 		applyMovement();
 		if (firsttick) {
 			Column beforecol = GameInstance.world.getColumn(beforeechc);
@@ -63,6 +80,10 @@ public class Entity {
 			col.entites.add(this);
 			beforeechc = echc;
 		}
+	}
+	
+	public void updateFacingBlock() {
+		
 	}
 	
 	public void updateGravity() {
@@ -167,5 +188,9 @@ public class Entity {
 	
 	public void readCustomProp(JsonObject prop) {
 		
+	}
+
+	public void placeBlock(Block block) {
+		GameInstance.world.setBlock(block);
 	}
 }

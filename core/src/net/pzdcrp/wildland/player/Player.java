@@ -21,6 +21,7 @@ import com.badlogic.gdx.math.Vector3;
 
 import net.pzdcrp.wildland.GameInstance;
 import net.pzdcrp.wildland.data.AABB;
+import net.pzdcrp.wildland.data.BlockFace;
 import net.pzdcrp.wildland.data.EntityType;
 import net.pzdcrp.wildland.data.Physics;
 import net.pzdcrp.wildland.data.Settings;
@@ -31,7 +32,9 @@ import net.pzdcrp.wildland.world.elements.Chunk;
 import net.pzdcrp.wildland.world.elements.Column;
 import net.pzdcrp.wildland.world.elements.blocks.Block;
 import net.pzdcrp.wildland.world.elements.blocks.Dirt;
+import net.pzdcrp.wildland.world.elements.chat.Chat;
 import net.pzdcrp.wildland.world.elements.entities.Entity;
+import net.pzdcrp.wildland.world.elements.inventory.items.DirtItem;
 
 public class Player extends Entity {
 	//public float pitch, yaw;//yaw left-right
@@ -44,12 +47,14 @@ public class Player extends Entity {
 	private static final float mouseSensitivity = 0.1f;
 	private Quaternion quaternion = new Quaternion();
 	public int actcd = 0;//15 ticks
+	public Chat chat = new Chat();
 	
 	public Player(double tx, double ty, double tz) {
 		super(new Vector3D(tx,ty,tz),new AABB(-0.3, 0, -0.3, 0.3, 1.7, 0.3), EntityType.player);
 		cam = new Camera();
 		cam.setpos(this.pos.x,this.pos.y,this.pos.z);
 		cam.cam.update();
+		this.inventory.addItem(new DirtItem(this.inventory), actcd);
 	}
 	
 	public void tick() {
@@ -101,21 +106,23 @@ public class Player extends Entity {
 	}
 	
 	public void updatePlayerActions() {
-		if (rmb) {
+		if (rmb && Gdx.input.isCursorCatched()) {
 			if (actcd <= 0) {
 				Vector3D pos = findFacingBlock(false);
+				this.currentAimBlock = pos;//TODO this is ass
 				if (pos != null) {
-					GameInstance.world.setBlock(pos, 2);
-					actcd = 7;
+					//GameInstance.world.setBlock(pos, 2);
+					this.inventory.getSlot(inventory.currentHitboxSlot()).onLClick();
+					actcd = 15;
 				}
 			}
 		}
-		if (lmb) {
+		if (lmb && Gdx.input.isCursorCatched()) {
 			if (actcd <= 0) {
 				Vector3D pos = findFacingBlock(true);
 				if (pos != null) {
 					GameInstance.world.setBlock(pos, 0);
-					actcd = 7;
+					actcd = 15;
 				}
 			}
 		}
@@ -148,6 +155,10 @@ public class Player extends Entity {
 	}
 	boolean b1 = false;
 	public void updateControls() {
+		if (Gdx.input.isKeyPressed(Input.Keys.T)) {
+			//this.chat.open();
+		}
+		if (this.chat.isOpen) return;
 		if (Gdx.input.isKeyPressed(Input.Keys.W)) {
 			forward = true;
 		} else forward = false;
@@ -175,15 +186,6 @@ public class Player extends Entity {
 		if (Gdx.input.isButtonPressed(Input.Buttons.LEFT)) {
 			lmb = true;
 		} else lmb = false;
-		if (Gdx.input.isKeyPressed(Input.Keys.T)) {
-			//for tests
-			/*for (Column col : GameInstance.world.loadedColumns) {
-				for (Chunk chunk : col.chunks) {
-					chunk.test = World.player.cam.cam.frustum.boundsInFrustum(chunk.min, chunk.max);
-				}
-			}*/
-			GameInstance.world.loadSave();
-		}
 		if (Gdx.input.isKeyPressed(Input.Keys.R)) {
 			if (!b1) {
 				GameInstance.world.time += 400;

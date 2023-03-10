@@ -1,5 +1,7 @@
 package net.pzdcrp.wildland.player;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 
 import net.pzdcrp.wildland.GameInstance;
@@ -15,7 +17,10 @@ public class ControlListener implements InputProcessor {
 
 	@Override
 	public boolean keyDown(int keycode) {
-		// TODO Auto-generated method stub
+		if (Gdx.input.isKeyPressed(Input.Keys.M)) {
+			Gdx.input.setCursorCatched(!Gdx.input.isCursorCatched());
+			return true;
+		}
 		return false;
 	}
 
@@ -45,14 +50,20 @@ public class ControlListener implements InputProcessor {
 
 	@Override
 	public boolean touchDragged(int screenX, int screenY, int pointer) {
-		World.player.handleMM(screenX, screenY);
-		return true;
+		if (Gdx.input.isCursorCatched()) {
+			GameInstance.world.player.handleMM(screenX, screenY);
+			return true;
+		}
+		return false;
 	}
 
 	@Override
 	public boolean mouseMoved(int screenX, int screenY) {
-		World.player.handleMM(screenX, screenY);
-		return true;
+		if (Gdx.input.isCursorCatched()) {
+			GameInstance.world.player.handleMM(screenX, screenY);
+			return true;
+		}
+		return false;
 	}
 
 	@Override

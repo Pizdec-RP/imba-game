@@ -7,6 +7,12 @@ public class Vector3D {
 	public double y;
 	public double z;
 	public int hasheddata = 0;
+	
+	public Vector3D() {
+		this.x = 0;
+		this.y = 0;
+		this.z = 0;
+	}
 
 	public Vector3D(double x, double y, double z) {
 		this.x = x;

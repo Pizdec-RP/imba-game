@@ -24,6 +24,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 
 import net.pzdcrp.wildland.GameInstance;
+import net.pzdcrp.wildland.data.Pair;
 import net.pzdcrp.wildland.data.Vector3D;
 import net.pzdcrp.wildland.utils.ModelUtils;
 import net.pzdcrp.wildland.world.World;
@@ -58,36 +59,14 @@ public class Chunk {
 	}
 
 	private void lUpdateModel() {
-		Map<Integer, Pair> modelsById = new HashMap<>();
+		Map<String, Pair> modelsById = new HashMap<>();
 		for(int xx = 0; xx < World.chunkWidht; xx++) {
 			for(int yy = 0; yy < World.chunkWidht; yy++) {
 				for(int zz = 0; zz < World.chunkWidht; zz++) {
 					int id = blocks[xx][yy][zz];
-					Class<? extends Block> block = Block.blocks.get(id);
 					try {
-						Block clas = (Block)block.getConstructor(Vector3D.class).newInstance(new Vector3D(motherCol.coords.columnX*16+xx,height+yy,motherCol.coords.columnZ*16+zz));
+						Block clas = Block.blockById(id, new Vector3D(motherCol.coords.columnX*16+xx,height+yy,motherCol.coords.columnZ*16+zz));
 						if (clas.isRenderable()) {
-							if (!modelsById.containsKey(id)) {
-								ModelBuilder mb = new ModelBuilder();
-								mb.begin();
-								modelsById.put(
-										id,
-										new Pair(
-												mb.part(
-													"cube", 
-													GL20.GL_TRIANGLES, 
-													VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates,
-													new Material(
-												    		TextureAttribute.createDiffuse(GameInstance.getTexture(clas.texture)),
-											    			IntAttribute.createCullFace(GL20.GL_FRONT),
-											    			new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-												    )
-												),
-												mb
-										)
-								);
-							}
-							
 							boolean n1,n2,n3,n4,n5,n6;
 							n1 = antirender(xx,yy+1,zz, clas.getType());
 							n2 = antirender(xx,yy-1,zz, clas.getType());
@@ -95,11 +74,33 @@ public class Chunk {
 							n4 = antirender(xx+1,yy,zz, clas.getType());
 							n5 = antirender(xx,yy,zz-1, clas.getType());
 							n6 = antirender(xx,yy,zz+1, clas.getType());
-							if (!n1 || !n2 || !n3 || !n4 || !n5 || !n6) {
-								Pair pair = modelsById.get(id);
-								ModelUtils.addCubeModel(n1, n2, n3, n4, n5, n6, pair.mpb, clas.pos.add(0.5).translate());
-								//System.out.println(clas.pos.translate().toString());
-								//System.out.println(clas.pos.toString());
+							if (!clas.isCustonModel()) {
+								if (!modelsById.containsKey(String.valueOf(id))) {
+									ModelBuilder mb = new ModelBuilder();
+									mb.begin();
+									modelsById.put(
+											String.valueOf(id),
+											new Pair(
+													mb.part(
+														"cube", 
+														GL20.GL_TRIANGLES, 
+														VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates,
+														new Material(
+													    		TextureAttribute.createDiffuse(GameInstance.getTexture(clas.texture)),
+												    			IntAttribute.createCullFace(GL20.GL_FRONT),
+												    			new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+													    )
+													),
+													mb
+											)
+									);
+								}
+								if (!n1 || !n2 || !n3 || !n4 || !n5 || !n6) {
+									Pair pair = modelsById.get(String.valueOf(id));
+									ModelUtils.addCubeModel(n1, n2, n3, n4, n5, n6, pair.mpb, clas.pos.add(0.5).translate());
+								}
+							} else {
+								clas.addModel(n1,n2,n3,n4,n5,n6,modelsById);
 							}
 						}
 					} catch (Exception e) {
@@ -157,17 +158,6 @@ public class Chunk {
 	}
 	public boolean test = false;
 	public boolean checkCamFrustum() {
-		return World.player.cam.cam.frustum.boundsInFrustum(min, max);
-		//return World.player.cam.cam.frustum.sphereInFrustum((min.x + max.x) / 2f, (min.y + max.y) / 2f, (min.z + max.z) / 2f, box.getDimensions(GameInstance.forAnyReason).len() / 2f);
-		//return test;
-	}
-}
-
-class Pair {
-	public final MeshPartBuilder mpb;
-	public final ModelBuilder mb;
-	public Pair(MeshPartBuilder one, ModelBuilder two) {
-		this.mpb = one;
-		this.mb = two;
+		return GameInstance.world.player.cam.cam.frustum.boundsInFrustum(min, max);
 	}
 }
