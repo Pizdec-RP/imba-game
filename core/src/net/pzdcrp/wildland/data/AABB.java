@@ -148,6 +148,12 @@ public class AABB {
 	           this.minY < other.maxY && this.maxY > other.minY &&
 	           this.minZ < other.maxZ && this.maxZ > other.minZ;
 	}
+	
+	public boolean collide(Vector3D other) {
+	    return this.minX < other.x && this.maxX > other.x &&
+	           this.minY < other.y && this.maxY > other.y &&
+	           this.minZ < other.z && this.maxZ > other.z;
+	}
 
 	public double getMinX() {
 		return minX;

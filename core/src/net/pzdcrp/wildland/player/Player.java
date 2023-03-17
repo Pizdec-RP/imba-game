@@ -99,7 +99,7 @@ public class Player extends Entity {
 		//gravity
         if (up) {
 			if (this.onGround) {
-				this.velY += 0.6400000013F;
+				this.velY += 0.599999904632568F;
 				this.onGround = false;
 			}
 		}
@@ -108,55 +108,27 @@ public class Player extends Entity {
 	public void updatePlayerActions() {
 		if (rmb && Gdx.input.isCursorCatched()) {
 			if (actcd <= 0) {
-				Vector3D pos = findFacingBlock(false);
-				this.currentAimBlock = pos;//TODO this is ass
 				if (pos != null) {
-					//GameInstance.world.setBlock(pos, 2);
 					this.inventory.getSlot(inventory.currentHitboxSlot()).onLClick();
-					actcd = 15;
+					actcd = 5;
 				}
 			}
 		}
 		if (lmb && Gdx.input.isCursorCatched()) {
 			if (actcd <= 0) {
-				Vector3D pos = findFacingBlock(true);
 				if (pos != null) {
-					GameInstance.world.setBlock(pos, 0);
-					actcd = 15;
+					this.inventory.getSlot(inventory.currentHitboxSlot()).onRClick();
+					actcd = 5;
 				}
 			}
 		}
 	}
 	
-	public Vector3D findFacingBlock(boolean solid) {
-		List<Vector3D> list = camRay();
-		Vector3D last = list.get(0);
-		for (Vector3D temppos : list) {
-			Block b = GameInstance.world.getBlock(new Vector3D((int)MathU.floorDouble(temppos.x), (int)MathU.floorDouble(temppos.y), (int)MathU.floorDouble(temppos.z)));
-			if (solid) {
-				if (b.isCollide()) return b.pos;
-			} else {
-				if (b.isCollide()) return last;
-			}
-			last = b.pos;
-		}
-		return null;
-	}
-	
-	public List<Vector3D> camRay() {
-		List<Vector3D> l = new ArrayList<>();
-		Vector3D dir = Vector3D.translate(cam.cam.direction.cpy().nor()).multiply(0.1);
-		Vector3D point = this.getEyeLocation().add(0,0,0);
-		for (int i = 0; i < 60; i++) {
-			l.add(point);
-			point = point.add(dir);
-		}
-		return l;
-	}
 	boolean b1 = false;
 	public void updateControls() {
 		if (Gdx.input.isKeyPressed(Input.Keys.T)) {
 			//this.chat.open();
+			this.pos.y += 5;
 		}
 		if (this.chat.isOpen) return;
 		if (Gdx.input.isKeyPressed(Input.Keys.W)) {
@@ -188,7 +160,7 @@ public class Player extends Entity {
 		} else lmb = false;
 		if (Gdx.input.isKeyPressed(Input.Keys.R)) {
 			if (!b1) {
-				GameInstance.world.time += 400;
+				GameInstance.world.time += 800;
 				b1 = true;
 			}
 		} else {
@@ -206,11 +178,13 @@ public class Player extends Entity {
 	
 	
 	public void render() {
-		cam.cam.update();
+		cam.render();
+		//cam.cam.update();
 		cam.cam.view.getRotation(quaternion);
         quaternion.nor();
 	}
 	
+	@Override
 	public Vector3D getEyeLocation() {
 		return new Vector3D(pos.x, pos.y+1.6f, pos.z);
 	}

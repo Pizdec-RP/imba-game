@@ -19,7 +19,6 @@ public class Block {
 		put(1, new Dirt(new Vector3D(),null));
 		put(2, new Stone(new Vector3D(),null));
 		put(3, new Glass(new Vector3D(),null));
-		put(4, new RedSand(new Vector3D(),null));
 		put(5, new Voed(new Vector3D(),null));
 		put(6, new Grass(new Vector3D(),null));
 		put(7, new OakLog(new Vector3D(),BlockFace.PX));//px

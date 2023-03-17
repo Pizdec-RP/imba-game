@@ -12,11 +12,14 @@ import net.pzdcrp.wildland.data.AABB;
 import net.pzdcrp.wildland.data.BlockFace;
 import net.pzdcrp.wildland.data.ColCoords;
 import net.pzdcrp.wildland.data.EntityType;
+import net.pzdcrp.wildland.data.OTripple;
 import net.pzdcrp.wildland.data.Physics;
 import net.pzdcrp.wildland.data.Vector3D;
 import net.pzdcrp.wildland.player.Player;
+import net.pzdcrp.wildland.utils.VectorU;
 import net.pzdcrp.wildland.world.World;
 import net.pzdcrp.wildland.world.elements.Column;
+import net.pzdcrp.wildland.world.elements.blocks.Air;
 import net.pzdcrp.wildland.world.elements.blocks.Block;
 import net.pzdcrp.wildland.world.elements.blocks.Dirt;
 import net.pzdcrp.wildland.world.elements.inventory.EntityInventory;
@@ -33,9 +36,10 @@ public class Entity {
 	public ColCoords beforeechc;
 	public boolean firsttick = true;
 	
-	//not saving
-	public Vector3D currentAimBlock = new Vector3D();
-	public BlockFace currentAimFace = BlockFace.PX;//TODO need to update
+	//FIXME saving and update
+	public Block currentAimBlock = new Air(new Vector3D(), BlockFace.PX);
+	public BlockFace currentAimFace = BlockFace.PX;
+	public Entity currentAimEntity = null;
 	public IInventory inventory;
 	
 	public Map<EntityType, Class<? extends Entity>> entities = new HashMap<EntityType, Class<? extends Entity>>() {
@@ -59,7 +63,7 @@ public class Entity {
 	
 	public void tick() {
 		updateGravity();
-		if (type == EntityType.player) updateFacingBlock();
+		if (type == EntityType.player) updateFacing();
 		applyMovement();
 		if (firsttick) {
 			Column beforecol = GameInstance.world.getColumn(beforeechc);
@@ -82,17 +86,27 @@ public class Entity {
 		}
 	}
 	
-	public void updateFacingBlock() {
-		
+	public void updateFacing() {
+		OTripple tripple = VectorU.findFacingPair(this.getEyeLocation(), GameInstance.world.player.cam.cam.direction);//FIXME replace cam.dir() with Pitch and Yaw to direction function
+		this.currentAimBlock = (Block) tripple.one;
+		if (this.currentAimBlock != null) {
+			this.currentAimFace = VectorU.getFace(currentAimBlock.pos, (Vector3D)tripple.two);
+		}
+		this.currentAimEntity = tripple.three == null ? null : (Entity) tripple.three;
 	}
 	
+	//private double xx = 0;
+    //private double step = 0.001;
+    //private double max = 13;
 	public void updateGravity() {
-		if (velY > 0) {
-			velY -= Physics.gravity*0.3;
-		} else {
-			//System.out.println(velY);
-			velY -= Physics.gravity*0.4;
+		/*if (velY == 0 && onGround) {
+			xx = 0;
 		}
+		double y = Math.pow(xx, 0.5) * Math.log(xx + 1);
+		xx += step * (max - xx);
+		velY -= y;
+		System.out.println(velY);*/
+		velY -= Physics.gravity;
 		velY *= Physics.airdrag;
 	}
 	
@@ -169,7 +183,6 @@ public class Entity {
 			if (!colz) pos.z+=velZ;
 			
 			velX *= 0.6;
-			velY *= 0.6;
 			velZ *= 0.6;
 			
 			if (Math.abs(velX) < Physics.badVel) velX = 0;
@@ -192,5 +205,9 @@ public class Entity {
 
 	public void placeBlock(Block block) {
 		GameInstance.world.setBlock(block);
+	}
+
+	public Vector3D getEyeLocation() {
+		return new Vector3D(pos.x, pos.y+hitbox.maxY*0.9, pos.z);
 	}
 }

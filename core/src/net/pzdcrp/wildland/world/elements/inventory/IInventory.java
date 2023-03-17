@@ -1,5 +1,8 @@
 package net.pzdcrp.wildland.world.elements.inventory;
 
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g3d.ModelBatch;
+
 import net.pzdcrp.wildland.world.elements.entities.Entity;
 
 public class IInventory {
@@ -18,6 +21,10 @@ public class IInventory {
 	}
 	
 	public void addItem(Item item, int index) {
+		
+	}
+
+	public void render(SpriteBatch spriteBatch) {
 		
 	}
 }

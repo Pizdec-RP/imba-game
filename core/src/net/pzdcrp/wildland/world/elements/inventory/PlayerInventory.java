@@ -36,4 +36,11 @@ public class PlayerInventory extends IInventory {
     public int currentHitboxSlot() {
     	return chs;
     }
+    
+    @Override
+    public void render(SpriteBatch batch) {
+    	for (int i = 0; i < 10; i++) {
+    		
+    	}
+    }
 }

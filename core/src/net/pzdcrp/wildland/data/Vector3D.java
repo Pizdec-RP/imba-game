@@ -1,5 +1,9 @@
 package net.pzdcrp.wildland.data;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import com.badlogic.gdx.math.Vector3;
 
 public class Vector3D {
@@ -187,6 +191,23 @@ public class Vector3D {
 	@Override
 	public String toString() {
 		return "Vec3D [x:"+x+" y:"+y+" z:"+z+"]";
+	}
+	
+	public List<Vector3D> sides() {
+		Vector3D target = this.floor().add(0.5, 0.5, 0.5);
+		List<Vector3D> sides = new ArrayList<Vector3D>() {{
+			add(target.add(1, 0, 0));
+			add(target.add(0, 0, 1));
+			add(target.add(-1, 0, 0));
+			add(target.add(0, 0, -1));
+			add(target.add(0, 1, 0));
+			add(target.add(0, -1, 0));
+		}};
+		//System.out.println("-------");
+		//for (Vector3D side : sides) {
+		//	System.out.println(side.toString());
+		//}
+		return sides;
 	}
 	
 	public static Vector3D fromString(String s) {

@@ -19,7 +19,7 @@ import net.pzdcrp.wildland.data.Vector3D;
 import net.pzdcrp.wildland.world.elements.blocks.Block.BlockType;
 
 public class Dirt extends Block {
-	static String tname = "dirt";
+	public static String tname = "dirt";
 	public Dirt(Vector3D pos,BlockFace blockface) {
 		super(pos,tname);
 	}

@@ -4,6 +4,7 @@ import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 
 
@@ -49,5 +50,12 @@ public class Item {
 	
 	public void onLClick() {
 		
+	}
+	public void onRClick() {
+		
+	}
+	
+	public Texture getTexture() {
+		return null;
 	}
 }

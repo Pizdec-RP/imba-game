@@ -84,7 +84,7 @@ public class World {// implements RenderableProvider {
 
     private static final int DAY_LENGTH = 60000;
     private static final float DISTANCE_FROM_CENTER = 200f;
-    public static final boolean load = true;
+    public static final boolean load = false;
     int renderRad = 4;
     Material skymaterial;
     ColorAttribute envcolor;
@@ -136,8 +136,7 @@ public class World {// implements RenderableProvider {
 		
 		model = ModelUtils.createCubeModel(false,false,true,false,false,false,"stone",false,new Vector3((float)player.pos.x,(float)player.pos.y,(float)player.pos.z));
 		
-		ModelInstance test = new ModelInstance(model);
-		additional.add(test);
+		//additional.add(new ModelInstance(model));
 		System.out.println("ready");
 		
 		ready = true;
