@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 
 import net.pzdcrp.wildland.world.elements.entities.Entity;
+import net.pzdcrp.wildland.world.elements.inventory.items.Item;
 
 public class IInventory {
 	public Entity owner;
@@ -16,15 +17,19 @@ public class IInventory {
 		return null;
 	}
 	
-	public int currentHitboxSlot() {
-		return 0;
-	}
-	
 	public void addItem(Item item, int index) {
 		
 	}
 
 	public void render(SpriteBatch spriteBatch) {
 		
+	}
+	
+	public void setCurrentSlotInt(int i) {
+		
+	}
+	
+	public int getCurrentSlotInt() {
+		return 0;
 	}
 }

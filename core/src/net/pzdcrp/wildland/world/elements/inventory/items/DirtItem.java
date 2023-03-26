@@ -8,7 +8,6 @@ import net.pzdcrp.wildland.utils.VectorU;
 import net.pzdcrp.wildland.world.elements.blocks.Air;
 import net.pzdcrp.wildland.world.elements.blocks.Dirt;
 import net.pzdcrp.wildland.world.elements.inventory.IInventory;
-import net.pzdcrp.wildland.world.elements.inventory.Item;
 
 public class DirtItem extends Item {
 	public DirtItem(IInventory inventory) {
@@ -43,5 +42,10 @@ public class DirtItem extends Item {
 	@Override
 	public Texture getTexture() {
 		return GameInstance.getTexture(Dirt.tname);
+	}
+	
+	@Override
+	public String getName() {
+		return "Dirt";
 	}
 }

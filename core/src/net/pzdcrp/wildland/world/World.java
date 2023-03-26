@@ -81,11 +81,10 @@ public class World {// implements RenderableProvider {
     public ModelInstance moon;
     public Vector3 lightDirection = new Vector3();
     
-
     private static final int DAY_LENGTH = 60000;
     private static final float DISTANCE_FROM_CENTER = 200f;
-    public static final boolean load = false;
-    int renderRad = 4;
+    public static final boolean load = true;
+    public static int renderRad = 5;
     Material skymaterial;
     ColorAttribute envcolor;
 	
@@ -134,7 +133,11 @@ public class World {// implements RenderableProvider {
 		moon = new ModelInstance(model);
 		
 		
-		model = ModelUtils.createCubeModel(false,false,true,false,false,false,"stone",false,new Vector3((float)player.pos.x,(float)player.pos.y,(float)player.pos.z));
+		//model = modelBuilder.createSphere(15, 15, 15, 20, 20, material, Usage.Position | Usage.Normal | Usage.TextureCoordinates);
+		
+		//ModelInstance m = new ModelInstance(model);
+		//m.transform.setToTranslation(20+(float)player.pos.x,(float)player.pos.y, (float)player.pos.z+20);
+        //additional.add(m);
 		
 		//additional.add(new ModelInstance(model));
 		System.out.println("ready");
@@ -287,7 +290,6 @@ public class World {// implements RenderableProvider {
 	    	}
 	    }
 	    //подгружаем недостдавшиеся
-	    int i = 0;
 	    for (ColCoords c : cl) {
 	    	//System.out.println("managing columns: "+i+++"/"+cl.size());
 	    	loadedColumns.put(c,genOrLoad(c));
@@ -311,12 +313,15 @@ public class World {// implements RenderableProvider {
 		//List<Model> world = new ArrayList<>();
 		//int i = 0;
 		for (Entry<ColCoords, Column> col : loadedColumns.entrySet()) {
-			col.getValue().render();
+			col.getValue().renderNormal();
 			//System.out.println(i+++"/"+loadedColumns.size()+" rendering");
+		}
+		for (Entry<ColCoords, Column> col : loadedColumns.entrySet()) {
+			col.getValue().renderTransparent();
 		}
 		//GameInstance.modelBatch.render(ModelUtils.combineModels(world), GameInstance.world.env);
 		for (ModelInstance a : additional) {
-			GameInstance.modelBatch.render(a, env);
+			GameInstance.modelBatch.render(a/*, env*/);
 		}
 		player.render();
 	}
@@ -340,8 +345,12 @@ public class World {// implements RenderableProvider {
 				for (int px = 0; px < World.chunkWidht; px++) {
 			        for (int py = 0; py < World.maxHeight; py++) {
 			            for (int pz = 0; pz < World.chunkWidht; pz++) {
-			                column.fastSetBlock(px, py, pz, blocks.get(i).getAsInt());
-			                i++;
+			            	try {
+				                column.fastSetBlock(px, py, pz, blocks.get(i).getAsInt());
+			            	} catch (Exception e) {
+			            		column.fastSetBlock(px, py, pz, 0);
+			            	}
+			            	i++;
 			            }
 			        }
 			    }
@@ -449,27 +458,8 @@ public class World {// implements RenderableProvider {
 			e.printStackTrace();
 		}
 	}
-	public static Material t3mp = new Material(
-			TextureAttribute.createDiffuse(GameInstance.getTexture("dirt")),
-			IntAttribute.createCullFace(GL20.GL_NONE),
-			new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-			);
-	/*@Override
-	public void getRenderables(Array<Renderable> renderables, Pool<Renderable> pool) {
-		for (Column column : loadedColumns) {
-			for (Chunk chunk : column.chunks) {
-				if (chunk.requestUpdate || chunk.mesh == null) {
-					
-				} else {
-					Renderable renderable = pool.obtain();
-					renderable.material = t3mp;
-					renderable.meshPart.mesh = chunk.allModels.model.meshes.get(0);
-					renderable.meshPart.offset = 0;
-					renderable.meshPart.size = chunk.allModels.model.meshes.get(0).getNumVertices();//numVertices[i];
-					renderable.meshPart.primitiveType = GL20.GL_TRIANGLES;
-					renderables.add(renderable);
-				}
-			}
-		}
-	}*/
+
+	public void chunkShit() {
+		
+	}
 }

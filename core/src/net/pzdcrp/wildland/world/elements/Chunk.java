@@ -33,7 +33,9 @@ import net.pzdcrp.wildland.world.elements.blocks.Block.BlockType;
 
 public class Chunk {
 	public int[][][] blocks = new int[World.chunkWidht][World.chunkWidht][World.chunkWidht];
+	public int[][][] light = new int[World.chunkWidht][World.chunkWidht][World.chunkWidht];
 	public ModelInstance allModels;
+	public ModelInstance transparent;
 	public Column motherCol;
 	public BoundingBox box;
 	public int height;
@@ -47,11 +49,6 @@ public class Chunk {
 		this.motherCol = motherCol;
 		min = new Vector3(motherCol.coords.columnX*16+8,height+8,motherCol.coords.columnZ*16+8);
 		max = new Vector3(16, 16, 16);
-		/*box = new BoundingBox(
-			new Vector3(motherCol.coords.columnX*16+8,height+8,motherCol.coords.columnZ*16+8),
-			new Vector3(motherCol.coords.columnX*16+16, height+16, motherCol.coords.columnX*16+16)
-		);*/
-		//System.out.println("colcords: "+motherCol.coords.toString()+" y: "+height+" "+box.toString());
 	}
 	
 	public void updateModel() {
@@ -87,7 +84,7 @@ public class Chunk {
 														VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates,
 														new Material(
 													    		TextureAttribute.createDiffuse(GameInstance.getTexture(clas.texture)),
-												    			IntAttribute.createCullFace(GL20.GL_FRONT),
+												    			IntAttribute.createCullFace(GL20.GL_NONE),
 												    			new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
 													    )
 													),
@@ -111,10 +108,16 @@ public class Chunk {
 			}
 		}
 		List<Model> models = new ArrayList<>();
-		for (Pair pair : modelsById.values()) {
-			models.add(pair.mb.end());
+		List<Model> transparents = new ArrayList<>();
+		for (Entry<String, Pair> entry : modelsById.entrySet()) {
+			if (entry.getKey().equals("3")) {
+				transparents.add(entry.getValue().mb.end());
+			} else {
+				models.add(entry.getValue().mb.end());
+			}
 		}
 		allModels = ModelUtils.combineModels(models);
+		transparent = ModelUtils.combineModels(transparents);
 		if (allModels.model.meshes.size > 1) {
 			MeshBuilder builder = new MeshBuilder();
 			builder.begin(VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);
@@ -127,6 +130,8 @@ public class Chunk {
 			Mesh m1 = builder.end();
 			allModels.model.meshes.add(m1);
 		}
+		
+		
 	}
 	
 	public void render() {
@@ -144,6 +149,10 @@ public class Chunk {
 		Block b = GameInstance.world.getBlock(new Vector3D(motherCol.coords.columnX*World.chunkWidht+x,this.height+y,motherCol.coords.columnZ*World.chunkWidht+z));
 		
 		if (b.getType() == BlockType.air || b.getType() == BlockType.Void) {
+			return false;
+		}
+		if (b.getType() == BlockType.glass) {
+			if (current == BlockType.glass) return true;
 			return false;
 		}
 		return true;

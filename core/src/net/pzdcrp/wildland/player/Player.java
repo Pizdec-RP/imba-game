@@ -1,40 +1,23 @@
 package net.pzdcrp.wildland.player;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Mesh;
-import com.badlogic.gdx.graphics.VertexAttributes.Usage;
-import com.badlogic.gdx.graphics.g3d.Material;
-import com.badlogic.gdx.graphics.g3d.Model;
-import com.badlogic.gdx.graphics.g3d.ModelInstance;
-import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
-import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
-import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector3;
 
 import net.pzdcrp.wildland.GameInstance;
 import net.pzdcrp.wildland.data.AABB;
-import net.pzdcrp.wildland.data.BlockFace;
 import net.pzdcrp.wildland.data.EntityType;
 import net.pzdcrp.wildland.data.Physics;
 import net.pzdcrp.wildland.data.Settings;
 import net.pzdcrp.wildland.data.Vector3D;
-import net.pzdcrp.wildland.utils.MathU;
-import net.pzdcrp.wildland.world.World;
-import net.pzdcrp.wildland.world.elements.Chunk;
-import net.pzdcrp.wildland.world.elements.Column;
-import net.pzdcrp.wildland.world.elements.blocks.Block;
-import net.pzdcrp.wildland.world.elements.blocks.Dirt;
 import net.pzdcrp.wildland.world.elements.chat.Chat;
 import net.pzdcrp.wildland.world.elements.entities.Entity;
 import net.pzdcrp.wildland.world.elements.inventory.items.DirtItem;
+import net.pzdcrp.wildland.world.elements.inventory.items.GlassItem;
+import net.pzdcrp.wildland.world.elements.inventory.items.GrassItem;
+import net.pzdcrp.wildland.world.elements.inventory.items.OakLogItem;
+import net.pzdcrp.wildland.world.elements.inventory.items.StoneItem;
 
 public class Player extends Entity {
 	//public float pitch, yaw;//yaw left-right
@@ -45,7 +28,6 @@ public class Player extends Entity {
 			rmb = false, lmb = false,
 			run = false;
 	private static final float mouseSensitivity = 0.1f;
-	private Quaternion quaternion = new Quaternion();
 	public int actcd = 0;//15 ticks
 	public Chat chat = new Chat();
 	
@@ -54,20 +36,17 @@ public class Player extends Entity {
 		cam = new Camera();
 		cam.setpos(this.pos.x,this.pos.y,this.pos.z);
 		cam.cam.update();
-		this.inventory.addItem(new DirtItem(this.inventory), actcd);
+		this.inventory.addItem(new DirtItem(this.inventory), 0);
+		this.inventory.addItem(new GlassItem(this.inventory), 1);
+		this.inventory.addItem(new GrassItem(this.inventory), 2);
+		this.inventory.addItem(new StoneItem(this.inventory), 3);
+		this.inventory.addItem(new OakLogItem(this.inventory), 4);
 	}
 	
 	public void tick() {
 		super.tick();
 		if (actcd > 0) actcd--;
 		updateControls();
-		if (run && cam.cam.fieldOfView < Settings.fov+5) {
-			cam.cam.fieldOfView += 1;
-		} else {
-			if (!run && cam.cam.fieldOfView > Settings.fov) {
-				cam.cam.fieldOfView -= 1;
-			}
-		}
 		
 		movement();
 		
@@ -92,14 +71,13 @@ public class Player extends Entity {
 		if (right) {
 			velocityGoal.z = speed;
 		}
-		
-        velX += velocityGoal.x * (float) Math.sin(quaternion.getYawRad()) + velocityGoal.z * (float) Math.cos(quaternion.getYawRad());
-        velZ += velocityGoal.z * (float) Math.sin(quaternion.getYawRad()) - velocityGoal.x * (float) Math.cos(quaternion.getYawRad());
+        velX += velocityGoal.x * (float) Math.sin(yaw) + velocityGoal.z * (float) Math.cos(yaw);
+        velZ += velocityGoal.z * (float) Math.sin(yaw) - velocityGoal.x * (float) Math.cos(yaw);
         
 		//gravity
         if (up) {
 			if (this.onGround) {
-				this.velY += 0.599999904632568F;
+				this.velY += 0.5099999904632568F;
 				this.onGround = false;
 			}
 		}
@@ -109,16 +87,16 @@ public class Player extends Entity {
 		if (rmb && Gdx.input.isCursorCatched()) {
 			if (actcd <= 0) {
 				if (pos != null) {
-					this.inventory.getSlot(inventory.currentHitboxSlot()).onLClick();
-					actcd = 5;
+					this.inventory.getSlot(inventory.getCurrentSlotInt()).onLClick();
+					actcd = 3;
 				}
 			}
 		}
 		if (lmb && Gdx.input.isCursorCatched()) {
 			if (actcd <= 0) {
 				if (pos != null) {
-					this.inventory.getSlot(inventory.currentHitboxSlot()).onRClick();
-					actcd = 5;
+					this.inventory.getSlot(inventory.getCurrentSlotInt()).onRClick();
+					actcd = 3;
 				}
 			}
 		}
@@ -129,6 +107,8 @@ public class Player extends Entity {
 		if (Gdx.input.isKeyPressed(Input.Keys.T)) {
 			//this.chat.open();
 			this.pos.y += 5;
+			this.velY = 0;
+			//GameInstance.displayInfo("sexing UI UIIII SEXO SEXOOOOOOOOO");
 		}
 		if (this.chat.isOpen) return;
 		if (Gdx.input.isKeyPressed(Input.Keys.W)) {
@@ -173,15 +153,27 @@ public class Player extends Entity {
 			System.out.println("vse");
 			System.exit(0);
 		}
+		if (GameInstance.controls.curentNumPressed != -1) {
+			this.inventory.setCurrentSlotInt(GameInstance.controls.curentNumPressed-1);
+			GameInstance.displayInfo(inventory.getSlot(inventory.getCurrentSlotInt()).getName());
+		}
 	}
 	
 	
 	
 	public void render() {
+		if (run && cam.getFov() < Settings.fov+5) {
+			cam.setFov(cam.getFov() + 0.4f);
+		} else {
+			if (!run && cam.getFov() > Settings.fov) {
+				cam.setFov(cam.getFov() - 0.4f);
+			}
+		}
 		cam.render();
 		//cam.cam.update();
-		cam.cam.view.getRotation(quaternion);
-        quaternion.nor();
+		//cam.cam.view.getRotation(quaternion);
+        //quaternion.nor();
+        
 	}
 	
 	@Override
@@ -194,21 +186,11 @@ public class Player extends Entity {
 	}
 	
 	public float getYaw() {
-		Matrix4 matrix = new Matrix4();
-		matrix.set(quaternion);
-
-		float yaw = (float)Math.atan2(matrix.val[Matrix4.M02], matrix.val[Matrix4.M00]);
-		
-		return yaw * MathUtils.radiansToDegrees;
+		return this.yaw;
     }
 
     public float getPitch() {
-    	Matrix4 matrix = new Matrix4();
-    	matrix.set(quaternion);
-
-    	float pitch = (float)Math.atan2(-matrix.val[Matrix4.M12], Math.sqrt(matrix.val[Matrix4.M02] * matrix.val[Matrix4.M02] + matrix.val[Matrix4.M00] * matrix.val[Matrix4.M00]));
-
-    	return pitch * MathUtils.radiansToDegrees;
+    	return this.pitch;
     }
     
     private int lastCursorX = Gdx.graphics.getWidth() / 2;
@@ -223,6 +205,13 @@ public class Player extends Entity {
 
         lastCursorX = screenX;
         lastCursorY = screenY;
+        
+        //cam.cam.direction.set(Vector3.Y); // устанавливаем начальное направление камеры
+        //cam.cam.rotate(Vector3.X, pitch); // поворачиваем камеру по оси X на угол pitch
+        //cam.cam.rotate(Vector3.Y, yaw); // поворачиваем камеру по оси Y на угол yaw
+        
+        pitch = MathUtils.atan2(cam.cam.direction.y, (float)Math.sqrt(cam.cam.direction.x * cam.cam.direction.x + cam.cam.direction.z * cam.cam.direction.z));
+        yaw = MathUtils.atan2(cam.cam.direction.x, -cam.cam.direction.z);
 	}
 	
 	private final Vector3 tmp = new Vector3();

@@ -21,12 +21,12 @@ public class Block {
 		put(3, new Glass(new Vector3D(),null));
 		put(5, new Voed(new Vector3D(),null));
 		put(6, new Grass(new Vector3D(),null));
-		put(7, new OakLog(new Vector3D(),BlockFace.PX));//px
-		put(8, new OakLog(new Vector3D(),BlockFace.PY));//py
-		put(9, new OakLog(new Vector3D(),BlockFace.PZ));//pz
-		put(10, new OakLog(new Vector3D(),BlockFace.NX));//nx
-		put(11, new OakLog(new Vector3D(),BlockFace.NY));//ny
-		put(12, new OakLog(new Vector3D(),BlockFace.NZ));//nz
+		put(7, new OakLog(new Vector3D(),BlockFace.PX));
+		put(8, new OakLog(new Vector3D(),BlockFace.PY));
+		put(9, new OakLog(new Vector3D(),BlockFace.PZ));
+		put(10, new OakLog(new Vector3D(),BlockFace.NX));
+		put(11, new OakLog(new Vector3D(),BlockFace.NY));
+		put(12, new OakLog(new Vector3D(),BlockFace.NZ));
 	}};
 	public enum BlockType {
 		air, Void, solid, sandy, glass, nonfull;
@@ -103,5 +103,10 @@ public class Block {
 			
 		}
 		return false;
+	}
+	
+	@Override
+	public String toString() {
+		return this.getClass().getName()+"[face:"+this.getFace()+", pos: "+this.pos.toStringInt()+"]";
 	}
 }

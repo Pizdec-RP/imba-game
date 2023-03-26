@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 import net.pzdcrp.wildland.world.elements.entities.Entity;
+import net.pzdcrp.wildland.world.elements.inventory.items.Item;
 
 public class PlayerInventory extends IInventory {
 	private Map<Integer,Item> items = new ConcurrentHashMap<Integer,Item>();
@@ -33,14 +34,19 @@ public class PlayerInventory extends IInventory {
     }
     
     @Override
-    public int currentHitboxSlot() {
-    	return chs;
-    }
-    
-    @Override
     public void render(SpriteBatch batch) {
     	for (int i = 0; i < 10; i++) {
     		
     	}
     }
+    
+    @Override
+    public int getCurrentSlotInt() {
+		return chs;
+	}
+    
+    @Override
+    public void setCurrentSlotInt(int i) {
+		chs = i;
+	}
 }

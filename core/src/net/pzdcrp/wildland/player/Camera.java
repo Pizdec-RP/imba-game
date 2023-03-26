@@ -5,15 +5,16 @@ import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.math.Vector3;
 
 import net.pzdcrp.wildland.GameInstance;
+import net.pzdcrp.wildland.data.Settings;
 import net.pzdcrp.wildland.data.Vector3D;
 
 public class Camera {
 	public PerspectiveCamera cam;
-	public int fov = 67;
+	public float nowfov = Settings.fov, beforefov = Settings.fov;
 	public Vector3 before = new Vector3(0,0,0), now = new Vector3(0,0,0);
 
 	public Camera() {
-		cam = new PerspectiveCamera(fov, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		cam = new PerspectiveCamera(nowfov, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		cam.position.set(0,0,0);
 		
 		cam.lookAt(0, 0, 0);
@@ -34,33 +35,39 @@ public class Camera {
 		return null;
 	}
 	
-	static final boolean smothmovement = true;
+	public void setFov(float fov) {
+		cam.fieldOfView = fov;
+		/*System.out.println(fov);
+		this.beforefov = nowfov;
+		nowfov = fov;*/
+	}
+	
+	public float getFov() {
+		//return nowfov;
+		return cam.fieldOfView;
+	}
 	
 	public void render() {
-		if (!smothmovement || GameInstance.curCBT > GameInstance.renderCallsBetweenTicks) return;
+		if (GameInstance.curCBT > GameInstance.renderCallsBetweenTicks) return;
 		if (GameInstance.curCBT == 0 || GameInstance.renderCallsBetweenTicks == 0) {
 			cam.position.set(now);
+			//cam.fieldOfView = nowfov;
 			cam.update();
 			return;
 		}
 		Vector3 offset = new Vector3(now.x-before.x,now.y-before.y,now.z-before.z);
 		float mul = (float)GameInstance.curCBT /(float)GameInstance.renderCallsBetweenTicks;
-		//System.out.println("offset: "+offset.toString());
-		//System.out.println("m: "+mul+" ccbt: "+GameInstance.curCBT+" rcbt: "+GameInstance.renderCallsBetweenTicks);
+		
+		/*float fovoffset = nowfov-beforefov;
+		cam.fieldOfView = beforefov + fovoffset * mul;
+		System.out.println(cam.fieldOfView);*/
+		
 		cam.position.set(before.x + offset.x*mul, before.y + offset.y*mul, before.z + offset.z*mul);
-		//System.out.println("campos: "+cam.position.toString());
-		//System.out.println("bef: "+before.toString());
 		cam.update();
 	}
 	
-	public void setpos(double x, double y, double z) {//tick
-		if (smothmovement) {
-			//System.out.println("tick--x:"+x+" y:"+y+" z:"+z);
-			before = now;
-			now = new Vector3((float)x, (float)y, (float)z);
-		} else {
-			cam.position.set((float)x, (float)y, (float)z);
-			cam.update();
-		}
+	public void setpos(double x, double y, double z) {
+		before = now;
+		now = new Vector3((float)x, (float)y, (float)z);
 	}
 }

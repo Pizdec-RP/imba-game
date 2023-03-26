@@ -6,8 +6,9 @@ import net.pzdcrp.wildland.data.Vector3D;
 public class FacingBlock extends Block {
 	public BlockFace blockface;
 	
-	public FacingBlock(Vector3D pos, String tname, BlockFace face) {
-		super(pos, tname);
+	public FacingBlock(Vector3D pos, String texture, BlockFace face) {
+		super(pos, texture);
+		this.blockface = face;
 	}
 	
 	@Override
@@ -15,4 +16,8 @@ public class FacingBlock extends Block {
 		return blockface;
 	}
 	
+	@Override
+	public boolean isCustonModel() {
+		return true;
+	}
 }

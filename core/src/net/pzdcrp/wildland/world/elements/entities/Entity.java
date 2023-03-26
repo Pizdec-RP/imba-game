@@ -136,6 +136,7 @@ public class Entity {
 		return b;
 	}
 	
+	List<Vector3D> tempvel = new ArrayList<>(); 
 	public void applyMovement() {
 		colx = false;coly = false;colz = false;
 		//System.out.println("huy "+velY);
@@ -143,37 +144,38 @@ public class Entity {
 			List<Block> nb = getNearBlocks();
 			//System.out.println("nb "+nb.size());
 			for (Block block : nb) {
-				
-				if (block.collide(getHitbox().offset(velX, 0, 0))) {
-					colx = true;
-					if (velX < 0) {
-						pos.x = block.getHitbox().maxX+0.3;
-					} else if (velX > 0) {
-						pos.x = block.getHitbox().minX-0.3;
+				//for (Vector3D vel : tempvel) {
+					if (block.collide(getHitbox().offset(velX, 0, 0))) {
+						colx = true;
+						if (velX < 0) {
+							pos.x = block.getHitbox().maxX+0.3;
+						} else if (velX > 0) {
+							pos.x = block.getHitbox().minX-0.3;
+						}
+						velX = 0;
 					}
-					velX = 0;
-				}
-				if (block.collide(getHitbox().offset(0, velY, 0))) {
-					coly = true;
-					if (velY < 0) {
-						pos.y = block.getHitbox().maxY;
-						onGround = true;
-					} else if (velY > 0) {
-						pos.y = block.getHitbox().minY-GameInstance.world.player.hitbox.maxY;
-						System.out.println(block.getHitbox().minY);
-						onGround = false;
+					if (block.collide(getHitbox().offset(0, velY, 0))) {
+						coly = true;
+						if (velY < 0) {
+							pos.y = block.getHitbox().maxY;
+							onGround = true;
+						} else if (velY > 0) {
+							pos.y = block.getHitbox().minY-GameInstance.world.player.hitbox.maxY;
+							System.out.println(block.getHitbox().minY);
+							onGround = false;
+						}
+						velY = 0;
 					}
-					velY = 0;
-				}
-				if (block.collide(getHitbox().offset(0, 0, velZ))) {
-					colz = true;
-					if (velZ < 0) {
-						pos.z = block.getHitbox().maxZ+0.3;
-					} else if (velZ > 0) {
-						pos.z = block.getHitbox().minZ-0.3;
+					if (block.collide(getHitbox().offset(0, 0, velZ))) {
+						colz = true;
+						if (velZ < 0) {
+							pos.z = block.getHitbox().maxZ+0.3;
+						} else if (velZ > 0) {
+							pos.z = block.getHitbox().minZ-0.3;
+						}
+						velZ = 0;
 					}
-					velZ = 0;
-				}
+				//}
 			}
 			//System.out.println(coly);
 			//System.out.println(velY);

@@ -23,174 +23,6 @@ import net.pzdcrp.wildland.GameInstance;
 import net.pzdcrp.wildland.data.Vector3D;
 
 public class ModelUtils {
-	@Deprecated
-	public static Model createCubeModel(boolean top, boolean bottom, boolean left, boolean right, boolean front, boolean back, String materialName, boolean transparent) {
-	    ModelBuilder modelBuilder = new ModelBuilder();
-	    modelBuilder.begin();
-	    Material material;// = GameInstance.getMaterial(materialName);
-	    /*if (material == null) {
-	    	System.out.println(materialName+" yo wha da hell bro");
-	    	System.exit(0);
-	    }*/
-	    /*if (transparent) {
-	    	material = new Material(
-	    		TextureAttribute.createDiffuse(GameInstance.getTexture(materialName)),
-    			IntAttribute.createCullFace(GL20.GL_FRONT),
-    			new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-	    	);
-	    } else {
-	    	material = new Material(
-	    		TextureAttribute.createDiffuse(GameInstance.getTexture(materialName)),
-	    		IntAttribute.createCullFace(GL20.GL_FRONT)
-	    	);
-	    }*/
-	    material = new Material(
-	    		TextureAttribute.createDiffuse(GameInstance.getTexture(materialName)),
-    			IntAttribute.createCullFace(GL20.GL_FRONT),
-    			new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-	    	);
-	    MeshPartBuilder builder = modelBuilder.part("cube", GL20.GL_TRIANGLES, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates, material);
-
-	    //Vector3 normal = new Vector3();
-	    builder.setUVRange(0, 0, 1, 1);
-	    // bottom
-	    if (!bottom) {
-	    	builder.rect(
-	    			-0.5f, -0.5f, 0.5f, 
-	    			0.5f, -0.5f, 0.5f, 
-	    			0.5f, -0.5f, -0.5f, 
-	    			-0.5f, -0.5f, -0.5f, 
-	    			0, -1, 0);
-	    }
-
-	    // top
-	    if (!top) {
-	        builder.rect(
-	                -0.5f, 0.5f, -0.5f,
-	                 0.5f, 0.5f, -0.5f,
-	                 0.5f, 0.5f,  0.5f,
-	                -0.5f, 0.5f,  0.5f,
-	                0, 1, 0);
-	    }
-
-	    // left
-	    if (!left) {
-	        builder.rect(
-	                -0.5f, -0.5f,  0.5f,
-	                -0.5f, -0.5f, -0.5f,
-	                -0.5f,  0.5f, -0.5f,
-	                -0.5f,  0.5f,  0.5f,
-	                -1, 0, 0);
-	    }
-
-	    // right
-	    if (!right) {
-	        builder.rect(
-	                 0.5f, -0.5f, -0.5f,
-	                 0.5f, -0.5f,  0.5f,
-	                 0.5f,  0.5f,  0.5f,
-	                 0.5f,  0.5f, -0.5f,
-	                 1, 0, 0);
-	    }
-
-	    // front
-	    if (!front) {
-	        builder.rect(
-	                -0.5f, -0.5f, -0.5f,
-	                 0.5f, -0.5f, -0.5f,
-	                 0.5f,  0.5f, -0.5f,
-	                -0.5f,  0.5f, -0.5f,
-	                0, 0, -1);
-	    }
-
-	    // back
-	    if (!back) {
-	        builder.rect(
-	                 0.5f, -0.5f,  0.5f,
-	                -0.5f, -0.5f,  0.5f,
-	                -0.5f,  0.5f,  0.5f,
-	                 0.5f,  0.5f,  0.5f,
-	                 0, 0, 1);
-	    }
-
-	    return modelBuilder.end();
-	}
-	
-	public static Model createCubeModel(boolean top, boolean bottom, boolean left, boolean right, boolean front, boolean back, String materialName, boolean transparent, Vector3 pos) {
-	    ModelBuilder modelBuilder = new ModelBuilder();
-	    modelBuilder.begin();
-	    Material material = new Material(
-	    		TextureAttribute.createDiffuse(GameInstance.getTexture(materialName)),
-    			IntAttribute.createCullFace(GL20.GL_FRONT),
-    			new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-	    	);
-	    MeshPartBuilder builder = modelBuilder.part("cube", GL20.GL_TRIANGLES, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates, material);
-
-	    //Vector3 normal = new Vector3();
-	    builder.setUVRange(0, 0, 1, 1);
-	    // bottom
-	    if (!bottom) {
-	    	builder.rect(
-	    			pos.x-0.5f, pos.y-0.5f, pos.z+0.5f, 
-	    			pos.x+0.5f, pos.y-0.5f, pos.z-0.5f, 
-	    			pos.x+0.5f, pos.y-0.5f, pos.z-0.5f,// 0.5f, -0.5f, -0.5f, 
-	    			pos.x-0.5f, pos.y-0.5f, pos.z-0.5f,// -0.5f, -0.5f, -0.5f, 
-	    			0, -1, 0);
-	    }
-
-	    // top
-	    if (!top) {
-	        builder.rect(
-	        		pos.x-0.5f, pos.y+0.5f, pos.z-0.5f,// -0.5f, 0.5f, -0.5f,
-	        		pos.x+0.5f, pos.y+0.5f, pos.z-0.5f,//  0.5f, 0.5f, -0.5f,
-	        		pos.x+0.5f, pos.y+0.5f, pos.z+0.5f,//  0.5f, 0.5f,  0.5f,
-	        		pos.x-0.5f, pos.y+0.5f, pos.z+0.5f,// -0.5f, 0.5f,  0.5f,
-	                0, 1, 0);
-	    }
-
-	    // left
-	    if (!left) {
-	        builder.rect(
-	        		pos.x-0.5f, pos.y-0.5f, pos.z+0.5f,// -0.5f, -0.5f,  0.5f,
-	        		pos.x-0.5f, pos.y-0.5f, pos.z-0.5f,// -0.5f, -0.5f, -0.5f,
-	        		pos.x-0.5f, pos.y+0.5f, pos.z-0.5f,// -0.5f,  0.5f, -0.5f,
-	        		pos.x-0.5f, pos.y+0.5f, pos.z+0.5f,// -0.5f,  0.5f,  0.5f,
-	                -1, 0, 0);
-	    }
-
-	    // right
-	    if (!right) {
-	        builder.rect(
-	        		pos.x+0.5f, pos.y-0.5f, pos.z-0.5f,// 0.5f, -0.5f, -0.5f,
-	        		pos.x+0.5f, pos.y-0.5f, pos.z+0.5f,// 0.5f, -0.5f,  0.5f,
-	        		pos.x+0.5f, pos.y+0.5f, pos.z+0.5f,// 0.5f,  0.5f,  0.5f,
-	        		pos.x+0.5f, pos.y+0.5f, pos.z-0.5f,// 0.5f,  0.5f, -0.5f,
-	                 1, 0, 0);
-	    }
-
-	    // front
-	    if (!front) {
-	        builder.rect(
-	        		pos.x-0.5f, pos.y-0.5f, pos.z-0.5f,// -0.5f, -0.5f, -0.5f,
-	        		pos.x+0.5f, pos.y-0.5f, pos.z-0.5f,//  0.5f, -0.5f, -0.5f,
-	        		pos.x+0.5f, pos.y+0.5f, pos.z-0.5f,//  0.5f,  0.5f, -0.5f,
-	        		pos.x-0.5f, pos.y+0.5f, pos.z-0.5f,// -0.5f,  0.5f, -0.5f,
-	                0, 0, -1);
-	    }
-
-	    // back
-	    if (!back) {
-	        builder.rect(
-	        		pos.x+0.5f, pos.y-0.5f, pos.z+0.5f,// 0.5f, -0.5f,  0.5f,
-	        		pos.x-0.5f, pos.y-0.5f, pos.z+0.5f,// -0.5f, -0.5f,  0.5f,
-	        		pos.x-0.5f, pos.y+0.5f, pos.z+0.5f,// -0.5f,  0.5f,  0.5f,
-	        		pos.x+0.5f, pos.y+0.5f, pos.z+0.5f,//  0.5f,  0.5f,  0.5f,
-	                 0, 0, 1);
-	    }
-
-	    return modelBuilder.end();
-	}
-	
 	public static void addCubeModel(boolean top, boolean bottom, boolean left, boolean right, boolean front, boolean back, MeshPartBuilder builder, Vector3 pos) {
 	    
 	    //Vector3 normal = new Vector3();
@@ -199,9 +31,9 @@ public class ModelUtils {
 	    if (!bottom) {
 	    	builder.rect(
 	    			pos.x-0.5f, pos.y-0.5f, pos.z+0.5f, 
-	    			pos.x+0.5f, pos.y-0.5f, pos.z-0.5f, 
-	    			pos.x+0.5f, pos.y-0.5f, pos.z-0.5f,// 0.5f, -0.5f, -0.5f, 
-	    			pos.x-0.5f, pos.y-0.5f, pos.z-0.5f,// -0.5f, -0.5f, -0.5f, 
+	    			pos.x+0.5f, pos.y-0.5f, pos.z+0.5f, 
+	    			pos.x+0.5f, pos.y-0.5f, pos.z-0.5f,
+	    			pos.x-0.5f, pos.y-0.5f, pos.z-0.5f,
 	    			0, -1, 0);
 	    }
 
@@ -270,5 +102,120 @@ public class ModelUtils {
 	    }
 	    Model combinedModel = modelBuilder.end();
 	    return new ModelInstance(combinedModel);
+	}
+	
+	
+	private static Vector3 sp = null;
+	
+	public static void setTransform(Vector3 pos) {
+		sp = pos;
+	}
+	
+	public static void buildTopZ(MeshPartBuilder mpb) {
+		mpb.rect(
+		sp.x-0.5f, sp.y+0.5f, sp.z-0.5f,
+		sp.x+0.5f, sp.y+0.5f, sp.z-0.5f,
+		sp.x+0.5f, sp.y+0.5f, sp.z+0.5f,
+		sp.x-0.5f, sp.y+0.5f, sp.z+0.5f,
+        0, 1, 0);
+	}
+	
+	public static void buildTopX(MeshPartBuilder mpb) {
+		mpb.rect(
+		sp.x-0.5f, sp.y+0.5f, sp.z+0.5f,
+		sp.x-0.5f, sp.y+0.5f, sp.z-0.5f,
+		sp.x+0.5f, sp.y+0.5f, sp.z-0.5f,
+		sp.x+0.5f, sp.y+0.5f, sp.z+0.5f,
+        0, 1, 0);
+	}
+	
+	public static void buildBottomZ(MeshPartBuilder mpb) {
+		mpb.rect(
+		sp.x-0.5f, sp.y-0.5f, sp.z+0.5f, 
+		sp.x+0.5f, sp.y-0.5f, sp.z+0.5f, 
+		sp.x+0.5f, sp.y-0.5f, sp.z-0.5f,
+		sp.x-0.5f, sp.y-0.5f, sp.z-0.5f,
+		0, -1, 0);
+	}
+	
+	public static void buildBottomX(MeshPartBuilder mpb) {
+		mpb.rect(
+		sp.x-0.5f, sp.y-0.5f, sp.z-0.5f,
+		sp.x-0.5f, sp.y-0.5f, sp.z+0.5f, 
+		sp.x+0.5f, sp.y-0.5f, sp.z+0.5f, 
+		sp.x+0.5f, sp.y-0.5f, sp.z-0.5f,
+		0, -1, 0);
+	}
+	
+	public static void buildLeftY(MeshPartBuilder mpb) {
+		mpb.rect(
+				sp.x-0.5f, sp.y+0.5f, sp.z-0.5f,
+		sp.x-0.5f, sp.y+0.5f, sp.z+0.5f,
+		sp.x-0.5f, sp.y-0.5f, sp.z+0.5f,
+		sp.x-0.5f, sp.y-0.5f, sp.z-0.5f,
+        -1, 0, 0);
+	}
+	
+	public static void buildLeftZ(MeshPartBuilder mpb) {
+		mpb.rect(
+		sp.x-0.5f, sp.y+0.5f, sp.z+0.5f,
+		sp.x-0.5f, sp.y-0.5f, sp.z+0.5f,
+		sp.x-0.5f, sp.y-0.5f, sp.z-0.5f,
+		sp.x-0.5f, sp.y+0.5f, sp.z-0.5f,
+        -1, 0, 0);
+	}
+	
+	public static void buildRightY(MeshPartBuilder mpb) {
+		mpb.rect(
+				sp.x+0.5f, sp.y+0.5f, sp.z+0.5f,
+		sp.x+0.5f, sp.y+0.5f, sp.z-0.5f,
+		sp.x+0.5f, sp.y-0.5f, sp.z-0.5f,
+		sp.x+0.5f, sp.y-0.5f, sp.z+0.5f,
+         1, 0, 0);
+	}
+	
+	public static void buildRightZ(MeshPartBuilder mpb) {
+		mpb.rect(
+		sp.x+0.5f, sp.y+0.5f, sp.z-0.5f,
+		sp.x+0.5f, sp.y-0.5f, sp.z-0.5f,
+		sp.x+0.5f, sp.y-0.5f, sp.z+0.5f,
+		sp.x+0.5f, sp.y+0.5f, sp.z+0.5f,
+         1, 0, 0);
+	}
+	
+	public static void buildFrontY(MeshPartBuilder mpb) {
+		mpb.rect(
+		sp.x-0.5f, sp.y-0.5f, sp.z-0.5f,
+		sp.x+0.5f, sp.y-0.5f, sp.z-0.5f,
+		sp.x+0.5f, sp.y+0.5f, sp.z-0.5f,
+		sp.x-0.5f, sp.y+0.5f, sp.z-0.5f,
+        0, 0, -1);
+	}
+	
+	public static void buildFrontX(MeshPartBuilder mpb) {
+		mpb.rect(
+				sp.x-0.5f, sp.y+0.5f, sp.z-0.5f,
+		sp.x-0.5f, sp.y-0.5f, sp.z-0.5f,
+		sp.x+0.5f, sp.y-0.5f, sp.z-0.5f,
+		sp.x+0.5f, sp.y+0.5f, sp.z-0.5f,
+        0, 0, -1);
+	}
+	
+	public static void buildBackY(MeshPartBuilder mpb) {
+		mpb.rect(
+		sp.x+0.5f, sp.y-0.5f, sp.z+0.5f,
+		sp.x-0.5f, sp.y-0.5f, sp.z+0.5f,
+		sp.x-0.5f, sp.y+0.5f, sp.z+0.5f,
+		sp.x+0.5f, sp.y+0.5f, sp.z+0.5f,
+         0, 0, 1);
+	}
+	
+	public static void buildBackX(MeshPartBuilder mpb) {
+		mpb.rect(
+				sp.x+0.5f, sp.y+0.5f, sp.z+0.5f,
+		sp.x+0.5f, sp.y-0.5f, sp.z+0.5f,
+		sp.x-0.5f, sp.y-0.5f, sp.z+0.5f,
+		sp.x-0.5f, sp.y+0.5f, sp.z+0.5f,
+         0, 0, 1);
 	}
 }

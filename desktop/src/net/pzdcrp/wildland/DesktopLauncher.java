@@ -2,6 +2,10 @@ package net.pzdcrp.wildland;
 
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
+
+import net.pizdecrp.game.test.ShaderTest;
+import net.pizdecrp.game.test.shadowMapping.ShadowMappingTest;
+
 import java.util.Random;
 
 
@@ -16,6 +20,8 @@ public class DesktopLauncher {
 		config.setWindowedMode(1200, 800);
 		config.setTitle("wildland "+ver);
 		new Lwjgl3Application(new GameInstance(), config);
+		//new Lwjgl3Application(new ShadowMappingTest(), config);
+		//new Lwjgl3Application(new ShaderTest(), config);
 		//for (s : new Vector3D(1,1,1).sides()) {
 			
 		//}
