@@ -5,12 +5,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.google.gson.JsonObject;
 
 import net.pzdcrp.wildland.GameInstance;
 import net.pzdcrp.wildland.data.AABB;
 import net.pzdcrp.wildland.data.BlockFace;
-import net.pzdcrp.wildland.data.ColCoords;
+import net.pzdcrp.wildland.data.Vector2I;
 import net.pzdcrp.wildland.data.EntityType;
 import net.pzdcrp.wildland.data.OTripple;
 import net.pzdcrp.wildland.data.Physics;
@@ -33,14 +34,18 @@ public class Entity {
 	public double velX=0, velY=0, velZ=0;
 	public boolean colx=false,coly=false,colz=false,onGround=false;
 	public float yaw = 0,pitch = 0;
-	public ColCoords beforeechc;
+	public Vector2I beforeechc;
 	public boolean firsttick = true;
+	private boolean isPlayer = false;
 	
-	//FIXME saving and update
+	//FIXME не сохраняется
 	public Block currentAimBlock = new Air(new Vector3D(), BlockFace.PX);
 	public BlockFace currentAimFace = BlockFace.PX;
 	public Entity currentAimEntity = null;
 	public IInventory inventory;
+	
+	//классы ссылки
+	public Column curCol;
 	
 	public Map<EntityType, Class<? extends Entity>> entities = new HashMap<EntityType, Class<? extends Entity>>() {
 	private static final long serialVersionUID = 5611014785520178934L;
@@ -53,15 +58,21 @@ public class Entity {
 		this.pos=pos;
 		this.beforepos=pos;
 		this.hitbox=hitbox;
-		this.beforeechc = new ColCoords(pos.x,pos.z);
+		this.beforeechc = new Vector2I(pos.x,pos.z);
 		if (type == EntityType.player) {
 			inventory = new PlayerInventory(this);
+			this.isPlayer = true;
 		} else {
 			inventory = new EntityInventory(this);
 		}
 	}
 	
 	public void tick() {
+		beforepos.set(pos);
+		if (curCol == null) {
+			Column col = GameInstance.world.getColumn(pos.x,pos.z);
+			this.curCol = col;
+		}
 		updateGravity();
 		if (type == EntityType.player) updateFacing();
 		applyMovement();
@@ -70,7 +81,7 @@ public class Entity {
 			if (!beforecol.entites.contains(this)) beforecol.entites.add(this);
 			firsttick = false;
 		}
-		ColCoords echc = new ColCoords(pos.x,pos.z);
+		Vector2I echc = new Vector2I(pos.x,pos.z);
 		if (this.type == EntityType.player) {
 			if (!beforeechc.equals(echc)) {
 				GameInstance.world.updateLoadedColumns();
@@ -79,6 +90,7 @@ public class Entity {
 		if (!beforeechc.equals(echc)) {
 			Column beforecol = GameInstance.world.getColumn(beforeechc);
 			Column col = GameInstance.world.getColumn(pos.x,pos.z);
+			this.curCol = col;
 			if (col == null || beforecol == null) return;
 			beforecol.entites.remove(this);
 			col.entites.add(this);
@@ -87,7 +99,7 @@ public class Entity {
 	}
 	
 	public void updateFacing() {
-		OTripple tripple = VectorU.findFacingPair(this.getEyeLocation(), GameInstance.world.player.cam.cam.direction);//FIXME replace cam.dir() with Pitch and Yaw to direction function
+		OTripple tripple = VectorU.findFacingPair(this.getEyeLocation(), GameInstance.world.player.cam.cam.direction);
 		this.currentAimBlock = (Block) tripple.one;
 		if (this.currentAimBlock != null) {
 			this.currentAimFace = VectorU.getFace(currentAimBlock.pos, (Vector3D)tripple.two);
@@ -95,17 +107,7 @@ public class Entity {
 		this.currentAimEntity = tripple.three == null ? null : (Entity) tripple.three;
 	}
 	
-	//private double xx = 0;
-    //private double step = 0.001;
-    //private double max = 13;
 	public void updateGravity() {
-		/*if (velY == 0 && onGround) {
-			xx = 0;
-		}
-		double y = Math.pow(xx, 0.5) * Math.log(xx + 1);
-		xx += step * (max - xx);
-		velY -= y;
-		System.out.println(velY);*/
 		velY -= Physics.gravity;
 		velY *= Physics.airdrag;
 	}
@@ -148,9 +150,9 @@ public class Entity {
 					if (block.collide(getHitbox().offset(velX, 0, 0))) {
 						colx = true;
 						if (velX < 0) {
-							pos.x = block.getHitbox().maxX+0.3;
+							pos.x = block.getHitbox().maxX+Math.abs(hitbox.maxX);
 						} else if (velX > 0) {
-							pos.x = block.getHitbox().minX-0.3;
+							pos.x = block.getHitbox().minX-Math.abs(hitbox.minX);
 						}
 						velX = 0;
 					}
@@ -160,8 +162,7 @@ public class Entity {
 							pos.y = block.getHitbox().maxY;
 							onGround = true;
 						} else if (velY > 0) {
-							pos.y = block.getHitbox().minY-GameInstance.world.player.hitbox.maxY;
-							System.out.println(block.getHitbox().minY);
+							pos.y = block.getHitbox().minY-hitbox.maxY;
 							onGround = false;
 						}
 						velY = 0;
@@ -169,9 +170,9 @@ public class Entity {
 					if (block.collide(getHitbox().offset(0, 0, velZ))) {
 						colz = true;
 						if (velZ < 0) {
-							pos.z = block.getHitbox().maxZ+0.3;
+							pos.z = block.getHitbox().maxZ+Math.abs(hitbox.maxZ);
 						} else if (velZ > 0) {
-							pos.z = block.getHitbox().minZ-0.3;
+							pos.z = block.getHitbox().minZ-Math.abs(hitbox.minZ);
 						}
 						velZ = 0;
 					}
@@ -184,8 +185,18 @@ public class Entity {
 			if (!coly) pos.y+=velY;
 			if (!colz) pos.z+=velZ;
 			
-			velX *= 0.6;
-			velZ *= 0.6;
+			if (this.isPlayer) {
+				velX *= 0.6;
+				velZ *= 0.6;
+			} else {
+				if (this.onGround) {
+					velX *= 0.6;
+					velZ *= 0.6;
+				} else {
+					velX *= 0.98;
+					velZ *= 0.98;
+				} 
+			}
 			
 			if (Math.abs(velX) < Physics.badVel) velX = 0;
 			if (Math.abs(velY) < Physics.badVel) velY = 0;
@@ -204,6 +215,11 @@ public class Entity {
 	public void readCustomProp(JsonObject prop) {
 		
 	}
+	
+	public void despawn() {
+		Vector2I echc = new Vector2I(pos.x,pos.z);
+		GameInstance.world.loadedColumns.get(echc).entites.remove(this);
+	}
 
 	public void placeBlock(Block block) {
 		GameInstance.world.setBlock(block);
@@ -211,5 +227,17 @@ public class Entity {
 
 	public Vector3D getEyeLocation() {
 		return new Vector3D(pos.x, pos.y+hitbox.maxY*0.9, pos.z);
+	}
+
+	public void setYaw(float yaw) {
+		this.yaw = yaw;
+	}
+	
+	public void setPitch(float pitch) {
+		this.pitch = pitch;
+	}
+
+	public void render(ModelBatch batch) {
+		
 	}
 }

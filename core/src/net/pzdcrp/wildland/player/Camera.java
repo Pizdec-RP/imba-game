@@ -14,17 +14,14 @@ public class Camera {
 	public Vector3 before = new Vector3(0,0,0), now = new Vector3(0,0,0);
 
 	public Camera() {
-		cam = new PerspectiveCamera(nowfov, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		cam = new PerspectiveCamera(nowfov, 1280, 720);
 		cam.position.set(0,0,0);
 		
 		cam.lookAt(0, 0, 0);
 		cam.near = 0.1f;
 		
 		cam.far = 500f;
-		//cam.viewportWidth = 200;
-	    //cam.viewportHeight = 150;
 		cam.update();
-		
 	}
 	
 	public void setpos(Vector3D pos) {
@@ -46,7 +43,7 @@ public class Camera {
 		//return nowfov;
 		return cam.fieldOfView;
 	}
-	
+	Vector3 offset = new Vector3();
 	public void render() {
 		if (GameInstance.curCBT > GameInstance.renderCallsBetweenTicks) return;
 		if (GameInstance.curCBT == 0 || GameInstance.renderCallsBetweenTicks == 0) {
@@ -55,13 +52,8 @@ public class Camera {
 			cam.update();
 			return;
 		}
-		Vector3 offset = new Vector3(now.x-before.x,now.y-before.y,now.z-before.z);
-		float mul = (float)GameInstance.curCBT /(float)GameInstance.renderCallsBetweenTicks;
-		
-		/*float fovoffset = nowfov-beforefov;
-		cam.fieldOfView = beforefov + fovoffset * mul;
-		System.out.println(cam.fieldOfView);*/
-		
+		offset = new Vector3(now.x-before.x,now.y-before.y,now.z-before.z);
+		float mul = GameInstance.curCBT /GameInstance.renderCallsBetweenTicks;
 		cam.position.set(before.x + offset.x*mul, before.y + offset.y*mul, before.z + offset.z*mul);
 		cam.update();
 	}

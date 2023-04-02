@@ -18,7 +18,7 @@ buildscript {
 allprojects {
     apply plugin: "eclipse"
 
-    version = '0.1.4'
+    version = '0.1.5'
     ext {
         appName = "wildland"
         gdxVersion = '1.11.0'

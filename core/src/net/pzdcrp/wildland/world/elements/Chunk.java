@@ -24,6 +24,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 
 import net.pzdcrp.wildland.GameInstance;
+import net.pzdcrp.wildland.data.MBIM;
 import net.pzdcrp.wildland.data.Pair;
 import net.pzdcrp.wildland.data.Vector3D;
 import net.pzdcrp.wildland.utils.ModelUtils;
@@ -32,7 +33,7 @@ import net.pzdcrp.wildland.world.elements.blocks.Block;
 import net.pzdcrp.wildland.world.elements.blocks.Block.BlockType;
 
 public class Chunk {
-	public int[][][] blocks = new int[World.chunkWidht][World.chunkWidht][World.chunkWidht];
+	private Block[][][] blocks = new Block[World.chunkWidht][World.chunkWidht][World.chunkWidht];
 	public int[][][] light = new int[World.chunkWidht][World.chunkWidht][World.chunkWidht];
 	public ModelInstance allModels;
 	public ModelInstance transparent;
@@ -43,11 +44,12 @@ public class Chunk {
 	//public Mesh mesh;
 	public Vector3 min;
 	public Vector3 max;
+	public boolean tickable = false;
 	
 	public Chunk(Column motherCol, int height) {
 		this.height = height;
 		this.motherCol = motherCol;
-		min = new Vector3(motherCol.coords.columnX*16+8,height+8,motherCol.coords.columnZ*16+8);
+		min = new Vector3(motherCol.pos.x*16+8,height+8,motherCol.pos.z*16+8);
 		max = new Vector3(16, 16, 16);
 	}
 	
@@ -57,12 +59,13 @@ public class Chunk {
 
 	private void lUpdateModel() {
 		Map<String, Pair> modelsById = new HashMap<>();
+		MBIM m = new MBIM(modelsById);
 		for(int xx = 0; xx < World.chunkWidht; xx++) {
 			for(int yy = 0; yy < World.chunkWidht; yy++) {
 				for(int zz = 0; zz < World.chunkWidht; zz++) {
-					int id = blocks[xx][yy][zz];
+					int id = getBlockId(xx,yy,zz);
 					try {
-						Block clas = Block.blockById(id, new Vector3D(motherCol.coords.columnX*16+xx,height+yy,motherCol.coords.columnZ*16+zz));
+						Block clas = Block.blockById(id, new Vector3D(motherCol.pos.x*16+xx,height+yy,motherCol.pos.z*16+zz));
 						if (clas.isRenderable()) {
 							boolean n1,n2,n3,n4,n5,n6;
 							n1 = antirender(xx,yy+1,zz, clas.getType());
@@ -71,34 +74,7 @@ public class Chunk {
 							n4 = antirender(xx+1,yy,zz, clas.getType());
 							n5 = antirender(xx,yy,zz-1, clas.getType());
 							n6 = antirender(xx,yy,zz+1, clas.getType());
-							if (!clas.isCustonModel()) {
-								if (!modelsById.containsKey(String.valueOf(id))) {
-									ModelBuilder mb = new ModelBuilder();
-									mb.begin();
-									modelsById.put(
-											String.valueOf(id),
-											new Pair(
-													mb.part(
-														"cube", 
-														GL20.GL_TRIANGLES, 
-														VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates,
-														new Material(
-													    		TextureAttribute.createDiffuse(GameInstance.getTexture(clas.texture)),
-												    			IntAttribute.createCullFace(GL20.GL_NONE),
-												    			new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-													    )
-													),
-													mb
-											)
-									);
-								}
-								if (!n1 || !n2 || !n3 || !n4 || !n5 || !n6) {
-									Pair pair = modelsById.get(String.valueOf(id));
-									ModelUtils.addCubeModel(n1, n2, n3, n4, n5, n6, pair.mpb, clas.pos.add(0.5).translate());
-								}
-							} else {
-								clas.addModel(n1,n2,n3,n4,n5,n6,modelsById);
-							}
+							clas.addModel(n1,n2,n3,n4,n5,n6,m);
 						}
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -110,7 +86,7 @@ public class Chunk {
 		List<Model> models = new ArrayList<>();
 		List<Model> transparents = new ArrayList<>();
 		for (Entry<String, Pair> entry : modelsById.entrySet()) {
-			if (entry.getKey().equals("3")) {
+			if (entry.getKey().startsWith("tr:")) {
 				transparents.add(entry.getValue().mb.end());
 			} else {
 				models.add(entry.getValue().mb.end());
@@ -146,7 +122,7 @@ public class Chunk {
 		if (this.height+y < 0) {
 			return true;
 		}
-		Block b = GameInstance.world.getBlock(new Vector3D(motherCol.coords.columnX*World.chunkWidht+x,this.height+y,motherCol.coords.columnZ*World.chunkWidht+z));
+		Block b = GameInstance.world.getBlock(new Vector3D(motherCol.pos.x*World.chunkWidht+x,this.height+y,motherCol.pos.z*World.chunkWidht+z));
 		
 		if (b.getType() == BlockType.air || b.getType() == BlockType.Void) {
 			return false;
@@ -158,15 +134,39 @@ public class Chunk {
 		return true;
 	}
 
-	public int getBlock(int x, int y, int z) {
+	public Block getBlock(int x, int y, int z) {
 		return blocks[x][y][z];
 	}
-
-	public void setBlock(int x, int y, int z, int i) {
-		blocks[x][y][z] = i;
+	
+	public int getBlockId(int x, int y, int z) {
+		Block b = blocks[x][y][z];
+		if (b == null) return 5;//Voed
+		return Block.idByBlock(b);
 	}
-	public boolean test = false;
+
+	public void setBlock(int x, int y, int z, int i) {//xyz = 0-15
+		setBlock(x,y,z,Block.blockById(i, new Vector3D(motherCol.pos.x*16+x,height+y,motherCol.pos.z*16+z)));
+	}
+	
+	public void setBlock(int x, int y, int z, Block i) {
+		blocks[x][y][z] = i;
+		if (i.tickable()) {
+			this.tickable = true;
+		}
+	}
+	
 	public boolean checkCamFrustum() {
 		return GameInstance.world.player.cam.cam.frustum.boundsInFrustum(min, max);
+	}
+
+	public void tick() {
+		if (!this.tickable) return;
+		for (Block[][] blocka : blocks) {
+			for (Block[] blockaa : blocka) {
+				for (Block block : blockaa) {
+					block.tick();
+				}
+			}
+		}
 	}
 }

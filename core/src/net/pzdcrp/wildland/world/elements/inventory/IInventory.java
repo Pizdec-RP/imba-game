@@ -21,7 +21,7 @@ public class IInventory {
 		
 	}
 
-	public void render(SpriteBatch spriteBatch) {
+	public void render() {
 		
 	}
 	

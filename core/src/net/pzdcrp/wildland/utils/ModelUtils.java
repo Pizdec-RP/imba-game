@@ -105,10 +105,12 @@ public class ModelUtils {
 	}
 	
 	
-	private static Vector3 sp = null;
+	private static Vector3 sp = new Vector3();
 	
-	public static void setTransform(Vector3 pos) {
-		sp = pos;
+	public static void setTransform(Vector3D pos) {
+		sp.x = (float)pos.x+0.5f;
+		sp.y = (float)pos.y+0.5f;
+		sp.z = (float)pos.z+0.5f;
 	}
 	
 	public static void buildTopZ(MeshPartBuilder mpb) {
@@ -165,6 +167,24 @@ public class ModelUtils {
         -1, 0, 0);
 	}
 	
+	public static void buildLeftNY(MeshPartBuilder mpb) {
+		mpb.rect(
+		sp.x-0.5f, sp.y+0.5f, sp.z-0.5f,
+		sp.x-0.5f, sp.y+0.5f, sp.z+0.5f,
+		sp.x-0.5f, sp.y-0.5f, sp.z+0.5f,
+		sp.x-0.5f, sp.y-0.5f, sp.z-0.5f,
+        -1, 0, 0);
+	}
+	
+	public static void buildLeftPY(MeshPartBuilder mpb) {
+		mpb.rect(
+		sp.x-0.5f, sp.y-0.5f, sp.z+0.5f,
+		sp.x-0.5f, sp.y-0.5f, sp.z-0.5f,
+		sp.x-0.5f, sp.y+0.5f, sp.z-0.5f,
+		sp.x-0.5f, sp.y+0.5f, sp.z+0.5f,
+        -1, 0, 0);
+	}
+	
 	public static void buildRightY(MeshPartBuilder mpb) {
 		mpb.rect(
 				sp.x+0.5f, sp.y+0.5f, sp.z+0.5f,
@@ -174,12 +194,30 @@ public class ModelUtils {
          1, 0, 0);
 	}
 	
-	public static void buildRightZ(MeshPartBuilder mpb) {
+	public static void buildRightPZ(MeshPartBuilder mpb) {
 		mpb.rect(
 		sp.x+0.5f, sp.y+0.5f, sp.z-0.5f,
 		sp.x+0.5f, sp.y-0.5f, sp.z-0.5f,
 		sp.x+0.5f, sp.y-0.5f, sp.z+0.5f,
 		sp.x+0.5f, sp.y+0.5f, sp.z+0.5f,
+         1, 0, 0);
+	}
+	
+	public static void buildRightNY(MeshPartBuilder mpb) {
+		mpb.rect(
+		sp.x+0.5f, sp.y+0.5f, sp.z+0.5f,
+		sp.x+0.5f, sp.y+0.5f, sp.z-0.5f,
+		sp.x+0.5f, sp.y-0.5f, sp.z-0.5f,
+		sp.x+0.5f, sp.y-0.5f, sp.z+0.5f,
+         1, 0, 0);
+	}
+	
+	public static void buildRightPY(MeshPartBuilder mpb) {
+		mpb.rect(
+		sp.x+0.5f, sp.y-0.5f, sp.z-0.5f,
+		sp.x+0.5f, sp.y-0.5f, sp.z+0.5f,
+		sp.x+0.5f, sp.y+0.5f, sp.z+0.5f,
+		sp.x+0.5f, sp.y+0.5f, sp.z-0.5f,
          1, 0, 0);
 	}
 	

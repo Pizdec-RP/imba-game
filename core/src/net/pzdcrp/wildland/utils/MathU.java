@@ -5,6 +5,9 @@ import java.util.function.Consumer;
 
 import com.badlogic.gdx.math.Vector3;
 
+import net.pzdcrp.wildland.data.Vector2I;
+import net.pzdcrp.wildland.data.Vector3D;
+
 public class MathU {
     private static final int[] MULTIPLY_DE_BRUIJN_BIT_POSITION = new int[]{0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8, 31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9};
     private static final double FRAC_BIAS = Double.longBitsToDouble(4805340802404319232L);

@@ -15,9 +15,4 @@ public class FacingBlock extends Block {
 	public BlockFace getFace() {
 		return blockface;
 	}
-	
-	@Override
-	public boolean isCustonModel() {
-		return true;
-	}
 }

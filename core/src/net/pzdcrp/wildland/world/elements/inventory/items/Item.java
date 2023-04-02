@@ -11,27 +11,19 @@ import net.pzdcrp.wildland.world.elements.inventory.IInventory;
 
 
 public class Item {
-    public static final DecimalFormat DECIMALFORMAT = new DecimalFormat("#.##");
     public int count, id;
 	public IInventory inventory;
 	
-	public Item(IInventory inventory) {
+	public Item(IInventory inventory, int id) {
 		this.inventory = inventory;
-		this.id = 0;
+		this.id = id;
 		this.count = 0;
 	}
 	
-	public Item(int id) {
+	public Item(IInventory inventory, int id, int count) {
+		this.inventory = inventory;
 		this.id = id;
-	}
-	
-	public Item(int id, int amount) {
-		this.id = id;
-		this.count = amount;
-	}
-	
-	public void render() {
-		
+		this.count = count;
 	}
 
 	public int getId() {
@@ -50,10 +42,15 @@ public class Item {
 		this.count = count;
 	}
 	
-	public void onLClick() {
+	public int maxCount() {
+		return 99;
+	}
+	
+	public void onRClick() {
 		
 	}
-	public void onRClick() {
+	
+	public void onLClick() {
 		
 	}
 	

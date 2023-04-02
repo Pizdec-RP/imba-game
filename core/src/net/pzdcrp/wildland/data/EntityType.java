@@ -1,5 +1,5 @@
 package net.pzdcrp.wildland.data;
 
 public enum EntityType {
-	player;
+	player, fallingBlock;
 }

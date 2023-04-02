@@ -4,34 +4,39 @@ import com.badlogic.gdx.graphics.Texture;
 
 import net.pzdcrp.wildland.GameInstance;
 import net.pzdcrp.wildland.data.BlockFace;
+import net.pzdcrp.wildland.data.Vector3D;
 import net.pzdcrp.wildland.utils.VectorU;
 import net.pzdcrp.wildland.world.elements.blocks.Air;
+import net.pzdcrp.wildland.world.elements.blocks.Block;
 import net.pzdcrp.wildland.world.elements.blocks.Dirt;
+import net.pzdcrp.wildland.world.elements.blocks.Glass;
 import net.pzdcrp.wildland.world.elements.blocks.OakLog;
 import net.pzdcrp.wildland.world.elements.blocks.Stone;
 import net.pzdcrp.wildland.world.elements.inventory.IInventory;
 
 public class OakLogItem extends Item {
-	public OakLogItem(IInventory inventory) {
-		super(inventory);
+	public OakLogItem(IInventory inventory, int count) {
+		super(inventory, 6, count);
 	}
 
 	@Override
-	public void onLClick() {
+	public void onRClick() {
 		if (this.inventory.owner.currentAimBlock == null) return;
+		Vector3D clickedBlock = VectorU.fromFace(
+				this.inventory.owner.currentAimBlock.pos,
+				this.inventory.owner.currentAimFace
+			);
+		if (this.inventory.owner.currentAimBlock.onClick(this.inventory.owner)) return;
 		this.inventory.owner.placeBlock(
 			new OakLog(
-				VectorU.fromFace(
-					this.inventory.owner.currentAimBlock.pos,
-					this.inventory.owner.currentAimFace
-				),
+				clickedBlock,
 				this.inventory.owner.currentAimFace
 			)
 		);
 	}
 	
 	@Override
-	public void onRClick() {
+	public void onLClick() {
 		if (this.inventory.owner.currentAimBlock == null) return;
 		this.inventory.owner.placeBlock(
 			new Air(
@@ -39,11 +44,6 @@ public class OakLogItem extends Item {
 				BlockFace.PX
 			)
 		);
-	}
-	
-	@Override
-	public Texture getTexture() {
-		return null;
 	}
 
 	@Override

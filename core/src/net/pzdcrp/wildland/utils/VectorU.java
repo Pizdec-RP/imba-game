@@ -8,6 +8,7 @@ import com.badlogic.gdx.math.Vector3;
 import net.pzdcrp.wildland.GameInstance;
 import net.pzdcrp.wildland.data.BlockFace;
 import net.pzdcrp.wildland.data.OTripple;
+import net.pzdcrp.wildland.data.Vector2I;
 import net.pzdcrp.wildland.data.Vector3D;
 import net.pzdcrp.wildland.world.elements.Column;
 import net.pzdcrp.wildland.world.elements.blocks.Block;
@@ -144,5 +145,18 @@ public class VectorU {
         	}
         }
         return temp.get(MathU.rnd(0, temp.size()-1));
+    }
+	
+
+    public static Vector2I posToRegion(Vector3D pos) {
+    	return new Vector2I((int)Math.floor(pos.x) >> 10, (int)Math.floor(pos.z) >> 10);
+    }
+    
+    public static Vector2I posToColumn(Vector3D pos) {
+    	return new Vector2I((int)Math.floor(pos.x) >> 4, (int)Math.floor(pos.z) >> 4);
+    }
+    
+    public static Vector2I ColumnToRegion(Vector2I column) {
+    	return new Vector2I((int)Math.floor(column.x) >> 3, (int)Math.floor(column.z) >> 3);
     }
 }

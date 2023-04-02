@@ -12,11 +12,13 @@ import com.badlogic.gdx.math.Matrix4;
 
 import net.pzdcrp.wildland.GameInstance;
 import net.pzdcrp.wildland.data.BlockFace;
+import net.pzdcrp.wildland.data.MBIM;
 import net.pzdcrp.wildland.data.Vector3D;
+import net.pzdcrp.wildland.utils.ModelUtils;
 import net.pzdcrp.wildland.world.elements.blocks.Block.BlockType;
 
 public class Stone extends Block {
-	static String tname = "stone";
+	public static String tname = "stone";
 	public Stone(Vector3D pos,BlockFace blockface) {
 		super(pos, tname);
 	}
@@ -29,5 +31,18 @@ public class Stone extends Block {
 	@Override
 	public Block clone() {
 		return new Stone(this.pos,null);
+	}
+	
+	@Override
+	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, MBIM mbim) {
+		MeshPartBuilder a = mbim.obtain("stone", tname);
+		ModelUtils.setTransform(pos);
+		a.setUVRange(0, 0, 1, 1);
+    	if (!py) ModelUtils.buildTopX(a);//PY
+	    if (!nx) ModelUtils.buildLeftPY(a);//NX
+	    if (!px) ModelUtils.buildRightPY(a);//PX
+	    if (!nz) ModelUtils.buildFrontY(a);//NZ
+	    if (!pz) ModelUtils.buildBackY(a);//PZ
+	    if (!ny) ModelUtils.buildBottomX(a);//NY
 	}
 }

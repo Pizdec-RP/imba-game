@@ -316,6 +316,12 @@ public class Vector3D {
 		this.z=z;
 	}
 	
+	public void set(Vector3D a) {
+		this.x=a.x;
+		this.y=a.y;
+		this.z=a.z;
+	}
+	
 	public void addComponents(double x, double y, double z) {
 		this.x+=x;
 		this.y+=y;

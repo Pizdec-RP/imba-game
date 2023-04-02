@@ -17,15 +17,10 @@ public class SuperPizdatiyShader extends DefaultShaderProvider {
  
     @Override
     protected Shader createShader(Renderable renderable) {
-    	if (renderable.material.id == "s") {
-	        String vert = Gdx.files.internal("vertexShader.vert").readString();
-	        String frag = Gdx.files.internal("fragmentShader.frag").readString();
-	        System.out.println(frag);
-	        System.out.println(vert);
-	        return new DefaultShader(renderable, new DefaultShader.Config(vert, frag));
-    	} else {
-    		return super.createShader(renderable);
-    	}
+    	String vert = Gdx.files.internal("vertexShader.vert").readString();
+        String frag = Gdx.files.internal("fragmentShader.frag").readString();
+        System.out.println("shader created");
+        return new DefaultShader(renderable, new DefaultShader.Config(vert, frag));
     }
  
 }

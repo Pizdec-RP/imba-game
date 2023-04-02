@@ -1,7 +1,10 @@
 package net.pzdcrp.wildland.world;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -48,7 +51,7 @@ import com.google.gson.stream.JsonReader;
 
 import net.pzdcrp.wildland.GameInstance;
 import net.pzdcrp.wildland.data.AABB;
-import net.pzdcrp.wildland.data.ColCoords;
+import net.pzdcrp.wildland.data.Vector2I;
 import net.pzdcrp.wildland.data.EntityType;
 import net.pzdcrp.wildland.data.Vector3D;
 import net.pzdcrp.wildland.player.Player;
@@ -57,6 +60,8 @@ import net.pzdcrp.wildland.utils.ModelUtils;
 import net.pzdcrp.wildland.utils.VectorU;
 import net.pzdcrp.wildland.world.elements.Chunk;
 import net.pzdcrp.wildland.world.elements.Column;
+import net.pzdcrp.wildland.world.elements.ParticleManager;
+import net.pzdcrp.wildland.world.elements.Region;
 import net.pzdcrp.wildland.world.elements.blocks.Air;
 import net.pzdcrp.wildland.world.elements.blocks.Block;
 import net.pzdcrp.wildland.world.elements.blocks.Voed;
@@ -65,8 +70,8 @@ import net.pzdcrp.wildland.world.elements.entities.Entity;
 
 public class World {// implements RenderableProvider {
 	public Player player;
-	public Map<ColCoords,Column> loadedColumns = new ConcurrentHashMap<>();
-	public Map<ColCoords,Column> memoriedColumns = new ConcurrentHashMap<>();
+	public Map<Vector2I,Column> loadedColumns = new ConcurrentHashMap<>();
+	public Map<Vector2I,Region> memoriedRegions = new ConcurrentHashMap<>();
 	public List<ModelInstance> additional = new CopyOnWriteArrayList<>();
 	public int time = 0;
 	public Environment env;
@@ -80,6 +85,7 @@ public class World {// implements RenderableProvider {
     public Vector3 moonPosition = new Vector3();
     public ModelInstance moon;
     public Vector3 lightDirection = new Vector3();
+    public ParticleManager pm = new ParticleManager(this);
     
     private static final int DAY_LENGTH = 60000;
     private static final float DISTANCE_FROM_CENTER = 200f;
@@ -89,6 +95,43 @@ public class World {// implements RenderableProvider {
     ColorAttribute envcolor;
 	
 	public World() {
+		
+	}
+	
+	public void load() {
+		if (load) {
+			System.out.println("подгружаем мир");
+			try {
+				JsonReader reader = new JsonReader(new FileReader("save/wdata.dat"));
+				JsonObject obj = (JsonObject) new JsonParser().parse(reader);
+				
+				this.time = obj.get("time").getAsInt();
+				Vector2I cpos = Vector2I.fromString(obj.get("playercol").getAsString());
+				Vector2I rpos = Vector2I.fromString(obj.get("playerreg").getAsString());
+				
+				this.loadedColumns.put(cpos, genOrLoadRegion(rpos).getColumn(cpos));
+			} catch (Exception e) {
+				e.printStackTrace();
+				System.out.println("данных о мире нет");
+				System.exit(0);
+			}
+		} else {
+			System.out.println("спавнимся");
+			player = new Player(5,chunks*16,5);
+		}
+		if (player == null) {
+			System.out.println("резерв спавн");
+			player = new Player(5,chunks*16,5);
+		}
+		updateLoadedColumns();
+		player.tick();
+		System.out.println("подгружаем окружение");
+		loadEnvironment();
+		World.ready = true;
+		System.out.println("все заебок");
+	}
+
+	public void loadEnvironment() {
 		env = new Environment();
 		env.set(envcolor = new ColorAttribute(ColorAttribute.AmbientLight, 0.8f, 0.8f, 0.8f, 1f));
 		
@@ -98,22 +141,6 @@ public class World {// implements RenderableProvider {
 		sundl.set(Color.WHITE,0,0,0);
 		sundl.setColor(0.3f,0.3f,0.3f,1);
 		
-		if (load) {
-			System.out.println("loading world");
-			loadSave();
-			updateLoadedColumns();
-		} else {
-			player = new Player(5,chunks*16,5);
-			loadedColumns.put(new ColCoords(0,0),new Column(0,0,true));
-			for (int y = (int)player.pos.y; y > 0; y--) {
-				if (getBlock(new Vector3D((int)Math.floor(player.pos.x), y-1, (int)Math.floor(player.pos.z))).getType() != BlockType.air) {
-					player.pos.y = y;
-					break;
-				}
-			}
-			updateLoadedColumns();
-		}
-		System.out.println("loading enviroment");
 		ModelBuilder modelBuilder = new ModelBuilder();
 		skymaterial = new Material(ColorAttribute.createDiffuse(0, 0, 255, 255), IntAttribute.createCullFace(GL20.GL_NONE));
 		Model model = modelBuilder.createSphere(DISTANCE_FROM_CENTER*2, DISTANCE_FROM_CENTER*2, DISTANCE_FROM_CENTER*2, 20, 20,skymaterial, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
@@ -131,56 +158,32 @@ public class World {// implements RenderableProvider {
 		material = new Material(ColorAttribute.createDiffuse(Color.DARK_GRAY));
 		model = modelBuilder.createSphere(5f, 5f, 5f, 5, 5, material, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
 		moon = new ModelInstance(model);
-		
-		
-		//model = modelBuilder.createSphere(15, 15, 15, 20, 20, material, Usage.Position | Usage.Normal | Usage.TextureCoordinates);
-		
-		//ModelInstance m = new ModelInstance(model);
-		//m.transform.setToTranslation(20+(float)player.pos.x,(float)player.pos.y, (float)player.pos.z+20);
-        //additional.add(m);
-		
-		//additional.add(new ModelInstance(model));
-		System.out.println("ready");
-		
-		ready = true;
 	}
 	
 	public void setBlock(Block block) {
 		if (block.pos.y < 0 || block.pos.y >= maxHeight) return;
 		Column col = getColumn(block.pos.x,block.pos.z);
-		for (Entry<ColCoords, Column> tcol : loadedColumns.entrySet()) {
+		for (Entry<Vector2I, Column> tcol : loadedColumns.entrySet()) {
 			for (Entity en : tcol.getValue().entites) {
 				if (block.collide(en.getHitbox())) return;
 			}
 		}
-		col.setBlock((int)block.pos.x&15,(int)block.pos.y,(int)block.pos.z&15, Block.idByBlock(block));
-	}
-	
-	public void setBlock(Vector3D v, int id) {
-		if (v.y < 0 || v.y >= maxHeight) return;
-		Column col = getColumn(v.x,v.z);
-		Block b = Block.blockById(id, v);
-		for (Entry<ColCoords, Column> tcol : loadedColumns.entrySet()) {
-			for (Entity en : tcol.getValue().entites) {
-				if (b.collide(en.getHitbox())) return;
-			}
-		}
-		col.setBlock((int)v.x&15,(int)v.y,(int)v.z&15, id);
+		col.setBlock((int)block.pos.x&15,(int)block.pos.y,(int)block.pos.z&15, block);
 	}
 	
 	public Column getColumn(double x, double z) {
 		int cx = (int)Math.floor(x) >> 4;
 		int cz = (int)Math.floor(z) >> 4;
-		for (Entry<ColCoords, Column> col : loadedColumns.entrySet()) {
-			if (col.getValue().coords.columnX == cx && col.getValue().coords.columnZ == cz) {
+		for (Entry<Vector2I, Column> col : loadedColumns.entrySet()) {
+			if (col.getValue().pos.x == cx && col.getValue().pos.z == cz) {
 				return col.getValue();
 			}
 		}
 		return null;
 	}
-	public Column getColumn(ColCoords cc) {
-		for (Entry<ColCoords, Column> col : loadedColumns.entrySet()) {
-			if (col.getValue().coords.equals(cc)) {
+	public Column getColumn(Vector2I cc) {
+		for (Entry<Vector2I, Column> col : loadedColumns.entrySet()) {
+			if (col.getValue().pos.equals(cc)) {
 				return col.getValue();
 			}
 		}
@@ -189,8 +192,8 @@ public class World {// implements RenderableProvider {
 	public Column getUnloadedColumn(double x, double z) {
 		int cx = (int)Math.floor(x) >> 4;
 		int cz = (int)Math.floor(z) >> 4;
-		for (Entry<ColCoords, Column> col : loadedColumns.entrySet()) {
-			if (col.getValue().coords.columnX == cx && col.getValue().coords.columnZ == cz) {
+		for (Entry<Vector2I, Column> col : loadedColumns.entrySet()) {
+			if (col.getValue().pos.x == cx && col.getValue().pos.z == cz) {
 				return col.getValue();
 			}
 		}
@@ -203,23 +206,15 @@ public class World {// implements RenderableProvider {
 		if (col == null) col = getUnloadedColumn(v.x,v.z);
 		if (col == null) return new Voed(v,null);
 		try {
-			Block c = Block.blockById(col.getBlock((int)v.x&15,(int)v.y,(int)v.z&15), v);
+			Block c = col.getBlock((int)v.x&15,(int)v.y,(int)v.z&15);
+			if (c == null) return new Voed(v,null);
 			return c;
 		} catch (Exception e) {
 			System.out.println("pizdec s getblock v worlde");
 			e.printStackTrace();
 			System.exit(0);
 		}
-		return null;
-	}
-	
-	public Column genOrLoad(int cx, int cz) {
-		for (Entry<ColCoords, Column> col : memoriedColumns.entrySet()) {
-			if (col.getValue().coords.columnX == cx && col.getValue().coords.columnZ == cz) {
-				return col.getValue();
-			}
-		}
-		return new Column(cx,cz,true);
+		return new Voed(v,null);
 	}
 	
 	
@@ -256,13 +251,14 @@ public class World {// implements RenderableProvider {
 	}
 	
 	public void tick() {
-		if (!ready) return;
+		if (!ready || GameInstance.exit) {
+			return;
+		}
 		time++;
 		if (time > DAY_LENGTH) time = 0;
-		for (Entry<ColCoords, Column> column : loadedColumns.entrySet()) {
+		for (Entry<Vector2I, Column> column : loadedColumns.entrySet()) {
 			column.getValue().tick();
 		}
-		player.tick();
 		updateLoadedColumns();
 	}
 	static long beforetime = System.currentTimeMillis();
@@ -274,188 +270,124 @@ public class World {// implements RenderableProvider {
 	}
 	
 	public void updateLoadedColumns() {
-		List<ColCoords> cl = new ArrayList<>();
+		List<Vector2I> cl = new ArrayList<>();
 	    for (int x = -renderRad; x < renderRad;x++) {
 	    	for (int z = -renderRad; z < renderRad;z++) {
-		    	cl.add(new ColCoords(player.beforeechc.columnX+x,player.beforeechc.columnZ+z));
+		    	cl.add(new Vector2I(player.beforeechc.x+x,player.beforeechc.z+z));
 		    }
 	    }
 	    //чекаем какие есть и убирает из cl то что есть
-	    for (Entry<ColCoords, Column> col : loadedColumns.entrySet()) {
-	    	if (cl.contains(col.getValue().coords)) {
-	    		cl.remove(col.getValue().coords);
+	    for (Entry<Vector2I, Column> col : loadedColumns.entrySet()) {
+	    	if (cl.contains(col.getValue().pos)) {
+	    		cl.remove(col.getValue().pos);
 	    	} else {//отгружаем чанки которых нет в cl
 	    		loadedColumns.remove(col.getKey());
-	    		memoriedColumns.put(col.getKey(), col.getValue());
+	    		//memoriedColumns.put(col.getKey(), col.getValue());
 	    	}
 	    }
 	    //подгружаем недостдавшиеся
-	    for (ColCoords c : cl) {
+	    for (Vector2I c : cl) {
 	    	//System.out.println("managing columns: "+i+++"/"+cl.size());
-	    	loadedColumns.put(c,genOrLoad(c));
+	    	loadedColumns.put(c,genOrLoadRegion(VectorU.ColumnToRegion(c)).getColumn(c));
 	    	
 	    }
 	}
 	
-	public Column genOrLoad(ColCoords need) {
-		//System.out.println("creatednew");
-		for (Entry<ColCoords, Column> col : memoriedColumns.entrySet()) {
-			if (col.getValue().coords.equals(need)) {
-				return col.getValue();
-			}
-		}
-		return new Column(need, true);
+	Vector3D ltemp = new Vector3D();
+	public void lerp(Vector3D toset, Vector3D before, Vector3D now) {
+		ltemp = new Vector3D(now.x-before.x,now.y-before.y,now.z-before.z);
+		float mul = GameInstance.curCBT / GameInstance.renderCallsBetweenTicks;
+		toset.setComponents(before.x + ltemp.x*mul, before.y + ltemp.y*mul, before.z + ltemp.z*mul);
 	}
 	
 	
 	public void render() {
+		if (GameInstance.exit) return;
 		renderSky();
 		//List<Model> world = new ArrayList<>();
 		//int i = 0;
-		for (Entry<ColCoords, Column> col : loadedColumns.entrySet()) {
+		for (Entry<Vector2I, Column> col : loadedColumns.entrySet()) {
 			col.getValue().renderNormal();
 			//System.out.println(i+++"/"+loadedColumns.size()+" rendering");
 		}
-		for (Entry<ColCoords, Column> col : loadedColumns.entrySet()) {
+		for (Entry<Vector2I, Column> col : loadedColumns.entrySet()) {
 			col.getValue().renderTransparent();
 		}
-		//GameInstance.modelBatch.render(ModelUtils.combineModels(world), GameInstance.world.env);
+		for (Entry<Vector2I, Column> col : loadedColumns.entrySet()) {
+			col.getValue().renderEntites();
+		}
 		for (ModelInstance a : additional) {
 			GameInstance.modelBatch.render(a/*, env*/);
 		}
 		player.render();
 	}
 	
-	@SuppressWarnings("deprecation")
-	public void loadSave() {
+	public boolean save() {
 		try {
-			
-			JsonReader reader = new JsonReader(new FileReader("world.json"));
-			JsonObject obj = (JsonObject) new JsonParser().parse(reader);
-			this.time = obj.get("time").getAsInt();
-			JsonArray columns = obj.get("columns").getAsJsonArray();
-			for (JsonElement jcole : columns) {
-				JsonObject jcol = jcole.getAsJsonObject();
-				ColCoords cc = ColCoords.fromString(jcol.get("pos").getAsString());
-				Column column = new Column(cc.columnX,cc.columnZ,false);
-				
-				//blocks
-				int i = 0;
-				JsonArray blocks = jcol.get("blocks").getAsJsonArray();
-				for (int px = 0; px < World.chunkWidht; px++) {
-			        for (int py = 0; py < World.maxHeight; py++) {
-			            for (int pz = 0; pz < World.chunkWidht; pz++) {
-			            	try {
-				                column.fastSetBlock(px, py, pz, blocks.get(i).getAsInt());
-			            	} catch (Exception e) {
-			            		column.fastSetBlock(px, py, pz, 0);
-			            	}
-			            	i++;
-			            }
-			        }
-			    }
-				//entities
-				JsonArray entities = jcol.get("entities").getAsJsonArray();
-				memoriedColumns.put(column.coords,column);
-				for (JsonElement jene : entities) {
-					JsonObject jen = jene.getAsJsonObject();
-					
-					Vector3D pos = Vector3D.fromString(jen.get("pos").getAsString());
-					EntityType type = EntityType.valueOf(jen.get("type").getAsString());
-					Entity entity;
-					if (type == EntityType.player) {
-						player = new Player(pos.x,pos.y,pos.z);
-						entity = player;
-						System.out.println(player);
-					} else {
-						AABB hb = AABB.fromString(jen.get("hitbox").getAsString());
-						entity = new Entity(pos, hb, type);
-					}
-					String[] jvel = jen.get("vel").getAsString().split(" ");
-					entity.velX = Double.parseDouble(jvel[0]);
-					entity.velY = Double.parseDouble(jvel[1]);
-					entity.velZ = Double.parseDouble(jvel[2]);
-					String[] jcoll = jen.get("coldata").getAsString().split(" ");
-					entity.colx = Boolean.parseBoolean(jcoll[0]);
-					entity.coly = Boolean.parseBoolean(jcoll[1]);
-					entity.colz = Boolean.parseBoolean(jcoll[2]);
-					entity.onGround = jen.get("onGround").getAsBoolean();
-					String[] rot = jen.get("yawpitch").getAsString().split(" ");
-					entity.yaw = Float.parseFloat(rot[0]);
-					entity.pitch = Float.parseFloat(rot[1]);
-					entity.beforeechc = ColCoords.fromString(jen.get("beforeechc").getAsString());
-					entity.readCustomProp(jen.get("custom").getAsJsonObject());
-					
-					column.entites.add(entity);
-				}
-				column.updateModel();
+			GameInstance.exit = true;
+			System.out.println("saving");
+			loadedColumns.clear();
+			for (Entry<Vector2I, Region> region : memoriedRegions.entrySet()) {
+				writeRegion(region.getValue());
 			}
+			JsonObject jwd = new JsonObject();
 			
+			jwd.addProperty("playerreg", memoriedRegions.get(VectorU.posToRegion(player.pos)).pos.toString());
+			jwd.addProperty("playercol", player.curCol.pos.toString());
+			jwd.addProperty("time", this.time);
+			
+			FileWriter writer = new FileWriter("save/wdata.dat");
+			writer.write(jwd.toString());
+			writer.close();
+			return true;
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(0);
+			return false;
 		}
 	}
 	
-	public void save() {
+	public Region genOrLoadRegion(Vector2I regpos) {
+		if (memoriedRegions.containsKey(regpos)) {
+			return memoriedRegions.get(regpos);
+		}
+		String need = regpos.x+"_"+regpos.z+".reg";
+	    for (final File fileEntry : new File("save").listFiles()) {
+	        if (!fileEntry.isDirectory()) {
+	        	if (fileEntry.getName().equals(need)) {
+	        		Region reg = readRegion(regpos);
+	        		memoriedRegions.put(regpos, reg);
+	        		return reg;
+	        	}
+	        }
+	    }
+	    Region reg = new Region(regpos);
+		memoriedRegions.put(regpos, reg);
+		return reg;
+	}
+	
+	public void writeRegion(Region reg) throws IOException {
+		FileWriter writer = new FileWriter("save/"+reg.pos.x+"_"+reg.pos.z+".reg");
+		writer.write(reg.toJson().toString());
+		writer.close();
+	}
+	
+	@SuppressWarnings("deprecation")
+	public Region readRegion(Vector2I regpos) {
+		JsonReader reader;
 		try {
-			JsonObject worldData = new JsonObject();
-			
-			worldData.add("columns", new JsonArray());
-			worldData.add("time", new JsonPrimitive(this.time));
-			List<Column> tcols = new ArrayList<>();
-			for (Column col : loadedColumns.values()) {
-				tcols.add(col);
-			}
-			for (Column col : memoriedColumns.values()) {
-				tcols.add(col);
-			}
-			int i = 1;
-			for (Column column : tcols) {
-				System.out.println("saving columns "+i+"/"+tcols.size());
-				i++;
-				JsonObject jcol = new JsonObject();
-				//pos
-				jcol.addProperty("pos", column.coords.toString());
-				//blocks
-				JsonArray blocks = new JsonArray();
-				for (int px = 0; px < World.chunkWidht; px++) {
-			        for (int py = 0; py < World.maxHeight; py++) {
-			            for (int pz = 0; pz < World.chunkWidht; pz++) {
-			                blocks.add(column.getBlock(px,py,pz));
-			            }
-			        }
-			    }
-				jcol.add("blocks", blocks);
-				//entities
-				jcol.add("entities", new JsonArray());
-				for (Entity entity : column.entites) {
-					JsonObject jen = new JsonObject();
-					
-					jen.addProperty("pos", entity.pos.toString());
-					jen.addProperty("hitbox", entity.hitbox.toString());
-					jen.addProperty("vel", entity.velX+" "+entity.velY+" "+entity.velZ);
-					jen.addProperty("coldata", entity.colx+" "+entity.coly+" "+entity.colz);
-					jen.addProperty("onGround", entity.onGround);
-					jen.addProperty("yawpitch", entity.yaw+" "+entity.pitch);
-					jen.addProperty("beforeechc", entity.beforeechc.toString());
-					jen.addProperty("type", entity.type.toString());
-					
-					//addtolist
-					jcol.get("entities").getAsJsonArray().add(jen);
-					jen.add("custom", entity.getCustomProp());
-				}
-				//addtodb
-				worldData.get("columns").getAsJsonArray().add(jcol);
-			}
-			
-			System.out.println("writing...");
-			FileWriter writer = new FileWriter("world.json");
-			writer.write(worldData.toString());
-			writer.close();
-			System.out.println("done!");
-		} catch (Exception e) {
+			reader = new JsonReader(new FileReader("save/"+regpos.x+"_"+regpos.z+".reg"));
+			JsonObject obj = (JsonObject) new JsonParser().parse(reader);
+			Region r = new Region(regpos);
+			r.fromJson(obj);
+			return r;
+		} catch (ClassCastException e) {
+			return new Region(regpos);
+		} catch (FileNotFoundException e) {
 			e.printStackTrace();
+			System.out.println("nema regiona :"+regpos.toString());
+			System.exit(0);
+			return null;
 		}
 	}
 
