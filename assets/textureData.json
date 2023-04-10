@@ -1,0 +1,15 @@
+{
+    "dirt": "dirt.png",
+    "stone": "stone.png",
+    "slot": "slot.png",
+    "sslot": "selectedslot.png",
+    "glass": "glass.png",
+    "redsand": "red_sand.png",
+    "grassblock": "grass.png",
+    "oaklog": "oaklog.png",
+    "planks": "planks.png",
+    "tntcrate": "tntcrate.png",
+    "waterbucket": "waterbucket.png",
+    "bucket": "bucket.png",
+    "water": "water.png"
+}
