@@ -12,7 +12,10 @@ import com.badlogic.gdx.math.Vector3;
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Pair;
+import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.player.Player;
+import net.pzdcrp.Hyperborea.utils.VectorU;
+import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.Item;
@@ -61,7 +64,7 @@ public class PlayerInventory extends IInventory {
 		    	    modelInstance.transform.rotate(Vector3.Z, 0);
 		    	    modelInstance.transform.translate(-.715f+.075f*index, -1.13f, .63f-.075f*index);
 		    	    modelInstance.transform.scale(.05f, .10f, .05f);
-		    	    modelInstance.userData = "noshader";
+		    	    modelInstance.userData = new Object[] {"noshader"};
 		    	    Mhotbar[index] = modelInstance;
 		    	    Bhotbar[index] = 1;
 	        	}
@@ -71,6 +74,30 @@ public class PlayerInventory extends IInventory {
         	}
         }
     }
+	
+	@Override
+	public void onRClick() {
+		if (owner.currentAimBlock == null) return;
+		Vector3D clickedPos = VectorU.fromFace(
+				owner.currentAimBlock.pos,
+				owner.currentAimFace
+			);
+		if (owner.currentAimBlock.onClick(owner)) return;
+		getSlot(getCurrentSlotInt()).onRClick(clickedPos);
+	}
+	
+	@Override
+	public void onLClick() {
+		System.out.println(111111);
+		if (owner.currentAimEntity != null) {
+			owner.currentAimEntity.hit(owner, getSlot(getCurrentSlotInt()).getDamage());
+		} else {
+			System.out.println(22222);
+			if (owner.currentAimBlock == null) return;
+			System.out.println(3333333);
+			owner.placeBlock(new Air(owner.currentAimBlock.pos));
+		}
+	}
     
     @Override
     public Item getSlot(int index) {

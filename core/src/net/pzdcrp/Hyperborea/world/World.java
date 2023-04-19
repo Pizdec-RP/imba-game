@@ -36,8 +36,10 @@ import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
+import com.badlogic.gdx.graphics.g3d.particles.ParticleSystem;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
@@ -58,16 +60,17 @@ import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.player.Player;
 import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.utils.ModelUtils;
+import net.pzdcrp.Hyperborea.utils.ThreadU;
 import net.pzdcrp.Hyperborea.utils.VectorU;
 import net.pzdcrp.Hyperborea.world.elements.Chunk;
 import net.pzdcrp.Hyperborea.world.elements.Column;
-import net.pzdcrp.Hyperborea.world.elements.ParticleManager;
 import net.pzdcrp.Hyperborea.world.elements.Region;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Voed;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block.BlockType;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
+import net.pzdcrp.Hyperborea.world.elements.entities.Particle;
 
 public class World {// implements RenderableProvider {
 	public Player player;
@@ -86,7 +89,6 @@ public class World {// implements RenderableProvider {
     public Vector3 moonPosition = new Vector3();
     public ModelInstance moon;
     public Vector3 lightDirection = new Vector3();
-    public ParticleManager pm = new ParticleManager(this);
     public int seed = 228;
     
     private static final int DAY_LENGTH = 60000;
@@ -94,6 +96,8 @@ public class World {// implements RenderableProvider {
     public static int renderRad = 5;
     Material skymaterial;
     ColorAttribute envcolor;
+    
+    public List<Particle> particles = new CopyOnWriteArrayList<>();
 	
 	public World() {
 		Block.world = this;
@@ -101,6 +105,7 @@ public class World {// implements RenderableProvider {
 	}
 	
 	public void load() {
+		
 		System.out.println("подгружаем мир");
 		try {
 			JsonReader reader = new JsonReader(new FileReader("save/wdata.dat"));
@@ -123,6 +128,7 @@ public class World {// implements RenderableProvider {
 		loadEnvironment();
 		World.ready = true;
 		System.out.println("все заебок");
+		//particles.add(new Particle(Hpb.getTexture("dirt"), player.pos.translate().add(0, 1.5f,0), new Vector3(0.02f,0,0), 99999));
 	}
 
 	public void loadEnvironment() {
@@ -139,7 +145,7 @@ public class World {// implements RenderableProvider {
 		skymaterial = new Material(ColorAttribute.createDiffuse(0, 0, 255, 255), IntAttribute.createCullFace(GL20.GL_NONE));
 		Model model = modelBuilder.createSphere(DISTANCE_FROM_CENTER*2, DISTANCE_FROM_CENTER*2, DISTANCE_FROM_CENTER*2, 20, 20,skymaterial, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
 		sky = new ModelInstance(model);
-		sky.userData = "noshader";
+		sky.userData = new Object[] {"c"};
 		Matrix4 transform = new Matrix4();
 		transform.translate((float)player.pos.x,(float)player.pos.y,(float)player.pos.z);
 		sky.transform.set(transform);
@@ -148,15 +154,30 @@ public class World {// implements RenderableProvider {
 		Material material = new Material(ColorAttribute.createDiffuse(Color.YELLOW));
 		model = modelBuilder.createSphere(20f, 20f, 20f, 15, 15, material, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
 		sun = new ModelInstance(model);
-		sun.userData = "noshader";
+		sun.userData = new Object[] {"c"};
 		
 		modelBuilder = new ModelBuilder();
 		material = new Material(ColorAttribute.createDiffuse(Color.DARK_GRAY));
 		model = modelBuilder.createSphere(5f, 5f, 5f, 5, 5, material, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
 		moon = new ModelInstance(model);
-		moon.userData = "noshader";
+		moon.userData = new Object[] {"c"};
+		
+		model = modelBuilder.createBox(1, 1, 1, material, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
+		
 	}
 	
+	public List<Entity> getEntities(Vector3D pos, double radius) {
+		ArrayList<Entity> e = new ArrayList<Entity>();
+		for (Column column : Hpb.world.loadedColumns.values()) {
+			for (Entity en : column.entites) {
+				if (VectorU.sqrt(en.pos, pos) <= radius) {
+					e.add(en);
+				}
+			}
+		}
+		return e;
+	}
+	static final float bs = 0.2f;
 	public void setBlock(Block block) {
 		if (block.pos.y < 0 || block.pos.y >= maxHeight) return;
 		Column col = getColumn(block.pos.x,block.pos.z);
@@ -165,15 +186,28 @@ public class World {// implements RenderableProvider {
 				if (block.isCollide() && block.collide(en.getHitbox())) return;
 			}
 		}
+		if (block instanceof Air) {
+			Block before = getBlock(block.pos);
+			if (before.isRenderable()) {
+				for (int i = 0; i < MathU.rnd(10, 20); i++) {
+					spawnParticle(before.texture, block.pos.translate().add(MathU.rndf(0.3f, 0.7f), MathU.rndf(0.3f, 0.7f), MathU.rndf(0.3f, 0.7f)), new Vector3(MathU.rndf(-bs, bs),MathU.rndf(-bs, bs),MathU.rndf(-bs, bs)), MathU.rnd(8, 16));
+				}
+			}
+		}
 		col.setBlock((int)block.pos.x&15,(int)block.pos.y,(int)block.pos.z&15, block);
 		for (Block block1 : block.getSides()) {
 			block1.onNeighUpdate();
+			block1.callChunkUpdate();//лаганая хуйня
 		}
+	}
+	
+	public void spawnParticle(String tname, Vector3 pos, Vector3 vel, int lifetime) {
+		particles.add(new Particle(Hpb.getTexture(tname), pos, vel, lifetime));
 	}
 	
 	public void breakBlock(Vector3D pos) {
 		if (pos.y < 0 || pos.y >= maxHeight) return;
-		//спавн партиклов
+		//спавн партиклов тут по идее
 		setBlock(new Air(pos));
 	}
 	
@@ -184,6 +218,22 @@ public class World {// implements RenderableProvider {
 	}
 	public Column getColumn(Vector2I cc) {
 		return loadedColumns.get(cc);
+	}
+	
+	public Block getBlock(double x, double y, double z) {
+		if (y < 0 || y >= maxHeight) return new Voed(new Vector3D(x,y,z));
+		Column col = getColumn(x,z);
+		if (col == null) return new Voed(new Vector3D(x,y,z));
+		try {
+			Block c = col.getBlock((int)x&15,(int)y,(int)z&15);
+			if (c == null) return new Voed(new Vector3D(x,y,z));
+			return c;
+		} catch (Exception e) {
+			System.out.println("pizdec s getblock v worlde");
+			e.printStackTrace();
+			System.exit(0);
+		}
+		return new Voed(new Vector3D(x,y,z));
 	}
 	
 	public Block getBlock(Vector3D v) {
@@ -239,12 +289,17 @@ public class World {// implements RenderableProvider {
 		if (!ready || Hpb.exit) {
 			return;
 		}
+		//System.out.println("tick-------------------");
+		//deltaTime();
 		time++;
 		if (time > DAY_LENGTH) time = 0;
+		//deltaTime();
 		for (Entry<Vector2I, Column> column : loadedColumns.entrySet()) {
 			column.getValue().tick();
 		}
-		updateLoadedColumns();
+		for (Particle p : particles) {
+			p.update();
+		}
 	}
 	static long beforetime = System.currentTimeMillis();
 	static long now;
@@ -285,14 +340,17 @@ public class World {// implements RenderableProvider {
 		for (Entry<Vector2I, Column> col : loadedColumns.entrySet()) {
 			col.getValue().renderNormal();
 		}
-		for (Entry<Vector2I, Column> col : loadedColumns.entrySet()) {
+		/*for (Entry<Vector2I, Column> col : loadedColumns.entrySet()) {
 			col.getValue().renderTransparent();
-		}
+		}*/
 		for (Entry<Vector2I, Column> col : loadedColumns.entrySet()) {
 			col.getValue().renderEntites();
 		}
 		for (ModelInstance a : additional) {
 			Hpb.modelBatch.render(a);
+		}
+		for (Particle p : particles) {
+			p.render();
 		}
 		player.render();
 		isCycleFree = true;

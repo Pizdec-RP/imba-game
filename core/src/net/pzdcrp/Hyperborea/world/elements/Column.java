@@ -11,6 +11,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.AABB;
@@ -32,6 +33,7 @@ public class Column {
 	public Chunk[] chunks = new Chunk[World.chunks];
 	private Vector3 center;
 	private Vector3 dimensions;
+	static boolean flat = true;
 	
 	public Column(int x, int z, boolean gen) {
 		this(new Vector2I(x,z), gen);
@@ -51,26 +53,36 @@ public class Column {
 	public void generate() {
 	    for (int px = 0; px < World.chunkWidht; px++) {
 	        for (int pz = 0; pz < World.chunkWidht; pz++) {
-	        	double noise = Noise.get((World.chunkWidht*pos.x+px)*Hpb.world.player.x, Hpb.world.player.y, (World.chunkWidht*pos.z+pz)*Hpb.world.player.x);
-	        	//System.out.println(noise);
-	        	int maxy = (int) ((noise+Hpb.world.player.z) * (World.maxHeight*0.5));
-	        	for (int py = 0; py < World.maxHeight; py++) {
-	        		if (py == 0) {
-	        			fastSetBlock(px,py,pz,6);
-	        		} else if (py < maxy) {
-	        			fastSetBlock(px,py,pz,1);
-	        		} else if (py == maxy) {
-	        			fastSetBlock(px,py,pz,6);
-	        		} else {
-	        			if (py < 3) {
-	        				fastSetBlock(px,py,pz,18);
-	        				Block block = getBlock(px,py,pz);
-	        				((Water) block).ableToTick = false;
+	        	if (flat) {
+	        		for (int py = 0; py < World.maxHeight; py++) {
+	        			if (py < 10) {
+	        				fastSetBlock(px,py,pz,6);
 	        			} else {
 	        				fastSetBlock(px,py,pz,0);
 	        			}
 	        		}
-        		}
+	        	} else {
+	        		double noise = Noise.get((World.chunkWidht*pos.x+px)*Hpb.world.player.x, Hpb.world.player.y, (World.chunkWidht*pos.z+pz)*Hpb.world.player.x);
+		        	//System.out.println(noise);
+		        	int maxy = (int) ((noise+Hpb.world.player.z) * (World.maxHeight*0.5));
+		        	for (int py = 0; py < World.maxHeight; py++) {
+		        		if (py == 0) {
+		        			fastSetBlock(px,py,pz,6);
+		        		} else if (py < maxy) {
+		        			fastSetBlock(px,py,pz,1);
+		        		} else if (py == maxy) {
+		        			fastSetBlock(px,py,pz,6);
+		        		} else {
+		        			if (py < 3) {
+		        				fastSetBlock(px,py,pz,18);
+		        				Block block = getBlock(px,py,pz);
+		        				((Water) block).ableToTick = false;
+		        			} else {
+		        				fastSetBlock(px,py,pz,0);
+		        			}
+		        		}
+	        		}
+	        	}
 	        }
 	    }
 	}
@@ -155,7 +167,13 @@ public class Column {
 		for (int px = 0; px < World.chunkWidht; px++) {
 	        for (int py = 0; py < World.maxHeight; py++) {
 	            for (int pz = 0; pz < World.chunkWidht; pz++) {
-	                blocks.add(Block.idByBlock(getBlock(px,py,pz)));
+	            	Block block = getBlock(px,py,pz);
+	            	JsonObject data = block.toJson();
+	            	if (data != null) {
+	            		blocks.add(data);
+	            	} else {
+	            		blocks.add(Block.idByBlock(block));
+	            	}
 	            }
 	        }
 	    }
@@ -167,7 +185,7 @@ public class Column {
 			
 			jen.addProperty("pos", entity.pos.toString());
 			jen.addProperty("hitbox", entity.hitbox.toString());
-			jen.addProperty("vel", entity.velX+" "+entity.velY+" "+entity.velZ);
+			jen.addProperty("vel", entity.vel.toString());
 			jen.addProperty("coldata", entity.colx+" "+entity.coly+" "+entity.colz);
 			jen.addProperty("onGround", entity.onGround);
 			jen.addProperty("yawpitch", entity.yaw+" "+entity.pitch);
@@ -196,7 +214,14 @@ public class Column {
 	        for (int py = 0; py < World.maxHeight; py++) {
 	            for (int pz = 0; pz < World.chunkWidht; pz++) {
 	            	try {
-		                fastSetBlock(px, py, pz, blocks.get(i).getAsInt());
+		            	JsonElement rawblock = blocks.get(i);
+		            	if (rawblock.isJsonPrimitive()) {
+		            		fastSetBlock(px, py, pz, blocks.get(i).getAsInt());
+		            	} else if (rawblock.isJsonObject()) {
+		            		JsonObject data = blocks.get(i).getAsJsonObject();
+		            		fastSetBlock(px, py, pz, data.get("id").getAsInt());
+		            		getBlock(px, py, pz).fromJson(data);
+		            	}
 	            	} catch (Exception e) {
 	            		e.printStackTrace();
 	            		System.exit(0);
@@ -221,10 +246,8 @@ public class Column {
 				AABB hb = AABB.fromString(jen.get("hitbox").getAsString());
 				entity = new Entity(pos, hb, type);
 			}
-			String[] jvel = jen.get("vel").getAsString().split(" ");
-			entity.velX = Double.parseDouble(jvel[0]);
-			entity.velY = Double.parseDouble(jvel[1]);
-			entity.velZ = Double.parseDouble(jvel[2]);
+			String jvel = jen.get("vel").getAsString();
+			entity.vel = Vector3D.fromString(jvel);
 			String[] jcoll = jen.get("coldata").getAsString().split(" ");
 			entity.colx = Boolean.parseBoolean(jcoll[0]);
 			entity.coly = Boolean.parseBoolean(jcoll[1]);

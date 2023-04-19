@@ -1,18 +1,13 @@
 package net.pzdcrp.Hyperborea;
 
-import java.io.FileReader;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
-
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
-import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
@@ -20,36 +15,19 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.Environment;
-import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
-import com.badlogic.gdx.graphics.g3d.ModelInstance;
-import com.badlogic.gdx.graphics.g3d.Renderable;
 import com.badlogic.gdx.graphics.g3d.RenderableProvider;
-import com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute;
-import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
-import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
-import com.badlogic.gdx.graphics.glutils.ShaderProgram;
-import com.badlogic.gdx.maps.tiled.TiledMapTileLayer.Cell;
-import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.math.collision.BoundingBox;
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.Align;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.stream.JsonReader;
-
-import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.player.ControlListener;
 import net.pzdcrp.Hyperborea.utils.ThreadU;
 import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.Column;
-import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
-import net.pzdcrp.Hyperborea.world.elements.blocks.Dirt;
 
 public class Hpb extends ApplicationAdapter {
 	Texture img;
@@ -72,6 +50,9 @@ public class Hpb extends ApplicationAdapter {
 	
 	public static Label infoLabel;
 	public static InputMultiplexer multiplexer;
+	//private static ShaderProgram sp;
+	public static FrameBuffer buffer;
+	public static TextureRegion textureRegion;
 	
 	@Override
 	public void create() {
@@ -79,7 +60,6 @@ public class Hpb extends ApplicationAdapter {
 		loadTextures();
 		System.out.println("lessgo");
 		modelBatch = new ModelBatch(shaderprovider = new SuperPizdatiyShader("test"));
-		//modelBatch.getShaderProvider().setDefaultShader();
 		
 		spriteBatch = new SpriteBatch();
 		
@@ -110,17 +90,24 @@ public class Hpb extends ApplicationAdapter {
 		mCamera = new OrthographicCamera();
 		mCamera.far = 500;
 	    mCamera.setToOrtho(false, 720, 720);
+	    
 		
 		world = new World();
 		world.load();
 		
+		buffer = new FrameBuffer(Pixmap.Format.RGBA8888, 1280, 720, true);
+		textureRegion = new TextureRegion();
+		textureRegion.flip(false, true);
 		tickLoop();
-		//chunkGenLoop();
-		
 	}
+
+	public static float renderCallsBetweenTicks = 16;
+	public static float curCBT = 0;
 	
 	public void tick() {
 		world.tick();
+		renderCallsBetweenTicks = curCBT;
+		curCBT = 0;
 	}
 	
 	static long startdisplay = 0L;
@@ -135,8 +122,54 @@ public class Hpb extends ApplicationAdapter {
 	
 	long last = System.currentTimeMillis();
 	//public static ModelInstance modelInstance;
-	private long delta, now;
-	private int en;
+	private static long /*delta, */now;
+	private static int en;
+	private static TextureRegion allTextures;
+	
+	public static float lerp(float a, float b) {
+	    float t = (float)(System.nanoTime() - timeone) / (tickrate * 1000000);
+	    if (t > 1f) t = 1f;
+	    return a * (1.0f - t) + b * t;
+	}
+	
+	public void renderWorld() {
+		//хуцня с обычным рендером
+		//buffer.begin();
+		
+		//Gdx.gl.glViewport(0, 0, 1280, 720);
+		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+		
+		//1 стадия
+		shaderprovider.newstage();
+		modelBatch.begin(world.player.cam.cam);
+		world.render();
+		modelBatch.end();
+		
+		//2 стадия
+		/*shaderprovider.newstage();
+		
+		textureRegion.setRegion(buffer.getColorBufferTexture());
+		shaderprovider.stage2pic = textureRegion.getTexture();
+		
+		buffer.end();
+		
+		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+		
+		modelBatch.begin(world.player.cam.cam);
+		world.render();
+		modelBatch.end();*/
+		
+		shaderprovider.end();
+		
+		//отрисовка gui
+		//Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+		modelBatch.begin(mCamera);
+		spriteBatch.begin();
+		//spriteBatch.draw(shaderprovider.stage2pic, 0,0,1280/2.5f,720/2.5f, 0, 0, 1280, 720, false, true);
+		world.player.inventory.render();
+		spriteBatch.end();
+		modelBatch.end();
+	}
 	
 	public static void render(RenderableProvider obj) {
 		modelBatch.render(obj);
@@ -145,36 +178,22 @@ public class Hpb extends ApplicationAdapter {
 	public static void render(RenderableProvider obj, Environment env) {
 		modelBatch.render(obj, env);
 	}
-	
-	public static float lerp(float a, float b) {
-	    float t = (float)(System.currentTimeMillis() - timeone) / tickrate;
-	    return a * (1.0f - t) + b * t;
-	}
-	
-	public static double lerp(double a, double b) {
-		double t = (System.currentTimeMillis() - timeone) / tickrate;
-	    return a * (1.0d - t) + b * t;
-	}
-	
+	public static int counter = 0;
 	@Override
 	public void render() {
-		if (exit) return;
+		if (exit) {
+			return;
+		}
 		try {
+			System.out.println("render");
+			counter = 0;
+			curCBT++;
 			now = System.currentTimeMillis();
-			delta = now - last;
+			//delta = now - last;
 			last = now;
-			Gdx.gl.glViewport(0, 0, 1280, 720);
-			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-			//world
-			modelBatch.begin(world.player.cam.cam);
-			world.render();
-			modelBatch.end();
-			//gui
-			modelBatch.begin(mCamera);
-			spriteBatch.begin();
-			world.player.inventory.render();
-			spriteBatch.end();
-			modelBatch.end();
+			
+			renderWorld();
+			
 			
 			StringBuilder builder = new StringBuilder();
 			builder.append("onGround: ").append(world.player.onGround);
@@ -222,6 +241,7 @@ public class Hpb extends ApplicationAdapter {
 	
 	@SuppressWarnings("deprecation")
 	public static void loadTextures() {
+		allTextures = new TextureRegion();
 		System.out.println(Gdx.files.getLocalStoragePath());
 		JsonObject obj = (JsonObject) new JsonParser().parse(Gdx.files.internal("textureData.json").readString());
 		System.out.println("грузим "+obj.keySet().size()+" тектур");
@@ -232,29 +252,43 @@ public class Hpb extends ApplicationAdapter {
 		}
 	}
 	
-	static long timeone = System.currentTimeMillis();
-	static int curcomp = 0;
-	public void tickLoop() {
-		/*new Thread(() -> {
-	        int tickRate = 50;
-	        long prevTime = System.currentTimeMillis();
-
+	public static void runChunkUpdate() {
+		new Thread(() -> {
 	        while (true) {
 	            try {
-	                currentTime = System.currentTimeMillis();
-	                long elapsedTime = currentTime - prevTime;
-	                tick();
-	                long timeToSleep = tickRate - elapsedTime;
-	                if (timeToSleep > 0) {
-	                    Thread.sleep(timeToSleep);
-	                }
-	                prevTime = System.currentTimeMillis();
+	            	if (exit) Thread.currentThread().stop();
+	                world.updateLoadedColumns();
+	                ThreadU.sleep(200);
 	            } catch (Exception e) {
-	                e.printStackTrace();
+	            	e.printStackTrace();
+					System.exit(2);
 	            }
 	        }
-	    }).start();*/
-		new Thread(()->{
+	    }).start();
+	}
+	
+	static long timeone = System.nanoTime();
+	static int curcomp = 0;
+	public void tickLoop() {
+		runChunkUpdate();
+		
+		new Thread(() -> {
+			while (true) {
+	        	timeone = System.nanoTime();
+	    	    tick();
+	    	    long two = System.nanoTime();
+	    	    int elapsed = (int)(two - timeone);
+	    	    int normaled = elapsed/1_000_000;
+	    	    int additional = elapsed/100_000-normaled*10;
+	    	    int itog = normaled + (additional >= 5 ? 1 : 0);
+	    	    int tosleep = tickrate - itog;
+	    	    if (tosleep > 0) {
+	    	    	ThreadU.sleep(tosleep);
+	    	    }
+	        }
+	    }).start();
+	}
+		/*new Thread(()->{
 			curcomp = 0;
 			int needtocompensate = 0;
 			while (true) {
@@ -266,11 +300,12 @@ public class Hpb extends ApplicationAdapter {
 					int raznica = (int) (timetwo - timeone);
 					if (needtocompensate > 5000) {
 						needtocompensate = 0;
-						//System.out.println("client overloaded, skiped "+needtocompensate/tickrate+" ticks");
+						System.out.println("client overloaded, skiped "+needtocompensate/tickrate+" ticks");
 					}
 					if (raznica > 0 && raznica < tickrate) {
 						curcomp = tickrate-raznica;
-						//System.out.println("comp "+raznica+"ms");
+						System.out.println("comp "+raznica+"ms");
+						System.out.println("ntc "+needtocompensate+"ms");
 						if (needtocompensate <= 0) {
 							ThreadU.sleep(curcomp);
 						} else {
@@ -283,7 +318,7 @@ public class Hpb extends ApplicationAdapter {
 							needtocompensate-=tickrate;
 						}
 					} else {
-						//System.out.println("pass "+raznica+"ms");
+						System.out.println("pass "+raznica+"ms");
 						needtocompensate += raznica-tickrate;
 					}
 				} catch (Exception e) {
@@ -292,5 +327,17 @@ public class Hpb extends ApplicationAdapter {
 				}
 			}
 		}).start();
+	}*/
+	
+	public static void onCommand(String command) {
+		command = command.replace("/","");
+		if (command.equals("stop")) {
+			if (Hpb.world.save()) {
+				System.out.println("всё");
+				System.exit(0);
+			} else {
+				System.out.println("откат, сохранение высрало ошибку");
+			}
+		}
 	}
 }

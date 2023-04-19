@@ -13,7 +13,7 @@ import net.pzdcrp.Hyperborea.data.AABB;
 import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.EntityType;
 import net.pzdcrp.Hyperborea.data.OTripple;
-import net.pzdcrp.Hyperborea.data.Physics;
+import net.pzdcrp.Hyperborea.data.DM;
 import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.player.Player;
@@ -31,7 +31,7 @@ public class Entity {
 	public Vector3D pos, beforepos;
 	public EntityType type;
 	public AABB hitbox;
-	public double velX=0, velY=0, velZ=0;
+	public Vector3D vel = new Vector3D();
 	public boolean colx=false,coly=false,colz=false,onGround=false;
 	public float yaw = 0,pitch = 0;
 	public Vector2I beforeechc;
@@ -43,6 +43,7 @@ public class Entity {
 	public BlockFace currentAimFace = BlockFace.PX;
 	public Entity currentAimEntity = null;
 	public IInventory inventory;
+	protected byte hp; 
 	
 	//классы ссылки
 	public Column curCol;
@@ -65,6 +66,7 @@ public class Entity {
 		} else {
 			inventory = new EntityInventory(this);
 		}
+		this.hp = maxhp();
 	}
 	
 	public void tick() {
@@ -99,7 +101,7 @@ public class Entity {
 	}
 	
 	public void updateFacing() {
-		OTripple tripple = VectorU.findFacingPair(this.getEyeLocation(), Hpb.world.player.cam.cam.direction);
+		OTripple tripple = VectorU.findFacingPair(this.getEyeLocation(), Hpb.world.player.cam.cam.direction, this);
 		this.currentAimBlock = (Block) tripple.one;
 		if (this.currentAimBlock != null) {
 			this.currentAimFace = VectorU.getFace(currentAimBlock.pos, (Vector3D)tripple.two);
@@ -108,15 +110,14 @@ public class Entity {
 	}
 	
 	public void updateGravity() {
-		velY -= Physics.gravity;
-		velY *= Physics.airdrag;
+		vel.y -= DM.gravity;
+		vel.y *= DM.airdrag;
 	}
 	
-	public List<Block> getNearBlocks() {
+	public List<AABB> getNearBlocks() {
 		AABB cube = getHitbox();
-		//System.out.println(cube.toString());
-		cube = cube.grow(Math.max(velX,1),Math.max(velY,1),Math.max(velZ,1));
-		List<Block> b = new ArrayList<>();
+		cube = cube.grow(Math.max(vel.x,1),Math.max(vel.y,1),Math.max(vel.z,1));
+		List<AABB> b = new ArrayList<>();
 		
 		for (int tx = (int)Math.floor(Math.min(cube.maxX, cube.minX)); tx < Math.max(cube.maxX, cube.minX); tx++) {
 			for (int tz = (int)Math.floor(Math.min(cube.maxZ, cube.minZ)); tz < Math.max(cube.maxZ, cube.minZ); tz++) {
@@ -124,7 +125,7 @@ public class Entity {
 					Block bl = Hpb.world.getBlock(new Vector3D(tx, ty, tz));//FIXME оптимизировать
 					if (bl != null) {
 						if (bl.isCollide()) {
-							b.add(bl);
+							b.add(bl.getHitbox());
 						}
 						
 					}
@@ -134,74 +135,68 @@ public class Entity {
 		return b;
 	}
 	
-	List<Vector3D> tempvel = new ArrayList<>(); 
 	public void applyMovement() {
-		colx = false;coly = false;colz = false;
-		//System.out.println("huy "+velY);
-		if (velX != 0 || velY != 0 || velZ != 0) {
-			List<Block> nb = getNearBlocks();
-			//System.out.println("nb "+nb.size());
-			for (Block block : nb) {
-				//for (Vector3D vel : tempvel) {
-					if (block.collide(getHitbox().offset(velX, 0, 0))) {
-						colx = true;
-						if (velX < 0) {
-							pos.x = block.getHitbox().maxX+Math.abs(hitbox.maxX);
-						} else if (velX > 0) {
-							pos.x = block.getHitbox().minX-Math.abs(hitbox.minX);
-						}
-						velX = 0;
-					}
-					if (block.collide(getHitbox().offset(0, velY, 0))) {
-						coly = true;
-						if (velY < 0) {
-							pos.y = block.getHitbox().maxY;
-							onGround = true;
-						} else if (velY > 0) {
-							pos.y = block.getHitbox().minY-hitbox.maxY;
-							onGround = false;
-						}
-						velY = 0;
-					}
-					if (block.collide(getHitbox().offset(0, 0, velZ))) {
-						colz = true;
-						if (velZ < 0) {
-							pos.z = block.getHitbox().maxZ+Math.abs(hitbox.maxZ);
-						} else if (velZ > 0) {
-							pos.z = block.getHitbox().minZ-Math.abs(hitbox.minZ);
-						}
-						velZ = 0;
-					}
-				//}
+		if (vel.x != 0 || vel.y != 0 || vel.z != 0) {
+			List<AABB> nb = getNearBlocks();
+			double bx,by,bz;
+			for (AABB collidedBB : nb) {
+				by = vel.y;
+				vel.y = collidedBB.calculateYOffset(this.getHitbox(), vel.y);
+				if (by != vel.y) {
+					coly = true;
+				}
 			}
-			//System.out.println(coly);
-			//System.out.println(velY);
-			//System.out.println(y);
-			if (!colx) pos.x+=velX;
-			if (!coly) pos.y+=velY;
-			if (!colz) pos.z+=velZ;
+			if (vel.y > 0) {
+				onGround = false;
+			} else if (vel.y == 0) {
+				onGround = true;
+			}
+			this.pos.y += vel.y;
+			
+			for (AABB collidedBB : nb) {
+				bx = vel.x;
+				vel.x = collidedBB.calculateXOffset(this.getHitbox(), vel.x);
+				if (bx != vel.x) {
+					colx = true;
+				}
+			}
+			this.pos.x += vel.x;
+			
+			for (AABB collidedBB : nb) {
+				bz = vel.z;
+				vel.z = collidedBB.calculateZOffset(this.getHitbox(), vel.z);
+				if (bz != vel.z) {
+					colz = true;
+				}
+			}
+			this.pos.z += vel.z;
+			
 			
 			if (this.isPlayer) {
-				velX *= 0.6;
-				velZ *= 0.6;
+				vel.x *= 0.6;
+				vel.z *= 0.6;
 			} else {
 				if (this.onGround) {
-					velX *= 0.6;
-					velZ *= 0.6;
+					vel.x *= 0.6;
+					vel.z *= 0.6;
 				} else {
-					velX *= 0.98;
-					velZ *= 0.98;
+					vel.x *= 0.98;
+					vel.z *= 0.98;
 				} 
 			}
 			
-			if (Math.abs(velX) < Physics.badVel) velX = 0;
-			if (Math.abs(velY) < Physics.badVel) velY = 0;
-			if (Math.abs(velZ) < Physics.badVel) velZ = 0;
+			if (Math.abs(vel.x) < DM.badVel) vel.x = 0;
+			if (Math.abs(vel.y) < DM.badVel) vel.y = 0;
+			if (Math.abs(vel.z) < DM.badVel) vel.z = 0;
 		}
 	}
 	
 	public AABB getHitbox() {//FIXME
 		return hitbox.noffset(pos);
+	}
+	
+	public byte maxhp() {
+		return 5;
 	}
 	
 	public JsonObject getCustomProp() {
@@ -235,5 +230,18 @@ public class Entity {
 
 	public void render() {
 		
+	}
+
+	public void hit(Entity enemy, int damage) {
+		if (hp == -Byte.MIN_VALUE) return;
+		this.hp -= damage;
+		if (hp < 0) {
+			Hpb.world.player.chat.send(this.getClass().getName()+" killed by "+enemy.getClass().getName());
+			if (isPlayer) {
+				((Player)this).deadScreen();
+			} else {
+				this.despawn();
+			}
+		}
 	}
 }

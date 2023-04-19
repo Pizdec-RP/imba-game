@@ -7,13 +7,17 @@ import java.util.concurrent.ThreadLocalRandom;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.math.Vector3;
 
+import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.player.Player;
+import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.utils.ModelUtils;
+import net.pzdcrp.Hyperborea.utils.VectorU;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block.BlockType;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
+import net.pzdcrp.Hyperborea.world.elements.entities.Particle;
 
 public class TntCrate extends Block {
 	public static String tname = "tntcrate";
@@ -61,6 +65,7 @@ public class TntCrate extends Block {
 		if (timer>0) {
 			System.out.println(timer);
 			timer--;
+			world.particles.add(new Particle(Hpb.getTexture("firebase"), pos.translate().add(0.5f, 1f, 0.5f), new Vector3(MathU.rndf(0.2f, -0.2f),MathU.rndf(0.6f, 0.1f),MathU.rndf(0.2f, -0.2f)), 60));
 			return;
 		}
 		world.setBlock(new Air(this.pos));
@@ -74,7 +79,7 @@ public class TntCrate extends Block {
 			if (p.down) {
 				return false;
 			} else {
-				this.updateCurrentChunkModel();
+				this.callChunkUpdate();
 				fired = true;
 				return true;
 			}
@@ -144,5 +149,14 @@ public class TntCrate extends Block {
         		world.breakBlock(block);
         	}
         }
+        /*double dr = size*2.5;
+        for (Entity e : world.getEntities(pos, dr)) {
+        	System.out.println("en");
+        	Vector3D dir = pos.subtract(e.pos).normalize();
+        	double amp = dr - VectorU.sqrt(pos, e.pos);
+        	Vector3D t = dir.multiply(amp);
+        	System.out.println(t.toString());
+        	e.vel.add(t);
+        }*/
 	}
 }

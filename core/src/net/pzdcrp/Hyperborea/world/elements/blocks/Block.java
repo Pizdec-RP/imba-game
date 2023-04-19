@@ -6,10 +6,12 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.google.gson.JsonObject;
 
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.AABB;
 import net.pzdcrp.Hyperborea.data.BlockFace;
+import net.pzdcrp.Hyperborea.data.DM;
 import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.world.World;
@@ -45,6 +47,7 @@ public class Block {
 	protected AABB hitbox;
 	
 	public static void init() {
+		
 		blocks = new ConcurrentHashMap<Integer, Block>( ) {
 			private static final long serialVersionUID = 3707964282902670945L;
 			{
@@ -66,6 +69,9 @@ public class Block {
 				put(16, new Water(new Vector3D(), 2));
 				put(17, new Water(new Vector3D(), 3));
 				put(18, new Water(new Vector3D(), 4));
+				put(19, new Water(new Vector3D(), 5));
+				put(20, new Water(new Vector3D(), 6));
+				put(21, new Water(new Vector3D(), 7));
 			}};
 	}
 	
@@ -117,7 +123,7 @@ public class Block {
 		
 	}
 	
-	public void updateCurrentChunkModel() {
+	public void callChunkUpdate() {
 		world.getColumn(pos.x, pos.z).chunks[(int) (Math.floor(pos.y)/World.chunkWidht)].updateModel();
 	}
 	
@@ -208,5 +214,13 @@ public class Block {
 
 	public int getResistance() {
 		return 5;
+	}
+	
+	public JsonObject toJson() {
+		return null;
+	}
+	
+	public void fromJson(JsonObject data) {
+		
 	}
 }

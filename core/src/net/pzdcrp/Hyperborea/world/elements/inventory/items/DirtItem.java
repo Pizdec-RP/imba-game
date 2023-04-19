@@ -17,28 +17,8 @@ public class DirtItem extends Item {
 	}
 
 	@Override
-	public void onRClick() {
-		if (this.inventory.owner.currentAimBlock == null) return;
-		Vector3D clickedBlock = VectorU.fromFace(
-				this.inventory.owner.currentAimBlock.pos,
-				this.inventory.owner.currentAimFace
-			);
-		if (this.inventory.owner.currentAimBlock.onClick(this.inventory.owner)) return;
-		this.inventory.owner.placeBlock(
-			new Dirt(
-				clickedBlock
-			)
-		);
-	}
-	
-	@Override
-	public void onLClick() {
-		if (this.inventory.owner.currentAimBlock == null) return;
-		this.inventory.owner.placeBlock(
-			new Air(
-				this.inventory.owner.currentAimBlock.pos
-			)
-		);
+	public void onRClick(Vector3D cp) {
+		this.inventory.owner.placeBlock(new Dirt(cp));
 	}
 	
 	@Override

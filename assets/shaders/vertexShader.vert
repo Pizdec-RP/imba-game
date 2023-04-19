@@ -190,8 +190,15 @@ varying vec3 v_ambientLight;
 #endif // lightingFlag
 
 uniform vec3 test;
+uniform sampler3D light3array;
+varying int varying_test;
 
 void main() {
+	if (a_position.x == 0) {
+		varying_test = 1;
+	} else {
+		varying_test = 0;
+	}
 	#ifdef diffuseTextureFlag
 		v_diffuseUV = u_diffuseUVTransform.xy + a_texCoord0 * u_diffuseUVTransform.zw;
 	#endif //diffuseTextureFlag

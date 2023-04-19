@@ -35,6 +35,10 @@ public class FallingBlockEntity extends Entity {
 		model = new ModelInstance(firstValue.mb.end());
 	}
 	
+	@Override
+	public byte maxhp() {
+		return Byte.MIN_VALUE;
+	}
 	
 	@Override
 	public void render() {

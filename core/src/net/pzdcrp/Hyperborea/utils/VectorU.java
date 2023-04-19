@@ -29,13 +29,13 @@ public class VectorU {
 		return null;
 	}
 	
-	public static OTripple findFacingPair(Vector3D from, Vector3 dir) {
+	public static OTripple findFacingPair(Vector3D from, Vector3 dir, Entity curen) {
 		List<Vector3D> list = ray(from, dir);
 		Entity entity = null;
 		for (Column column : Hpb.world.loadedColumns.values()) {
 			for (Entity en : column.entites) {
 				for (Vector3D ps : list) {
-					if (en.getHitbox().collide(ps)) {
+					if (!en.equals(curen) && en.getHitbox().collide(ps)) {
 						entity = en;
 						break;
 					}

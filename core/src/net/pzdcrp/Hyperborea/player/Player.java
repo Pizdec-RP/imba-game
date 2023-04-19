@@ -9,8 +9,8 @@ import com.badlogic.gdx.math.Vector3;
 
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.AABB;
+import net.pzdcrp.Hyperborea.data.DM;
 import net.pzdcrp.Hyperborea.data.EntityType;
-import net.pzdcrp.Hyperborea.data.Physics;
 import net.pzdcrp.Hyperborea.data.Settings;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.world.elements.Chunk;
@@ -72,11 +72,11 @@ public class Player extends Entity {
 		Vector3D velocityGoal = new Vector3D(0,0,0);
 		double speed = 0d;
 		if (down) {
-			speed = Physics.walkSpeed/3;
+			speed = DM.walkSpeed/3;
 		} else if (run) {
-			speed = Physics.runSpeed;
+			speed = DM.runSpeed;
 		} else {
-			speed = Physics.walkSpeed;
+			speed = DM.walkSpeed;
 		}
 		if (forward) {
 			velocityGoal.x = speed;
@@ -90,12 +90,12 @@ public class Player extends Entity {
 		if (right) {
 			velocityGoal.z = speed;
 		}
-        velX += velocityGoal.x * (float) Math.sin(yaw) + velocityGoal.z * (float) Math.cos(yaw);
-        velZ += velocityGoal.z * (float) Math.sin(yaw) - velocityGoal.x * (float) Math.cos(yaw);
+        vel.x += velocityGoal.x * (float) Math.sin(yaw) + velocityGoal.z * (float) Math.cos(yaw);
+        vel.z += velocityGoal.z * (float) Math.sin(yaw) - velocityGoal.x * (float) Math.cos(yaw);
 		//gravity
         if (up) {
 			if (this.onGround) {
-				this.velY += 0.5099999904632568F;
+				this.vel.y += 0.5099999904632568F;
 				this.onGround = false;
 			}
 		}
@@ -105,7 +105,7 @@ public class Player extends Entity {
 		if (rmb && Gdx.input.isCursorCatched()) {
 			if (actcd <= 0) {
 				if (pos != null) {
-					this.inventory.getSlot(inventory.getCurrentSlotInt()).onRClick();
+					this.inventory.onRClick();
 					actcd = 3;
 				}
 			}
@@ -113,7 +113,7 @@ public class Player extends Entity {
 		if (lmb && Gdx.input.isCursorCatched()) {
 			if (actcd <= 0) {
 				if (pos != null) {
-					this.inventory.getSlot(inventory.getCurrentSlotInt()).onLClick();
+					this.inventory.onLClick();
 					actcd = 3;
 				}
 			}
@@ -132,8 +132,17 @@ public class Player extends Entity {
 		System.out.println(z);
 	}
 	
+	public void deadScreen() {
+		
+	}
+	
+	@Override
+	public byte maxhp() {
+		return (byte)25;
+	}
+	
 	boolean b1 = false;
-	public float x = -0.015f, y = 11.13f, z=0.02f, scl = 0.01f;
+	public float x = 0f, y = 0f, z=0f, scl = 0.5f;
 	public void updateControls() {
 		if (Gdx.input.isKeyPressed(Input.Keys.U)) {
 			x+=scl;
@@ -159,10 +168,11 @@ public class Player extends Entity {
 			y-=scl;
 			test();
 		}
+		//System.out.println("x:"+x+" y:"+y+" z:"+z);
 		if (chat.isOpened()) return;
 		if (Gdx.input.isKeyPressed(Input.Keys.T)) {
 			this.pos.y += 5;
-			this.velY = 0;
+			this.vel.y = 0;
 		}
 		if (Gdx.input.isKeyPressed(Input.Keys.W)) {
 			forward = true;

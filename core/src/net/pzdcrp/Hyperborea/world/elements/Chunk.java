@@ -1,5 +1,6 @@
 package net.pzdcrp.Hyperborea.world.elements;
 
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +23,7 @@ import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
+import com.badlogic.gdx.utils.BufferUtils;
 
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.MBIM;
@@ -41,15 +43,11 @@ public class Chunk {
 	public BoundingBox box;
 	public int height;
 	private boolean requestUpdate = false;
-	//public Vector3 center;
-	//public Vector3 dimensions;
 	public boolean tickable = false;
 	
 	public Chunk(Column motherCol, int height) {
 		this.height = height;
 		this.motherCol = motherCol;
-		//center = new Vector3(motherCol.pos.x*16+8,height+8,motherCol.pos.z*16+8);
-		//dimensions = new Vector3(16, 16, 16);
 	}
 	
 	public void updateModel() {
@@ -92,9 +90,20 @@ public class Chunk {
 			}
 		}
 		allModels = ModelUtils.combineModels(models);
-		allModels.userData = "c";
+		FloatBuffer buffer = BufferUtils.newFloatBuffer(16 * 16 * 16);
+		
+		for (int i = 0; i < 16; i++) {
+		    for (int j = 0; j < 16; j++) {
+		        for (int k = 0; k < 16; k++) {
+		            buffer.put(light[i][j][k]);
+		        }
+		    }
+		}
+		allModels.userData = new Object[] {"c", "chunk", buffer};
+		
+		
 		transparent = ModelUtils.combineModels(transparents);
-		allModels.userData = "c";
+		transparent.userData = new Object[] {"c"};
 		if (allModels.model.meshes.size > 1) {
 			MeshBuilder builder = new MeshBuilder();
 			builder.begin(VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);

@@ -150,11 +150,15 @@ public class MathU {
         consumer.accept(t);
         return t;
     }
+	public static float rndf(float min, float max) {
+	    return (float) (Math.random() * (max - min) + min);
+	}
 	
 	public static int rnd(double min, double max) {
 		max -= min;
 		return (int) ((Math.random() * ++max) + min);
 	}
+	
 	public static <M> M random(List<M> list) {
 		return list.get(rnd(0,list.size()-1));
 	}

@@ -7,8 +7,10 @@ import java.util.List;
 import java.util.Map;
 
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
+import com.google.gson.JsonObject;
 
 import net.pzdcrp.Hyperborea.data.AABB;
+import net.pzdcrp.Hyperborea.data.DM;
 import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.utils.ModelUtils;
@@ -20,8 +22,9 @@ public class Water extends Liquifyable {
 		super(pos, tname, liquidLevel);
 	}
 	
+	int beforell = this.ll;
 	public boolean ableToTick = true;
-	private int tickcd = 2;
+	private int tickcd = 20;
 	@Override
 	public void tick() {
 		if (!ableToTick) return;
@@ -29,68 +32,77 @@ public class Water extends Liquifyable {
 			tickcd--;
 			return;
 		}
-		//System.out.println("tick pos: "+this.pos.toString());
+		beforell = this.ll;
+		System.out.println("tick pos: "+this.pos.toString());
 		tickcd = 10;
-		Block under = world.getBlock(pos.add(0, -1, 0));
-		if (under instanceof Water) {
-			Water nw = (Water)under;
-			int ost = nw.liqlide(ll);
-			if (ost == 0) {
-				world.setBlock(new Air(this.pos));
-				ableToTick=false;
-			} else {
-				this.ll = ost;
-				this.updateCurrentChunkModel();
-				ableToTick=false;
+		//ищем предисточник
+		Block up = world.getBlock(pos.add(0, 1, 0));
+		if (up instanceof Water) {
+			if (this.ll != DM.maxll) this.setLl(DM.maxll-1);
+		} else {
+			boolean b0 = false;
+			byte maxlvl = -1;
+			if (this.ll == DM.maxll) {//если этот блок и есть источник
+				b0 = true;
+			} else {//если нет то продолжаем искать
+				Block[] var = new Block[] {
+					world.getBlock(pos.add(1, 0, 0)),
+					world.getBlock(pos.add(-1, 0, 0)),
+					world.getBlock(pos.add(0, 0, 1)),
+					world.getBlock(pos.add(0, 0, -1))};
+				for (Block temp : var) {
+					if (temp instanceof Water) {
+						Water tw = (Water) temp;
+						if (tw.ll == (this.ll+1)) {//источник найден и он на 1 лвл больше этого блока 
+							b0 = true;
+							//ableToTick=false;//он должен растечься в этом тике а в следующем стать неактивным
+						} else if (tw.ll > (this.ll+1)) {//если лвл гораздо больше то сглаживаем этот блок относительно источника
+							if (maxlvl < tw.ll) maxlvl = (byte)tw.ll;
+							//ableToTick=false;//он должен растечься в этом тике а в следующем стать неактивным
+						}
+					}
+				}
 			}
-		} else if (under instanceof Air) {
-			world.setBlock(new Air(this.pos));
-			this.pos = under.pos;
-			this.hitbox = new AABB(pos.x,pos.y,pos.z,pos.x+1,pos.y+heightMap.get(ll),pos.z+1);
-			world.setBlock(this);
-			return;
+			if (this.ll != DM.maxll) {//если этот блок не источник и источника поблизости нет то убавляем нопемногу уровень
+				if (!b0) {//
+					setLl(this.ll-1);
+					this.callChunkUpdate();
+				} else {// если же источник есть и есть рядом с ним блок с большим уровнем то надо на 1 лвл меньше этого блкоа сделать
+					if (maxlvl != -1) {
+						setLl(maxlvl-1);
+						this.callChunkUpdate();
+					}//если блока с лвл больше не найдено то выше уже делается обработка при источнике или без него
+				}
+			}
 		}
-		if (ll != 1) {
+		boolean leakedUnder = false;
+		//вода течет в стороны, перменные назначеные выше не должны использоваться
+		Block under = world.getBlock(pos.add(0, -1, 0));
+		if (under instanceof Liquifyable) {
+			Liquifyable lu = (Liquifyable)under;
+			if (lu.ll != DM.maxll-1) {
+				lu.setLl(DM.maxll-1);
+				this.callChunkUpdate();
+				leakedUnder = true;
+			}
+		}
+		if (this.ll == DM.maxll || (!leakedUnder && this.ll != DM.maxll)) {
 			Block[] neighbors = new Block[] {
 					world.getBlock(pos.add(1, 0, 0)),
 					world.getBlock(pos.add(-1, 0, 0)),
 					world.getBlock(pos.add(0, 0, 1)),
 					world.getBlock(pos.add(0, 0, -1))};
-			List<Block> a;
-			Collections.shuffle(a = Arrays.asList(neighbors));
-			neighbors = a.toArray(new Block[4]);
-			for (Block n : neighbors) {
-				if (this.ll <= 1) break;
+			for (Block n : neighbors) {//чекаем возможность для текучести и хуярим
 				if (n instanceof Liquifyable) {
 					Liquifyable ln = (Liquifyable) n;
-					if (ln.ll < this.ll) {
-						ln.liqlide(1);
-						this.ll--;
+					if (ln.ll < this.ll-1) {//блоки рядом должны быть на 1 лвл меньше своего источника
+						ln.setLl(this.ll-1);
+						ln.callChunkUpdate();
 					}
 				}
 			}
-			ableToTick=false;
-		} else if (ll == 1) {
-			Block[] neighbors = new Block[] {
-					world.getBlock(pos.add(1, 0, 0)),
-					world.getBlock(pos.add(-1, 0, 0)),
-					world.getBlock(pos.add(0, 0, 1)),
-					world.getBlock(pos.add(0, 0, -1))};
-			List<Block> a;
-			Collections.shuffle(a = Arrays.asList(neighbors));
-			neighbors = a.toArray(new Block[4]);
-			for (Block n : neighbors) {
-				if (n instanceof Air) {
-					Block uunder = n.under();
-					if(uunder instanceof Air || uunder instanceof Water) {
-						world.setBlock(new Air(this.pos));
-						this.pos = n.pos;
-						this.hitbox = new AABB(pos.x,pos.y,pos.z,pos.x+1,pos.y+heightMap.get(ll),pos.z+1);
-						world.setBlock(this);
-						return;
-					}
-				}
-			}
+		}
+		if (beforell == this.ll) {
 			ableToTick=false;
 		}
 	}
@@ -106,8 +118,12 @@ public class Water extends Liquifyable {
 		ModelUtils.setTransform(pos);
 		float h = heightMap.get(ll).floatValue();
 		mpb.setUVRange(0, 0, 1, 1);
-		ModelUtils.buildBottomX(mpb);
-		if (!py) {
+		Block temp;
+		
+		if (!ny) ModelUtils.buildBottomX(mpb);
+		
+		temp = world.getBlock(new Vector3D(pos.x,pos.y+1,pos.z));
+		if ((temp instanceof Water && ll != 4) || !py) {
 			mpb.rect(
 			ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z+0.5f,
 			ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z-0.5f,
@@ -116,6 +132,7 @@ public class Water extends Liquifyable {
 			0, 1, 0);
 		}
 		mpb.setUVRange(0, 0, 1, h);
+		temp = world.getBlock(new Vector3D(pos.x-1,pos.y,pos.z));
 		if (!nx) {
 			mpb.rect(
 			ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f, ModelUtils.sp.z+0.5f,
@@ -123,7 +140,19 @@ public class Water extends Liquifyable {
 			ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z-0.5f,
 			ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z+0.5f,
 	        -1, 0, 0);
+		} else {
+			if (temp instanceof Water && ((Water)temp).ll < this.ll) {
+				Water side = (Water)temp;
+				mpb.rect(
+				ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z+0.5f,
+				ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z-0.5f,
+				ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z-0.5f,
+				ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z+0.5f,
+		        -1, 0, 0);
+			}
 		}
+		
+		temp = world.getBlock(new Vector3D(pos.x+1,pos.y,pos.z));
 		if (!px) {
 			mpb.rect(
 			ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f, ModelUtils.sp.z-0.5f,
@@ -131,7 +160,19 @@ public class Water extends Liquifyable {
 			ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z+0.5f,
 			ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z-0.5f,
 	         1, 0, 0);
+		} else {
+			if (temp instanceof Water && ((Water)temp).ll < this.ll) {
+				Water side = (Water)temp;
+				mpb.rect(
+				ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z-0.5f,
+				ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z+0.5f,
+				ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z+0.5f,
+				ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z-0.5f,
+		         1, 0, 0);
+			}
 		}
+		
+		temp = world.getBlock(new Vector3D(pos.x,pos.y,pos.z-1));
 		if (!nz) {
 			mpb.rect(
 			ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f, ModelUtils.sp.z-0.5f,
@@ -139,7 +180,19 @@ public class Water extends Liquifyable {
 			ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z-0.5f,
 			ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z-0.5f,
 	        0, 0, -1);
+		} else {
+			if (temp instanceof Water && ((Water)temp).ll < this.ll) {
+				Water side = (Water)temp;
+				mpb.rect(
+				ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z-0.5f,
+				ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z-0.5f,
+				ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z-0.5f,
+				ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z-0.5f,
+		        0, 0, -1);
+			}
 		}
+		
+		temp = world.getBlock(new Vector3D(pos.x,pos.y,pos.z+1));
 		if (!pz) {
 			mpb.rect(
 			ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f, ModelUtils.sp.z+0.5f,
@@ -147,6 +200,16 @@ public class Water extends Liquifyable {
 			ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z+0.5f,
 			ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z+0.5f,
 	         0, 0, 1);
+		} else {
+			if (temp instanceof Water && ((Water)temp).ll < this.ll) {
+				Water side = (Water)temp;
+				mpb.rect(
+				ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z+0.5f,
+				ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z+0.5f,
+				ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z+0.5f,
+				ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z+0.5f,
+		         0, 0, 1);
+			}
 		}
 	}
 	
@@ -162,7 +225,7 @@ public class Water extends Liquifyable {
 	
 	@Override
 	public boolean tickable() {
-		return true;
+		return ableToTick;
 	}
 	
 	@Override
@@ -172,5 +235,18 @@ public class Water extends Liquifyable {
 			if (block.getClass() == this.getClass() && b.getFace() == this.getFace() && this.ll == ((Water)block).ll) return true;
 		}
 		return false;
+	}
+	
+	@Override
+	public JsonObject toJson() {
+		JsonObject j = new JsonObject();
+		j.addProperty("id", Block.idByBlock(this));
+		j.addProperty("a", this.ableToTick);
+		return j;
+	}
+	
+	@Override
+	public void fromJson(JsonObject data) {
+		this.ableToTick = data.get("a").getAsBoolean();
 	}
 }

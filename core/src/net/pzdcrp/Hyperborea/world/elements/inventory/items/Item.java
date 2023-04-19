@@ -7,6 +7,7 @@ import java.util.Map;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 
+import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.world.elements.inventory.IInventory;
 
 
@@ -46,7 +47,7 @@ public class Item {
 		return 99;
 	}
 	
-	public void onRClick() {
+	public void onRClick(Vector3D cp) {
 		
 	}
 	
@@ -64,5 +65,9 @@ public class Item {
 	
 	public boolean isModel() {
 		return true;
+	}
+
+	public int getDamage() {
+		return 1;
 	}
 }

@@ -23,13 +23,13 @@ public class Chat {
 	public Chat() {
 		font = new BitmapFont(Gdx.files.classpath("com/badlogic/gdx/utils/lsans-15.fnt"), Gdx.files.classpath("com/badlogic/gdx/utils/lsans-15.png"), false);
 		lst = new TypeListener(this);
-		label = new Label("chat______", new Label.LabelStyle(font, Color.WHITE));
+		label = new Label("", new Label.LabelStyle(font, Color.WHITE));
 		label.setPosition(10, Gdx.graphics.getHeight()/2);
 		for (int i = 0; i < 15; i++) {
 			allChat.add(" \n");
 		}
 		Hpb.stage.addActor(label);
-		currentLine = new Label("___", new Label.LabelStyle(font, Color.WHITE));
+		currentLine = new Label("", new Label.LabelStyle(font, Color.WHITE));
 		Hpb.stage.addActor(currentLine);
 	}
 	
@@ -53,6 +53,7 @@ public class Chat {
 	}
 	
 	public void send(String msg) {
+		if (msg.startsWith("/")) Hpb.onCommand(msg);
 		allChat.add(msg);
 		updateChat();
 		System.out.println("sended "+msg);
@@ -60,6 +61,7 @@ public class Chat {
 	
 	public void send() {
 		if (currentLine.getText().toString().equals("")) return;
+		if (currentLine.getText().toString().startsWith("/")) Hpb.onCommand(currentLine.getText().toString());
 		allChat.add(currentLine.getText().toString());
 		
 		updateChat();

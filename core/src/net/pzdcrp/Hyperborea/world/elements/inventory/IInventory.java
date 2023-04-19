@@ -32,4 +32,12 @@ public class IInventory {
 	public int getCurrentSlotInt() {
 		return 0;
 	}
+
+	public void onRClick() {
+		
+	}
+
+	public void onLClick() {
+		
+	}
 }

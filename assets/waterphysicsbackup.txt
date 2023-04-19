@@ -1,0 +1,138 @@
+if (!realphys) {
+			Block under = world.getBlock(pos.add(0, -1, 0));
+			if (under instanceof Liquifyable) {
+				Liquifyable lu = (Liquifyable)under;
+				if (lu.ll != DM.maxll) {
+					lu.ll = DM.maxll;
+					this.callChunkUpdate();
+					ableToTick=false;
+					return;
+				}
+			}
+			Block[] neighbors = new Block[] {
+					world.getBlock(pos.add(1, 0, 0)),
+					world.getBlock(pos.add(-1, 0, 0)),
+					world.getBlock(pos.add(0, 0, 1)),
+					world.getBlock(pos.add(0, 0, -1))};
+			for (Block n : neighbors) {
+				
+			}
+		} else {
+			Block under = world.getBlock(pos.add(0, -1, 0));
+			if (under instanceof Water) {
+				Water nw = (Water)under;
+				int ost = nw.liqlide(ll);
+				if (ost == 0) {
+					world.setBlock(new Air(this.pos));
+					ableToTick=false;
+				} else {
+					this.ll = ost;
+					this.callChunkUpdate();
+					ableToTick=false;
+				}
+			} else if (under instanceof Air) {
+				world.setBlock(new Air(this.pos));
+				this.pos = under.pos;
+				this.hitbox = new AABB(pos.x,pos.y,pos.z,pos.x+1,pos.y+heightMap.get(ll),pos.z+1);
+				world.setBlock(this);
+				return;
+			}
+			if (ll != 1) {
+				Block[] neighbors = new Block[] {
+						world.getBlock(pos.add(1, 0, 0)),
+						world.getBlock(pos.add(-1, 0, 0)),
+						world.getBlock(pos.add(0, 0, 1)),
+						world.getBlock(pos.add(0, 0, -1))};
+				List<Block> a;
+				Collections.shuffle(a = Arrays.asList(neighbors));
+				neighbors = a.toArray(new Block[4]);
+				for (Block n : neighbors) {
+					if (this.ll <= 1) break;
+					if (n instanceof Liquifyable) {
+						Liquifyable ln = (Liquifyable) n;
+						if (ln.ll < this.ll) {
+							ln.liqlide(1);
+							this.ll--;
+						}
+					}
+				}
+				ableToTick=false;
+			}
+		}
+		/* else if (ll == 1) {
+			Block[] neighbors = new Block[] {
+					world.getBlock(pos.add(1, 0, 0)),
+					world.getBlock(pos.add(-1, 0, 0)),
+					world.getBlock(pos.add(0, 0, 1)),
+					world.getBlock(pos.add(0, 0, -1))};
+			List<Block> a;
+			Collections.shuffle(a = Arrays.asList(neighbors));
+			neighbors = a.toArray(new Block[4]);
+			for (Block n : neighbors) {
+				if (n instanceof Air) {
+					Block uunder = n.under();
+					if(uunder instanceof Air || uunder instanceof Water) {
+						world.setBlock(new Air(this.pos));
+						this.pos = n.pos;
+						this.hitbox = new AABB(pos.x,pos.y,pos.z,pos.x+1,pos.y+heightMap.get(ll),pos.z+1);
+						world.setBlock(this);
+						return;
+					}
+				}
+			}
+			ableToTick=false;
+		}*/
+		
+		
+		/*
+		 * Block under = world.getBlock(pos.add(0, -1, 0));
+		if (under instanceof Liquifyable) {
+			Liquifyable u1 = (Liquifyable) under;
+			if (u1.ll != DM.maxll) {
+				setLl(u1.liqlide(this.ll));
+				//при уровне 0 тики дальше не идут
+				return;
+			}
+		}
+		Block[] neighbors = new Block[] {
+				world.getBlock(pos.add(1, 0, 0)),world.getBlock(pos.add(-1, 0, 0)),
+				world.getBlock(pos.add(0, 0, 1)), world.getBlock(pos.add(0, 0, -1))};
+		List<Block> a;
+		Collections.shuffle(a = Arrays.asList(neighbors));
+		neighbors = a.toArray(new Block[4]);
+		
+		boolean leakedhorizontal = false;
+		for (Block sub : neighbors) {
+			if (sub instanceof Liquifyable) {
+				Liquifyable lsub = (Liquifyable)sub;
+				if (this.ll > 1 && lsub.ll <= this.ll) {
+					lsub.liqlide(1);
+					this.ll--;
+					leakedhorizontal = true;
+				}
+			}
+		}
+		if (leakedhorizontal) {
+			ableToTick=false;
+		}
+		/*boolean leakedsidedown = false;
+		for (Block sub : neighbors) {
+			if (sub instanceof Air) {
+				Block usub = world.getBlock(sub.pos.down());
+				if (usub instanceof Liquifyable) {
+					setLl(((Liquifyable) usub).liqlide(this.ll));
+					leakedsidedown = true;
+				}
+			}
+		}
+		if (leakedsidedown) return;
+		for (Block sub : neighbors) {
+			if (sub instanceof Liquifyable) {
+				Liquifyable lsub = (Liquifyable)sub;
+				if (lsub.ll > this.ll) {
+					setLl(lsub.liqlide(this.ll));
+					return;
+				}
+			}
+		}
+		ableToTick=false;*/

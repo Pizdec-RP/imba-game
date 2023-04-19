@@ -7,9 +7,11 @@ import com.badlogic.gdx.math.Vector3;
 
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.Vector3D;
+import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
 import net.pzdcrp.Hyperborea.world.elements.entities.FallingBlockEntity;
+import net.pzdcrp.Hyperborea.world.elements.entities.Particle;
 
 public class ControlListener implements InputProcessor {
 
@@ -38,10 +40,13 @@ public class ControlListener implements InputProcessor {
 			Vector3D entitypos = Hpb.world.player.getEyeLocation();
 			Entity fbe = new FallingBlockEntity(entitypos,1);
 			Vector3 camdir = Hpb.world.player.cam.cam.direction.cpy().scl(1.5f);
-			fbe.velX = camdir.x;
-			fbe.velY = camdir.y;
-			fbe.velZ = camdir.z;
+			fbe.vel.x = camdir.x;
+			fbe.vel.y = camdir.y;
+			fbe.vel.z = camdir.z;
 			Hpb.world.player.curCol.entites.add(fbe);
+		}
+		if (keycode == Input.Keys.V) {
+			Hpb.world.particles.add(new Particle(Hpb.getTexture("firebase"), Hpb.world.player.pos.translate().add(0, 2f, 0), new Vector3(), 120));
 		}
 		if (keycode == Input.Keys.N) {
 			World.renderRad += 1;

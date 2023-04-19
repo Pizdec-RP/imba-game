@@ -18,12 +18,14 @@ public class DesktopLauncher {
 	public static final String ver = "0.1.6";
 	public static void main (String[] arg) {
 		Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
-		config.setForegroundFPS(60);
+		config.setForegroundFPS(120);
 		config.setWindowedMode(1280, 720);
-		config.setTitle("wildland "+ver);
-		
-		//System.out.println(new File("save/gay.txt").canRead());
+		config.setTitle("Hyperborea "+ver);
 		
 		new Lwjgl3Application(new Hpb(), config);
+		
+		/*for (int i = 0; i < 6; i++) {
+			System.out.println("put("+(i+1)+", "+(1f/6f)*(i+1)+");");
+		}*/
 	}
 }
