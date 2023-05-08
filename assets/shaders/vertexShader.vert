@@ -190,15 +190,39 @@ varying vec3 v_ambientLight;
 #endif // lightingFlag
 
 uniform vec3 test;
-uniform sampler3D light3array;
-varying int varying_test;
+varying float vertexlight;
+uniform float sdvigx;
+uniform float sdvigz;
+uniform int sdvigy;
+
+uniform int haslight;
+
+varying float makefragred;
+
+uniform sampler2D intArrayTexture;
+
+int getArrayElement(int index) {
+    vec4 texel = texture2D(intArrayTexture, float(index) / textureSize(intArrayTexture, 0), 0);
+
+    return int(texel.r * 255.0);
+}
 
 void main() {
-	if (a_position.x == 0) {
-		varying_test = 1;
+	makefragred = 0.0;
+	
+	if (haslight > 0 && haslight < 5) {
+		int lightLevel = getArrayElement(gl_VertexID);
+		if (lightLevel > 19) {//TODO remove
+			makefragred = 1.0;
+		} else if (lightLevel < 0) {//shit ass
+			makefragred = 2.0;
+		}
+		vertexlight = lightLevel / 20.0;
 	} else {
-		varying_test = 0;
+		//makefragred = 1.0;
+		vertexlight = 0.3;
 	}
+	
 	#ifdef diffuseTextureFlag
 		v_diffuseUV = u_diffuseUVTransform.xy + a_texCoord0 * u_diffuseUVTransform.zw;
 	#endif //diffuseTextureFlag

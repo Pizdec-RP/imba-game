@@ -2,6 +2,7 @@ package net.pzdcrp.Hyperborea.player;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Quaternion;
@@ -53,9 +54,12 @@ public class Player extends Entity {
 		this.inventory.addItem(new PlanksItem(this.inventory, 99), 5);
 		this.inventory.addItem(new DirtItem(this.inventory, 99), 6);
 		this.inventory.addItem(new WaterBucketItem(this.inventory, 1), 7);
+		Hpb.shaderprovider.testx = x;
+		Hpb.shaderprovider.testz = z;
+		Hpb.shaderprovider.testy = y;
 	}
 	
-	public void tick() {
+	public void tick() throws Exception {
 		super.tick();
 		if (actcd > 0) actcd--;
 		updateControls();
@@ -121,15 +125,21 @@ public class Player extends Entity {
 	}
 	
 	public void test() {
-		for (Column c : Hpb.world.loadedColumns.values()) {
+		/*for (Column c : Hpb.world.loadedColumns.values()) {
 			c.generate();
 			for (Chunk ch : c.chunks) {
 				ch.updateModel();
 			}
+		}*/
+		/*Hpb.shaderprovider.testx = x;
+		Hpb.shaderprovider.testz = z;
+		Hpb.shaderprovider.testy = y;*/
+		for (Column col : Hpb.world.loadedColumns.values()) {
+			for (Chunk c : col.chunks) {
+				c.callLightUpdate();
+			}
 		}
-		System.out.println(x);
-		System.out.println(y);
-		System.out.println(z);
+		System.out.println(x+" "+y+" "+z);
 	}
 	
 	public void deadScreen() {
@@ -142,7 +152,7 @@ public class Player extends Entity {
 	}
 	
 	boolean b1 = false;
-	public float x = 0f, y = 0f, z=0f, scl = 0.5f;
+	public int x = 0, y = 0, z = 0, scl = 1;
 	public void updateControls() {
 		if (Gdx.input.isKeyPressed(Input.Keys.U)) {
 			x+=scl;
@@ -153,19 +163,19 @@ public class Player extends Entity {
 			test();
 		}
 		if (Gdx.input.isKeyPressed(Input.Keys.I)) {
-			z+=scl;
-			test();
-		}
-		if (Gdx.input.isKeyPressed(Input.Keys.K)) {
-			z-=scl;
-			test();
-		}
-		if (Gdx.input.isKeyPressed(Input.Keys.O)) {
 			y+=scl;
 			test();
 		}
-		if (Gdx.input.isKeyPressed(Input.Keys.L)) {
+		if (Gdx.input.isKeyPressed(Input.Keys.K)) {
 			y-=scl;
+			test();
+		}
+		if (Gdx.input.isKeyPressed(Input.Keys.O)) {
+			z+=1;
+			test();
+		}
+		if (Gdx.input.isKeyPressed(Input.Keys.L)) {
+			z-=1;
 			test();
 		}
 		//System.out.println("x:"+x+" y:"+y+" z:"+z);

@@ -47,22 +47,17 @@ public class Chat {
 		StringBuilder s = new StringBuilder();
 		if (allChat.size > 15) allChat.removeIndex(0);
 		for (String msg : allChat) {
-			s.append(msg).append("\n");
+			s.append(msg);
 		}
 		label.setText(s);
 	}
 	
-	public void send(String msg) {
-		if (msg.startsWith("/")) Hpb.onCommand(msg);
-		allChat.add(msg);
-		updateChat();
-		System.out.println("sended "+msg);
-	}
-	
 	public void send() {
-		if (currentLine.getText().toString().equals("")) return;
-		if (currentLine.getText().toString().startsWith("/")) Hpb.onCommand(currentLine.getText().toString());
-		allChat.add(currentLine.getText().toString());
+		String text = currentLine.getText().toString().replace("\n", "");
+		if (text.equals("")) return;
+		System.out.println("nmsg:"+text);
+		if (text.startsWith("/")) Hpb.onCommand(text);
+		allChat.add("\n"+text);
 		
 		updateChat();
 	}

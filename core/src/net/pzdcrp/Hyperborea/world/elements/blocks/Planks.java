@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Vector3D;
+import net.pzdcrp.Hyperborea.extended.SexyMeshBuilder;
 import net.pzdcrp.Hyperborea.utils.ModelUtils;
 
 public class Planks extends Block {
@@ -25,7 +26,7 @@ public class Planks extends Block {
 	
 	@Override
 	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, MBIM mbim) {
-		MeshPartBuilder a = mbim.obtain("planks", tname);
+		SexyMeshBuilder a = mbim.obtain("planks", tname, pos);
 		ModelUtils.setTransform(pos);
 		a.setUVRange(0, 0, 1, 1);
     	if (!py) ModelUtils.buildTopX(a);//PY

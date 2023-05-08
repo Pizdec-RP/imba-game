@@ -26,7 +26,7 @@ public class Vector2I {
 	}
 	
 	public Vector3D toVec() {
-		return new Vector3D(x*World.chunkWidht+World.chunkWidht/2,Hpb.world.player.pos.y,z*World.chunkWidht+World.chunkWidht/2);
+		return new Vector3D(x*16+16/2,Hpb.world.player.pos.y,z*16+16/2);
 	}
 	
 	@Override

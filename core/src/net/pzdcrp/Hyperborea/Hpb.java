@@ -16,6 +16,8 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
+import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.badlogic.gdx.graphics.g3d.Renderable;
 import com.badlogic.gdx.graphics.g3d.RenderableProvider;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.math.Vector3;
@@ -32,7 +34,7 @@ import net.pzdcrp.Hyperborea.world.elements.Column;
 public class Hpb extends ApplicationAdapter {
 	Texture img;
 	public static int renderDistance = 3;
-	public static ModelBatch modelBatch;
+	private static ModelBatch modelBatch;
 	public static SpriteBatch spriteBatch;
 	public static BitmapFont font;
 	private Label label;
@@ -40,7 +42,7 @@ public class Hpb extends ApplicationAdapter {
 	public static boolean exit = false;
 	public static ControlListener controls;
 	public static Stage stage;
-	private SuperPizdatiyShader shaderprovider;
+	public static SuperPizdatiyShader shaderprovider;
 	public static OrthographicCamera mCamera;
 	
 	public static Map<String, Texture> textures = new HashMap<>();
@@ -59,7 +61,7 @@ public class Hpb extends ApplicationAdapter {
 		System.out.println("loading textures");
 		loadTextures();
 		System.out.println("lessgo");
-		modelBatch = new ModelBatch(shaderprovider = new SuperPizdatiyShader("test"));
+		modelBatch = new ModelBatch(shaderprovider = new SuperPizdatiyShader());
 		
 		spriteBatch = new SpriteBatch();
 		
@@ -93,21 +95,22 @@ public class Hpb extends ApplicationAdapter {
 	    
 		
 		world = new World();
-		world.load();
-		
+		try {
+			world.load();
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("мир не подгружается");
+			System.exit(0);
+		}
 		buffer = new FrameBuffer(Pixmap.Format.RGBA8888, 1280, 720, true);
 		textureRegion = new TextureRegion();
 		textureRegion.flip(false, true);
 		tickLoop();
+		Thread.currentThread().setName("main thd");
 	}
-
-	public static float renderCallsBetweenTicks = 16;
-	public static float curCBT = 0;
 	
-	public void tick() {
+	public void tick() throws Exception {
 		world.tick();
-		renderCallsBetweenTicks = curCBT;
-		curCBT = 0;
 	}
 	
 	static long startdisplay = 0L;
@@ -132,7 +135,7 @@ public class Hpb extends ApplicationAdapter {
 	    return a * (1.0f - t) + b * t;
 	}
 	
-	public void renderWorld() {
+	public void renderWorld() throws Exception {
 		//хуцня с обычным рендером
 		//buffer.begin();
 		
@@ -140,12 +143,14 @@ public class Hpb extends ApplicationAdapter {
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 		
 		//1 стадия
+		
 		shaderprovider.newstage();
 		modelBatch.begin(world.player.cam.cam);
 		world.render();
 		modelBatch.end();
 		
 		//2 стадия
+		
 		/*shaderprovider.newstage();
 		
 		textureRegion.setRegion(buffer.getColorBufferTexture());
@@ -162,6 +167,7 @@ public class Hpb extends ApplicationAdapter {
 		shaderprovider.end();
 		
 		//отрисовка gui
+		
 		//Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 		modelBatch.begin(mCamera);
 		spriteBatch.begin();
@@ -171,23 +177,16 @@ public class Hpb extends ApplicationAdapter {
 		modelBatch.end();
 	}
 	
-	public static void render(RenderableProvider obj) {
+	public static void render(ModelInstance obj) {
 		modelBatch.render(obj);
 	}
 	
-	public static void render(RenderableProvider obj, Environment env) {
-		modelBatch.render(obj, env);
-	}
-	public static int counter = 0;
 	@Override
 	public void render() {
 		if (exit) {
 			return;
 		}
 		try {
-			System.out.println("render");
-			counter = 0;
-			curCBT++;
 			now = System.currentTimeMillis();
 			//delta = now - last;
 			last = now;
@@ -273,19 +272,25 @@ public class Hpb extends ApplicationAdapter {
 		runChunkUpdate();
 		
 		new Thread(() -> {
-			while (true) {
-	        	timeone = System.nanoTime();
-	    	    tick();
-	    	    long two = System.nanoTime();
-	    	    int elapsed = (int)(two - timeone);
-	    	    int normaled = elapsed/1_000_000;
-	    	    int additional = elapsed/100_000-normaled*10;
-	    	    int itog = normaled + (additional >= 5 ? 1 : 0);
-	    	    int tosleep = tickrate - itog;
-	    	    if (tosleep > 0) {
-	    	    	ThreadU.sleep(tosleep);
-	    	    }
-	        }
+			try {
+				while (true) {
+					if (exit) return;
+		        	timeone = System.nanoTime();
+		    	    tick();
+		    	    long two = System.nanoTime();
+		    	    int elapsed = (int)(two - timeone);
+		    	    int normaled = elapsed/1_000_000;
+		    	    int additional = elapsed/100_000-normaled*10;
+		    	    int itog = normaled + (additional >= 5 ? 1 : 0);
+		    	    int tosleep = tickrate - itog;
+		    	    if (tosleep > 0) {
+		    	    	ThreadU.sleep(tosleep);
+		    	    }
+		        }
+			} catch (Exception e) {
+				e.printStackTrace();
+				System.exit(0);
+			}
 	    }).start();
 	}
 		/*new Thread(()->{
@@ -331,6 +336,7 @@ public class Hpb extends ApplicationAdapter {
 	
 	public static void onCommand(String command) {
 		command = command.replace("/","");
+		//System.out.println(command);
 		if (command.equals("stop")) {
 			if (Hpb.world.save()) {
 				System.out.println("всё");
@@ -338,6 +344,9 @@ public class Hpb extends ApplicationAdapter {
 			} else {
 				System.out.println("откат, сохранение высрало ошибку");
 			}
+		} else if (command.equals("save")) {
+			Hpb.world.save();
+			exit=false;
 		}
 	}
 }

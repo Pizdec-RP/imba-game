@@ -78,14 +78,11 @@ public class World {// implements RenderableProvider {
 	public Map<Vector2I,Region> memoriedRegions = new ConcurrentHashMap<>();
 	public List<ModelInstance> additional = new CopyOnWriteArrayList<>();
 	public int time = 0;
-	public Environment env;
-	public static final int chunks = 16, chunkWidht = 16, maxHeight = chunkWidht*chunks;
+	public static final int chunks = 16;
 	public static boolean ready = false;
 	public Matrix4 temp = new Matrix4();
 	public Vector3 sunPosition = new Vector3();
 	public ModelInstance sun;
-	public Environment sunlight;
-	public DirectionalLight sundl;
     public Vector3 moonPosition = new Vector3();
     public ModelInstance moon;
     public Vector3 lightDirection = new Vector3();
@@ -93,9 +90,8 @@ public class World {// implements RenderableProvider {
     
     private static final int DAY_LENGTH = 60000;
     private static final float DISTANCE_FROM_CENTER = 200f;
-    public static int renderRad = 5;
+    public static int renderRad = 2;
     Material skymaterial;
-    ColorAttribute envcolor;
     
     public List<Particle> particles = new CopyOnWriteArrayList<>();
 	
@@ -104,7 +100,7 @@ public class World {// implements RenderableProvider {
 		Block.init();
 	}
 	
-	public void load() {
+	public void load() throws Exception {
 		
 		System.out.println("подгружаем мир");
 		try {
@@ -132,20 +128,12 @@ public class World {// implements RenderableProvider {
 	}
 
 	public void loadEnvironment() {
-		env = new Environment();
-		env.set(envcolor = new ColorAttribute(ColorAttribute.AmbientLight, 0.8f, 0.8f, 0.8f, 1f));
-		
-		sunlight = new Environment();
-		sunlight.set(new ColorAttribute(ColorAttribute.Diffuse, 0.7f,0.7f,0.7f,1f));
-		sunlight.add(sundl = new DirectionalLight());
-		sundl.set(Color.WHITE,0,0,0);
-		sundl.setColor(0.3f,0.3f,0.3f,1);
 		
 		ModelBuilder modelBuilder = new ModelBuilder();
 		skymaterial = new Material(ColorAttribute.createDiffuse(0, 0, 255, 255), IntAttribute.createCullFace(GL20.GL_NONE));
 		Model model = modelBuilder.createSphere(DISTANCE_FROM_CENTER*2, DISTANCE_FROM_CENTER*2, DISTANCE_FROM_CENTER*2, 20, 20,skymaterial, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
 		sky = new ModelInstance(model);
-		sky.userData = new Object[] {"c"};
+		sky.userData = new Object[] {"c", "sky"};
 		Matrix4 transform = new Matrix4();
 		transform.translate((float)player.pos.x,(float)player.pos.y,(float)player.pos.z);
 		sky.transform.set(transform);
@@ -154,13 +142,13 @@ public class World {// implements RenderableProvider {
 		Material material = new Material(ColorAttribute.createDiffuse(Color.YELLOW));
 		model = modelBuilder.createSphere(20f, 20f, 20f, 15, 15, material, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
 		sun = new ModelInstance(model);
-		sun.userData = new Object[] {"c"};
+		sun.userData = new Object[] {"c", "sun"};
 		
 		modelBuilder = new ModelBuilder();
 		material = new Material(ColorAttribute.createDiffuse(Color.DARK_GRAY));
 		model = modelBuilder.createSphere(5f, 5f, 5f, 5, 5, material, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
 		moon = new ModelInstance(model);
-		moon.userData = new Object[] {"c"};
+		moon.userData = new Object[] {"c", "moon"};
 		
 		model = modelBuilder.createBox(1, 1, 1, material, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
 		
@@ -179,7 +167,7 @@ public class World {// implements RenderableProvider {
 	}
 	static final float bs = 0.2f;
 	public void setBlock(Block block) {
-		if (block.pos.y < 0 || block.pos.y >= maxHeight) return;
+		if (block.pos.y < 0 || block.pos.y >= chunks*16) return;
 		Column col = getColumn(block.pos.x,block.pos.z);
 		for (Entry<Vector2I, Column> tcol : loadedColumns.entrySet()) {
 			for (Entity en : tcol.getValue().entites) {
@@ -206,22 +194,43 @@ public class World {// implements RenderableProvider {
 	}
 	
 	public void breakBlock(Vector3D pos) {
-		if (pos.y < 0 || pos.y >= maxHeight) return;
+		if (pos.y < 0 || pos.y >= chunks*16) return;
 		//спавн партиклов тут по идее
 		setBlock(new Air(pos));
 	}
 	
 	public Column getColumn(double x, double z) {
+		try {
+			return getColumn(new Vector2I((int)Math.floor(x) >> 4, (int)Math.floor(z) >> 4));
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(0);
+			return null;
+		}
+	}
+	
+	public Column getColumn(Vector2I cc) throws Exception {
+		if (loadedColumns.containsKey(cc))
+			return loadedColumns.get(cc);
+		else return this.genOrLoadRegion(VectorU.ColumnToRegion(cc)).getColumn(cc);
+	}
+	
+	public int getLight(int x, int y, int z) throws Exception {
 		int cx = (int)Math.floor(x) >> 4;
 		int cz = (int)Math.floor(z) >> 4;
-		return loadedColumns.get(new Vector2I(cx,cz));
+		int cy = y&15;
+		return getColumn(new Vector2I(cx,cz)).chunks[cy].rawGetLight(x&15, cy, z&15);
 	}
-	public Column getColumn(Vector2I cc) {
-		return loadedColumns.get(cc);
+	
+	public void setLight(int x, int y, int z, int num) throws Exception {
+		int cx = (int)Math.floor(x) >> 4;
+		int cz = (int)Math.floor(z) >> 4;
+		int cy = y&15;
+		getColumn(new Vector2I(cx,cz)).chunks[cy].rawSetLight(x&15, cy, z&15, num);
 	}
 	
 	public Block getBlock(double x, double y, double z) {
-		if (y < 0 || y >= maxHeight) return new Voed(new Vector3D(x,y,z));
+		if (y < 0 || y >= chunks*16) return new Voed(new Vector3D(x,y,z));
 		Column col = getColumn(x,z);
 		if (col == null) return new Voed(new Vector3D(x,y,z));
 		try {
@@ -237,7 +246,7 @@ public class World {// implements RenderableProvider {
 	}
 	
 	public Block getBlock(Vector3D v) {
-		if (v.y < 0 || v.y >= maxHeight) return new Voed(v);
+		if (v.y < 0 || v.y >= chunks*16) return new Voed(v);
 		Column col = getColumn(v.x,v.z);
 		if (col == null) return new Voed(v);
 		try {
@@ -264,28 +273,13 @@ public class World {// implements RenderableProvider {
         sun.transform.setToTranslation(x, y, (float) player.pos.z);
         //moon.transform.setToTranslation(x, y, (float) player.pos.z);
 		Hpb.render(sun);
-		float sunpossc = (float) player.pos.y-y;
-		if (sunpossc <= 40 && sunpossc >= -40) {
-			float a = sunpossc*0.1f;
-			envcolor.color.r = 1.1f-a/4;
-			envcolor.color.g = 1.1f-a/4;
-			envcolor.color.b = 1.1f-a/4;
-		} else if (sunpossc >= -40) {
-			envcolor.color.r = 0.1f;
-			envcolor.color.g = 0.1f;
-			envcolor.color.b = 0.1f;
-		} else if (sunpossc <= 40) {
-			envcolor.color.r = 1.1f;
-			envcolor.color.g = 1.1f;
-			envcolor.color.b = 1.1f;
-		}
 		//GameInstance.modelBatch.render(moon);
-		sundl.direction.set(-x, -y, (float) player.pos.z);
-		Hpb.render(sky,env);
+		//sundl.direction.set(-x, -y, (float) player.pos.z);
+		Hpb.render(sky);
         //lightDirection.set(player.pos.translate()).sub(sunPosition).nor();
 	}
 	
-	public void tick() {
+	public void tick() throws Exception {
 		if (!ready || Hpb.exit) {
 			return;
 		}
@@ -309,7 +303,7 @@ public class World {// implements RenderableProvider {
 		beforetime = now;
 	}
 	
-	public void updateLoadedColumns() {
+	public void updateLoadedColumns() throws Exception {
 		List<Vector2I> cl = new ArrayList<>();
 	    for (int x = -renderRad; x < renderRad;x++) {
 	    	for (int z = -renderRad; z < renderRad;z++) {
@@ -334,7 +328,7 @@ public class World {// implements RenderableProvider {
 	}
 	
 	public boolean isCycleFree = true;
-	public void render() {
+	public void render() throws Exception {
 		if (Hpb.exit) return;
 		renderSky();
 		for (Entry<Vector2I, Column> col : loadedColumns.entrySet()) {
@@ -347,7 +341,7 @@ public class World {// implements RenderableProvider {
 			col.getValue().renderEntites();
 		}
 		for (ModelInstance a : additional) {
-			Hpb.modelBatch.render(a);
+			Hpb.render(a);
 		}
 		for (Particle p : particles) {
 			p.render();
@@ -379,12 +373,12 @@ public class World {// implements RenderableProvider {
 			return true;
 		} catch (Exception e) {
 			e.printStackTrace();
-			System.exit(0);
+			//System.exit(0);
 			return false;
 		}
 	}
 	
-	public Region genOrLoadRegion(Vector2I regpos) {
+	public Region genOrLoadRegion(Vector2I regpos) throws Exception {
 		if (memoriedRegions.containsKey(regpos)) {
 			return memoriedRegions.get(regpos);
 		}
@@ -410,7 +404,7 @@ public class World {// implements RenderableProvider {
 	}
 	
 	@SuppressWarnings("deprecation")
-	public Region readRegion(Vector2I regpos) {
+	public Region readRegion(Vector2I regpos) throws Exception {
 		JsonReader reader;
 		try {
 			reader = new JsonReader(new FileReader("save/"+regpos.x+"_"+regpos.z+".reg"));

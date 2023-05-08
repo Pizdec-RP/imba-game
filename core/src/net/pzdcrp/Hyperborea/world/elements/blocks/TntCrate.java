@@ -11,6 +11,7 @@ import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Vector3D;
+import net.pzdcrp.Hyperborea.extended.SexyMeshBuilder;
 import net.pzdcrp.Hyperborea.player.Player;
 import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.utils.ModelUtils;
@@ -31,7 +32,7 @@ public class TntCrate extends Block {
 	@Override
 	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, MBIM mbim) {
 		if (!py || !ny || !nx || !px || !nz || !pz) {
-			MeshPartBuilder tnttexture = mbim.obtain("tnt", tname);
+			SexyMeshBuilder tnttexture = mbim.obtain("tnt", tname, pos);
 			ModelUtils.setTransform(pos);
 			tnttexture.setUVRange(0, 0, 0.5f, 0.5f);
 	    	if (!py) ModelUtils.buildTopX(tnttexture);//PY

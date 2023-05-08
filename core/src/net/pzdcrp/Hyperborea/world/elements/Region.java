@@ -17,7 +17,7 @@ public class Region {
 		this.pos = pos;
 	}
 	
-	public Column getColumn(Vector2I cpos) {
+	public Column getColumn(Vector2I cpos) throws Exception {
 		if (columns.containsKey(cpos)) {
 			return columns.get(cpos);
 		} else {
@@ -41,7 +41,7 @@ public class Region {
 		return jreg;
 	}
 
-	public void fromJson(JsonObject obj) {
+	public void fromJson(JsonObject obj) throws Exception {
 		JsonArray jcolumns = obj.get("columns").getAsJsonArray();
 		
 		for (JsonElement jcole : jcolumns) {

@@ -69,7 +69,7 @@ public class Entity {
 		this.hp = maxhp();
 	}
 	
-	public void tick() {
+	public void tick() throws Exception {
 		if (curCol == null) {
 			Column col = Hpb.world.getColumn(pos.x,pos.z);
 			this.curCol = col;
@@ -236,7 +236,7 @@ public class Entity {
 		if (hp == -Byte.MIN_VALUE) return;
 		this.hp -= damage;
 		if (hp < 0) {
-			Hpb.world.player.chat.send(this.getClass().getName()+" killed by "+enemy.getClass().getName());
+			//Hpb.world.player.chat.send(this.getClass().getName()+" killed by "+enemy.getClass().getName());
 			if (isPlayer) {
 				((Player)this).deadScreen();
 			} else {

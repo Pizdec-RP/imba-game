@@ -13,6 +13,7 @@ import net.pzdcrp.Hyperborea.data.AABB;
 import net.pzdcrp.Hyperborea.data.DM;
 import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Vector3D;
+import net.pzdcrp.Hyperborea.extended.SexyMeshBuilder;
 import net.pzdcrp.Hyperborea.utils.ModelUtils;
 
 public class Water extends Liquifyable {
@@ -114,7 +115,7 @@ public class Water extends Liquifyable {
 	
 	@Override
 	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, MBIM mbim) {
-		MeshPartBuilder mpb = mbim.obtain("tr:water", tname);
+		SexyMeshBuilder mpb = mbim.obtain("tr:water", tname, pos);
 		ModelUtils.setTransform(pos);
 		float h = heightMap.get(ll).floatValue();
 		mpb.setUVRange(0, 0, 1, 1);
@@ -238,7 +239,7 @@ public class Water extends Liquifyable {
 	}
 	
 	@Override
-	public JsonObject toJson() {
+	public JsonObject toJson() {//TODO если в блоке не должна обновляться информация в следующем тике то он сохраняется как int начение
 		JsonObject j = new JsonObject();
 		j.addProperty("id", Block.idByBlock(this));
 		j.addProperty("a", this.ableToTick);

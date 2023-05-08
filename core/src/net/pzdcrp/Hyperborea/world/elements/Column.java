@@ -1,5 +1,6 @@
 package net.pzdcrp.Hyperborea.world.elements;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -21,6 +22,7 @@ import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.player.Player;
 import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.world.World;
+import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
 import net.pzdcrp.Hyperborea.world.elements.deGenerator.Noise;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
@@ -34,27 +36,38 @@ public class Column {
 	private Vector3 center;
 	private Vector3 dimensions;
 	static boolean flat = true;
+	protected int[][] skylightmaxdown;
 	
-	public Column(int x, int z, boolean gen) {
+	public Column(int x, int z, boolean gen) throws Exception {
 		this(new Vector2I(x,z), gen);
 	}
 	
-	public Column(Vector2I cords, boolean gen) {
+	public Column(Vector2I cords, boolean gen) throws Exception {
 		this.pos = cords;
-		center = new Vector3(pos.x*16+8,World.maxHeight/2,pos.z*16+8);
-		dimensions = new Vector3(16, World.maxHeight, 16);
+		System.out.println("new col: "+cords.toString());
+		//fill default
+		skylightmaxdown = new int[16][16];
+		//TODO remove
+		for (int px = 0; px < 16; px++) {
+	        for (int pz = 0; pz < 16; pz++) {
+	        	skylightmaxdown[px][pz] = 16*World.chunks-1;
+	        }
+		}
+		
+		center = new Vector3(pos.x*16+8,16/2,pos.z*16+8);
+		dimensions = new Vector3(16, 16, 16);
 		for (int y = 0; y < World.chunks; y++) {
 			chunks[y] = new Chunk(this, y*16);
 		}
+		
 		if (gen) generate();
-		updateModel();
 	}
 	
 	public void generate() {
-	    for (int px = 0; px < World.chunkWidht; px++) {
-	        for (int pz = 0; pz < World.chunkWidht; pz++) {
+	    for (int px = 0; px < 16; px++) {
+	        for (int pz = 0; pz < 16; pz++) {
 	        	if (flat) {
-	        		for (int py = 0; py < World.maxHeight; py++) {
+	        		for (int py = 0; py < 16; py++) {
 	        			if (py < 10) {
 	        				fastSetBlock(px,py,pz,6);
 	        			} else {
@@ -62,10 +75,10 @@ public class Column {
 	        			}
 	        		}
 	        	} else {
-	        		double noise = Noise.get((World.chunkWidht*pos.x+px)*Hpb.world.player.x, Hpb.world.player.y, (World.chunkWidht*pos.z+pz)*Hpb.world.player.x);
+	        		double noise = Noise.get((16*pos.x+px)*Hpb.world.player.x, Hpb.world.player.y, (16*pos.z+pz)*Hpb.world.player.x);
 		        	//System.out.println(noise);
-		        	int maxy = (int) ((noise+Hpb.world.player.z) * (World.maxHeight*0.5));
-		        	for (int py = 0; py < World.maxHeight; py++) {
+		        	int maxy = (int) ((noise+Hpb.world.player.z) * (16*0.5));
+		        	for (int py = 0; py < 16; py++) {
 		        		if (py == 0) {
 		        			fastSetBlock(px,py,pz,6);
 		        		} else if (py < maxy) {
@@ -83,18 +96,35 @@ public class Column {
 		        		}
 	        		}
 	        	}
+	        	recalculateSLMD(px,pz);
 	        }
 	    }
+	    updateModel();
+	}
+	
+	private void updateSLMDForAll() {
+		for (int px = 0; px < 16; px++) {
+	        for (int pz = 0; pz < 16; pz++) {
+	        	recalculateSLMD(px,pz);
+	        }
+		}
+	}
+	
+	private void recalculateSLMD(int x, int z) {
+		//this.skylightmaxdown[x][z] = 10;
+		for (int y = 16*World.chunks-1; y >= 0; y--) {
+			if (!(getBlock(x,y,z) instanceof Air)) this.skylightmaxdown[x][z] = y+1; 
+		}
 	}
 	
 	public Block getBlock(int x, int y, int z) {
-		Chunk c = chunks[y/World.chunkWidht];
-		return c.getBlock(x,y&World.chunkWidht-1,z);
+		Chunk c = chunks[y/16];
+		return c.getBlock(x,y&15,z);
 	}
 	
 	public void fastSetBlock(int x ,int y,int z, int id) {
-		Chunk c = chunks[y/World.chunkWidht];
-		c.setBlock(x,y&World.chunkWidht-1,z, id);
+		Chunk c = chunks[y/16];
+		c.setBlock(x,y&15,z, id);
 	}
 	
 	/*
@@ -103,18 +133,19 @@ public class Column {
 	 *	z = 0-15
 	 */
 	public void setBlock(int x ,int y,int z, Block b) {
-		Chunk c = chunks[y/World.chunkWidht];
-		c.setBlock(x,y&World.chunkWidht-1,z, b);
+		Chunk c = chunks[y/16];
+		c.setBlock(x,y&15,z, b);
 		c.updateModel();
+		recalculateSLMD(x,z);
 	}
 	
-	private void updateModel()  {
+	private void updateModel() {//TODO выключено хз зачем
 		for (int i = 0; i < World.chunks; i++) {
 			chunks[i].updateModel();
 		}
 	}
 	
-	public void tick() {
+	public void tick() throws Exception {
 		for (Entity entity : this.entites) {
 			entity.tick();
 		}
@@ -131,32 +162,34 @@ public class Column {
 		}
 	}
 	
-	public void renderNormal() {
+	public void renderNormal() throws Exception {
 		if (!Hpb.world.player.cam.cam.frustum.boundsInFrustum(center, dimensions)) return;
 		if (chunks.length != 0) {
 			if (Hpb.world.isCycleFree) {
 				for (Chunk chunk : chunks) {
-					chunk.render();
+					chunk.callFromRenderThread();
 				}
 			}
 			for (Chunk chunk : chunks) {
 				if (chunk.allModels != null) {
-					Hpb.render(chunk.allModels, Hpb.world.env);
+					Hpb.render(chunk.allModels);
+				} else {
+					chunk.updateModel();
 				}
 			}
 		}
 	}
 	
-	public void renderTransparent() {
+	/*public void renderTransparent() {
 		if (!Hpb.world.player.cam.cam.frustum.boundsInFrustum(center, dimensions)) return;
 		if (chunks.length != 0) {
 			for (Chunk chunk : chunks) {
 				if (chunk.transparent != null) {
-					Hpb.render(chunk.transparent, Hpb.world.env);
+					Hpb.render(chunk.transparent);
 				}
 			}
 		}
-	}
+	}*/
 	
 	public JsonObject toJson() {
 		JsonObject jcol = new JsonObject();
@@ -164,9 +197,9 @@ public class Column {
 		jcol.addProperty("pos", pos.toString());
 		//blocks
 		JsonArray blocks = new JsonArray();
-		for (int px = 0; px < World.chunkWidht; px++) {
-	        for (int py = 0; py < World.maxHeight; py++) {
-	            for (int pz = 0; pz < World.chunkWidht; pz++) {
+		for (int px = 0; px < 16; px++) {
+	        for (int py = 0; py < 16; py++) {
+	            for (int pz = 0; pz < 16; pz++) {
 	            	Block block = getBlock(px,py,pz);
 	            	JsonObject data = block.toJson();
 	            	if (data != null) {
@@ -210,9 +243,9 @@ public class Column {
 		//blocks
 		int i = 0;
 		JsonArray blocks = jcol.get("blocks").getAsJsonArray();
-		for (int px = 0; px < World.chunkWidht; px++) {
-	        for (int py = 0; py < World.maxHeight; py++) {
-	            for (int pz = 0; pz < World.chunkWidht; pz++) {
+		for (int px = 0; px < 16; px++) {
+			for (int py = 0; py < 16; py++) {
+				for (int pz = 0; pz < 16; pz++) {
 	            	try {
 		            	JsonElement rawblock = blocks.get(i);
 		            	if (rawblock.isJsonPrimitive()) {
@@ -260,5 +293,6 @@ public class Column {
 			entity.readCustomProp(jen.get("custom").getAsJsonObject());
 			entites.add(entity);
 		}
+		updateSLMDForAll();
 	}
 }

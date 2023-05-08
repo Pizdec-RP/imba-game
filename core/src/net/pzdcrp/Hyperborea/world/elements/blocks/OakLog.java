@@ -16,6 +16,7 @@ import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Pair;
 import net.pzdcrp.Hyperborea.data.Vector3D;
+import net.pzdcrp.Hyperborea.extended.SexyMeshBuilder;
 import net.pzdcrp.Hyperborea.utils.ModelUtils;
 
 public class OakLog extends FacingBlock {
@@ -26,8 +27,8 @@ public class OakLog extends FacingBlock {
 	
 	@Override
 	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, MBIM mbim) {
-		MeshPartBuilder top = mbim.obtain("oaktop", tname);
-		MeshPartBuilder bottom = mbim.obtain("oakbottom",tname);
+		SexyMeshBuilder top = mbim.obtain("oaktop", tname, pos);//TODO делать все в 1 мпб
+		SexyMeshBuilder bottom = mbim.obtain("oakbottom",tname, pos);
 		if (!py || !ny || !nx || !px || !nz || !pz) {
 			ModelUtils.setTransform(pos);
 		    if (blockface == BlockFace.PY || blockface == BlockFace.NY) {

@@ -85,10 +85,8 @@ public class ControlListener implements InputProcessor {
 	        case Input.Keys.NUM_0:
 	        	curentNumPressed = 10;
 	            break;
-	        default:
-	        	curentNumPressed = -1;
 		}
-		return false;
+		return true;
 	}
 
 	@Override
@@ -135,12 +133,15 @@ public class ControlListener implements InputProcessor {
 
 	@Override
 	public boolean scrolled(float ax, float ay) {
-		//System.out.println(ax+" "+ay);
-		if (curentNumPressed+ay < 1) curentNumPressed = 10;
-		else if (curentNumPressed+ay > 10) curentNumPressed = 1;
-		else curentNumPressed += ay;
+		System.out.println(ax+" "+ay);
+		curentNumPressed+=ay;
+		if (curentNumPressed > 10) {
+			curentNumPressed = 1;
+		} else if (curentNumPressed < 1) {
+			curentNumPressed = 10;
+		}
 		//System.out.println(curentNumPressed);
-		return false;
+		return true;
 	}
 
 }

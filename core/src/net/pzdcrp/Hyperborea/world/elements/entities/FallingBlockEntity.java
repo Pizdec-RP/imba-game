@@ -25,7 +25,11 @@ public class FallingBlockEntity extends Entity {
 		super(pos, new AABB(0,0,0,1,1,1), EntityType.fallingBlock);
 		this.id = bid;
 		p = new HashMap<String, Pair>();
-		m = new MBIM(p);
+		m = new MBIM(p,null);//TODO сделать один единственый билдер моделей
+		//блоки должны иметь параметр подбираемости
+		//такие как вода подбираться не должны а значит создание ентити блока с айди такого блока должно выдавать ошибку
+		//должен быть метод в классе блока который будет билдить ModelInstance по вызову метода без аргументов
+		//по хорошему вообще не использовать этот тип ентити
 		Block.getAbstractBlock(bid).addModel(false,false,false,false,false,false, m);
 		Pair firstValue = null;//java moment
 		for (Pair value : p.values()) {
@@ -51,7 +55,7 @@ public class FallingBlockEntity extends Entity {
 	}
 	
 	@Override
-	public void tick() {
+	public void tick() throws Exception {
 		super.tick();
 		if (this.coly) {
 			this.despawn();

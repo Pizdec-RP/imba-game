@@ -34,7 +34,7 @@ public class PlayerInventory extends IInventory {
 			}
 		}
 		p = new HashMap<String, Pair>();
-		m = new MBIM(p);
+		m = new MBIM(p,null);//TODO полностью переделать потомучто это говно полное ваще переделать весь рендер инвентаря нахуй
 	}
 	
 	private Map<String, Pair> p;
@@ -64,7 +64,7 @@ public class PlayerInventory extends IInventory {
 		    	    modelInstance.transform.rotate(Vector3.Z, 0);
 		    	    modelInstance.transform.translate(-.715f+.075f*index, -1.13f, .63f-.075f*index);
 		    	    modelInstance.transform.scale(.05f, .10f, .05f);
-		    	    modelInstance.userData = new Object[] {"noshader"};
+		    	    modelInstance.userData = new Object[] {"hotbar item "+index};
 		    	    Mhotbar[index] = modelInstance;
 		    	    Bhotbar[index] = 1;
 	        	}
@@ -88,13 +88,10 @@ public class PlayerInventory extends IInventory {
 	
 	@Override
 	public void onLClick() {
-		System.out.println(111111);
 		if (owner.currentAimEntity != null) {
 			owner.currentAimEntity.hit(owner, getSlot(getCurrentSlotInt()).getDamage());
 		} else {
-			System.out.println(22222);
 			if (owner.currentAimBlock == null) return;
-			System.out.println(3333333);
 			owner.placeBlock(new Air(owner.currentAimBlock.pos));
 		}
 	}
@@ -120,7 +117,7 @@ public class PlayerInventory extends IInventory {
     		}
     		if (Bhotbar[i] == 1) {
     			//System.out.println("render "+hotbar[i].transform.getTranslation(new Vector3()).toString());
-    			Hpb.modelBatch.render(Mhotbar[i]);
+    			//Hpb.render(Mhotbar[i]);
     		} else if (Bhotbar[i] == 2) {
     			Hpb.spriteBatch.draw(Thotbar[i], i*64+3.75f*i, 15, 64, 64);
     		}

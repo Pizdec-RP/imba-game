@@ -6,6 +6,7 @@ import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Vector3D;
+import net.pzdcrp.Hyperborea.extended.SexyMeshBuilder;
 import net.pzdcrp.Hyperborea.utils.ModelUtils;
 
 public class Glass extends Block {
@@ -26,7 +27,7 @@ public class Glass extends Block {
 	
 	@Override
 	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, MBIM mbim) {
-		MeshPartBuilder a = mbim.obtain("tr:glass", tname);
+		SexyMeshBuilder a = mbim.obtain("tr:glass", tname, pos);
 		ModelUtils.setTransform(pos);
 		a.setUVRange(0, 0, 1, 1);
     	if (!py) ModelUtils.buildTopX(a);//PY

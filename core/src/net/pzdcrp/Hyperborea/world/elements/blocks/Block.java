@@ -124,10 +124,10 @@ public class Block {
 	}
 	
 	public void callChunkUpdate() {
-		world.getColumn(pos.x, pos.z).chunks[(int) (Math.floor(pos.y)/World.chunkWidht)].updateModel();
+		world.getColumn(pos.x, pos.z).chunks[(int) (Math.floor(pos.y)/16)].updateModel();
 	}
 	
-	public Block under() {
+	public Block under() throws Exception {
 		return world.getBlock(new Vector3D(pos.x, pos.y-1, pos.z));
 	}
 	
