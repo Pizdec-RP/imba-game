@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -26,10 +27,13 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.utils.Align;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+
+import net.pzdcrp.Hyperborea.data.Mutex;
 import net.pzdcrp.Hyperborea.player.ControlListener;
 import net.pzdcrp.Hyperborea.utils.ThreadU;
 import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.Column;
+import net.pzdcrp.Hyperborea.world.elements.blocks.Stone;
 
 public class Hpb extends ApplicationAdapter {
 	Texture img;
@@ -44,6 +48,7 @@ public class Hpb extends ApplicationAdapter {
 	public static Stage stage;
 	public static SuperPizdatiyShader shaderprovider;
 	public static OrthographicCamera mCamera;
+	public static Mutex mutex = new Mutex();
 	
 	public static Map<String, Texture> textures = new HashMap<>();
 	public static final Vector3 forAnyReason = new Vector3();
@@ -107,6 +112,8 @@ public class Hpb extends ApplicationAdapter {
 		textureRegion.flip(false, true);
 		tickLoop();
 		Thread.currentThread().setName("main thd");
+		
+		
 	}
 	
 	public void tick() throws Exception {
@@ -127,7 +134,7 @@ public class Hpb extends ApplicationAdapter {
 	//public static ModelInstance modelInstance;
 	private static long /*delta, */now;
 	private static int en;
-	private static TextureRegion allTextures;
+	private static TextureRegion allTextures;//TODO remove
 	
 	public static float lerp(float a, float b) {
 	    float t = (float)(System.nanoTime() - timeone) / (tickrate * 1000000);
@@ -171,7 +178,7 @@ public class Hpb extends ApplicationAdapter {
 		//Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 		modelBatch.begin(mCamera);
 		spriteBatch.begin();
-		//spriteBatch.draw(shaderprovider.stage2pic, 0,0,1280/2.5f,720/2.5f, 0, 0, 1280, 720, false, true);
+		//spriteBatch.draw(mutex.comp, 0,0,mutex.comp.getWidth(),mutex.comp.getHeight(), 0, 0, mutex.comp.getWidth(),mutex.comp.getHeight(), false, true);
 		world.player.inventory.render();
 		spriteBatch.end();
 		modelBatch.end();
@@ -240,15 +247,17 @@ public class Hpb extends ApplicationAdapter {
 	
 	@SuppressWarnings("deprecation")
 	public static void loadTextures() {
-		allTextures = new TextureRegion();
+		mutex.begin();
 		System.out.println(Gdx.files.getLocalStoragePath());
 		JsonObject obj = (JsonObject) new JsonParser().parse(Gdx.files.internal("textureData.json").readString());
 		System.out.println("грузим "+obj.keySet().size()+" тектур");
 		for (String key : obj.keySet()) {
 			Texture texture;
-			textures.put(key, texture = new Texture(Gdx.files.internal("textures/"+obj.get(key).getAsString()),true));
+			textures.put(key, texture = new Texture(Gdx.files.internal("textures/"+obj.get(key).getAsString()),Format.RGBA8888,true));
 			texture.setFilter(TextureFilter.MipMap,TextureFilter.Nearest);
+			mutex.addTexture(texture, key);
 		}
+		mutex.end();
 	}
 	
 	public static void runChunkUpdate() {
@@ -293,49 +302,12 @@ public class Hpb extends ApplicationAdapter {
 			}
 	    }).start();
 	}
-		/*new Thread(()->{
-			curcomp = 0;
-			int needtocompensate = 0;
-			while (true) {
-				try {
-					if (exit) Thread.currentThread().stop();
-					timeone = System.currentTimeMillis();
-					tick();
-					long timetwo = System.currentTimeMillis();
-					int raznica = (int) (timetwo - timeone);
-					if (needtocompensate > 5000) {
-						needtocompensate = 0;
-						System.out.println("client overloaded, skiped "+needtocompensate/tickrate+" ticks");
-					}
-					if (raznica > 0 && raznica < tickrate) {
-						curcomp = tickrate-raznica;
-						System.out.println("comp "+raznica+"ms");
-						System.out.println("ntc "+needtocompensate+"ms");
-						if (needtocompensate <= 0) {
-							ThreadU.sleep(curcomp);
-						} else {
-							needtocompensate-=curcomp;
-						}
-					} else if (raznica == 0){
-						if (needtocompensate <= 0) {
-							ThreadU.sleep(tickrate);
-						} else {
-							needtocompensate-=tickrate;
-						}
-					} else {
-						System.out.println("pass "+raznica+"ms");
-						needtocompensate += raznica-tickrate;
-					}
-				} catch (Exception e) {
-					e.printStackTrace();
-					System.exit(2);
-				}
-			}
-		}).start();
-	}*/
 	
-	public static void onCommand(String command) {
-		command = command.replace("/","");
+	public static void onCommand(String rawcommand) {
+		if (rawcommand.split(" ").length == 0) return;
+		String command = rawcommand.split(" ")[0].replace("/", "");
+		String[] args = rawcommand.split(" ");
+		
 		//System.out.println(command);
 		if (command.equals("stop")) {
 			if (Hpb.world.save()) {
@@ -347,6 +319,22 @@ public class Hpb extends ApplicationAdapter {
 		} else if (command.equals("save")) {
 			Hpb.world.save();
 			exit=false;
+		} else if (command.equals("setblock")) {
+			world.setBlock(new Stone(world.player.pos.clone().func_vf()));
+			world.player.chat.currentLine.setText("setted");
+			world.player.chat.send();
+		} else if (command.equals("gl")) {
+			if (args.length < 4) {
+				world.player.chat.currentLine.setText("no args");
+				world.player.chat.send();
+			} else {
+				int x = Integer.parseInt(args[1]);
+				int y = Integer.parseInt(args[2]);
+				int z = Integer.parseInt(args[3]);
+				int light = world.getLight(x, y, z);
+				world.player.chat.currentLine.setText("light at ["+x+" "+y+" "+z+"] is "+light);
+				world.player.chat.send();
+			}
 		}
 	}
 }

@@ -123,6 +123,10 @@ public class Block {
 		
 	}
 	
+	public boolean emitLight() {
+		return false;
+	}
+	
 	public void callChunkUpdate() {
 		world.getColumn(pos.x, pos.z).chunks[(int) (Math.floor(pos.y)/16)].updateModel();
 	}
@@ -137,6 +141,10 @@ public class Block {
 	
 	public boolean isCollide() {
 		return true;
+	}
+	
+	public boolean isTransparent() {
+		return false;
 	}
 	
 	public boolean collide(AABB with) {

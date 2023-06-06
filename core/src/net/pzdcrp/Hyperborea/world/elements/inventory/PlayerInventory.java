@@ -33,12 +33,10 @@ public class PlayerInventory extends IInventory {
 				Bhotbar[i] = 0;
 			}
 		}
-		p = new HashMap<String, Pair>();
-		m = new MBIM(p,null);//TODO полностью переделать потомучто это говно полное ваще переделать весь рендер инвентаря нахуй
+		//m = new MBIM(null);//TODO полностью переделать потомучто это говно полное ваще переделать весь рендер инвентаря нахуй
 	}
 	
-	private Map<String, Pair> p;
-	private MBIM m;
+	//private MBIM m;
 	@Override
     public void addItem(Item item, int index) {
         if (items.containsKey(index)) {
@@ -50,13 +48,8 @@ public class PlayerInventory extends IInventory {
         	if (item.isModel()) {
 	        	Block n = Block.blockByItem(item);
 	        	if (n.isRenderable()) {
-	        		p.clear();
-	        		n.addModel(false, false, false, false, false, false, m);
-	        		Pair firstValue = null;//java moment
-	        		for (Pair value : p.values()) {
-	        		    firstValue = value;
-	        		    break;
-	        		}
+	        		/*n.addModel(false, false, false, false, false, false, m);
+	        		Pair firstValue = m.p;
 		        	ModelInstance modelInstance = new ModelInstance(firstValue.mb.end());
 		        	modelInstance.transform.set(Hpb.mCamera.invProjectionView);
 		        	modelInstance.transform.rotate(Vector3.X, 35);
@@ -66,7 +59,7 @@ public class PlayerInventory extends IInventory {
 		    	    modelInstance.transform.scale(.05f, .10f, .05f);
 		    	    modelInstance.userData = new Object[] {"hotbar item "+index};
 		    	    Mhotbar[index] = modelInstance;
-		    	    Bhotbar[index] = 1;
+		    	    Bhotbar[index] = 1;*/
 	        	}
         	} else {
         		Thotbar[index] = item.getTexture();

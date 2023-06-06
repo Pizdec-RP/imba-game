@@ -29,7 +29,5 @@ public class SexyMeshBuilder extends MeshBuilder {
 		mbim.lightarray.add(light);
 		mbim.lightarray.add(light);
 		mbim.lightarray.add(light);
-		//TODO большие шансы что это говнокод
-		//обработка создания 2х вершин. отсюда берется какаято хуйня и чото делается кароче все должно вести к системе освещения
 	}
 }

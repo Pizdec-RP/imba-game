@@ -54,9 +54,6 @@ public class Player extends Entity {
 		this.inventory.addItem(new PlanksItem(this.inventory, 99), 5);
 		this.inventory.addItem(new DirtItem(this.inventory, 99), 6);
 		this.inventory.addItem(new WaterBucketItem(this.inventory, 1), 7);
-		Hpb.shaderprovider.testx = x;
-		Hpb.shaderprovider.testz = z;
-		Hpb.shaderprovider.testy = y;
 	}
 	
 	public void tick() throws Exception {
@@ -110,7 +107,7 @@ public class Player extends Entity {
 			if (actcd <= 0) {
 				if (pos != null) {
 					this.inventory.onRClick();
-					actcd = 3;
+					actcd = 0;
 				}
 			}
 		}
@@ -118,28 +115,14 @@ public class Player extends Entity {
 			if (actcd <= 0) {
 				if (pos != null) {
 					this.inventory.onLClick();
-					actcd = 3;
+					actcd = 0;
 				}
 			}
 		}
 	}
 	
 	public void test() {
-		/*for (Column c : Hpb.world.loadedColumns.values()) {
-			c.generate();
-			for (Chunk ch : c.chunks) {
-				ch.updateModel();
-			}
-		}*/
-		/*Hpb.shaderprovider.testx = x;
-		Hpb.shaderprovider.testz = z;
-		Hpb.shaderprovider.testy = y;*/
-		for (Column col : Hpb.world.loadedColumns.values()) {
-			for (Chunk c : col.chunks) {
-				c.callLightUpdate();
-			}
-		}
-		System.out.println(x+" "+y+" "+z);
+		
 	}
 	
 	public void deadScreen() {
@@ -152,9 +135,9 @@ public class Player extends Entity {
 	}
 	
 	boolean b1 = false;
-	public int x = 0, y = 0, z = 0, scl = 1;
+	//public int x = 0, y = 0, z = 0, scl = 1;
 	public void updateControls() {
-		if (Gdx.input.isKeyPressed(Input.Keys.U)) {
+		/*if (Gdx.input.isKeyPressed(Input.Keys.U)) {
 			x+=scl;
 			test();
 		}
@@ -177,7 +160,7 @@ public class Player extends Entity {
 		if (Gdx.input.isKeyPressed(Input.Keys.L)) {
 			z-=1;
 			test();
-		}
+		}*/
 		//System.out.println("x:"+x+" y:"+y+" z:"+z);
 		if (chat.isOpened()) return;
 		if (Gdx.input.isKeyPressed(Input.Keys.T)) {

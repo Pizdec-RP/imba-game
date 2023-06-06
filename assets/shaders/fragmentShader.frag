@@ -104,5 +104,7 @@ void main() {
 		gl_FragColor.rgb = vec3(1,0,0);
 	} else if (makefragred > 1.0 && makefragred <= 2) {
 		gl_FragColor.rgb = vec3(0,0,1);
+	} else if (makefragred > 2.0 && makefragred <= 3) {
+		gl_FragColor.rgb = vec3(1,1,1);
 	}
 }

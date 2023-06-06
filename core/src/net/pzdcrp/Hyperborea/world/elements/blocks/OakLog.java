@@ -16,6 +16,7 @@ import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Pair;
 import net.pzdcrp.Hyperborea.data.Vector3D;
+import net.pzdcrp.Hyperborea.data.MBIM.offset;
 import net.pzdcrp.Hyperborea.extended.SexyMeshBuilder;
 import net.pzdcrp.Hyperborea.utils.ModelUtils;
 
@@ -27,42 +28,95 @@ public class OakLog extends FacingBlock {
 	
 	@Override
 	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, MBIM mbim) {
-		SexyMeshBuilder top = mbim.obtain("oaktop", tname, pos);//TODO делать все в 1 мпб
-		SexyMeshBuilder bottom = mbim.obtain("oakbottom",tname, pos);
+		SexyMeshBuilder a = mbim.obtain(pos);
 		if (!py || !ny || !nx || !px || !nz || !pz) {
 			ModelUtils.setTransform(pos);
 		    if (blockface == BlockFace.PY || blockface == BlockFace.NY) {
-		    	//top texture
-				top.setUVRange(0, 0.5f, 1, 1);
-		    	if (!py) ModelUtils.buildTopX(top);//PY
-		    	if (!ny) ModelUtils.buildBottomX(top);//NY
-		    	//bottom texture
-			    bottom.setUVRange(0, 0, 1, 0.5f);
-			    if (!nx) ModelUtils.buildLeftY(bottom);//NX
-			    if (!px) ModelUtils.buildRightY(bottom);//PX
-			    if (!nz) ModelUtils.buildFrontY(bottom);//NZ
-			    if (!pz) ModelUtils.buildBackY(bottom);//PZ
+		    	//a texture
+		    	Hpb.mutex.hookuvr(a, tname, 0, 0.5f, 1, 1);
+		    	if (!py) {
+		    		mbim.curoffset = offset.py;
+		    		ModelUtils.buildTopX(a);//PY
+		    	}
+		    	if (!ny) {
+		    		mbim.curoffset = offset.ny;
+		    		ModelUtils.buildTopX(a);//NY
+		    	}
+		    	//a texture
+		    	Hpb.mutex.hookuvr(a, tname, 0, 0, 1, 0.5f);
+			    if (!nx) {
+			    	mbim.curoffset = offset.nx;
+			    	ModelUtils.buildLeftY(a);//NX
+			    }
+			    if (!px) {
+			    	mbim.curoffset = offset.px;
+			    	ModelUtils.buildRightY(a);//PX
+			    }
+			    if (!nz) {
+			    	mbim.curoffset = offset.nz;
+			    	ModelUtils.buildFrontY(a);//NZ
+			    }
+			    if (!pz) {
+			    	mbim.curoffset = offset.pz;
+			    	ModelUtils.buildBackY(a);//PZ
+			    }
 		    } else if (blockface == BlockFace.PZ || blockface == BlockFace.NZ) {
-		    	top.setUVRange(0, 0.5f, 1, 1);
-				//top texture
-				if (!pz) ModelUtils.buildBackX(top);
-				if (!nz) ModelUtils.buildFrontX(top);
-		    	//bottom texture
-				bottom.setUVRange(0, 0, 1, 0.5f);
-			    if (!px) ModelUtils.buildRightPZ(bottom);
-			    if (!nx) ModelUtils.buildLeftZ(bottom);
-			    if (!py) ModelUtils.buildTopZ(bottom);
-			    if (!ny) ModelUtils.buildBottomZ(bottom);
+		    	Hpb.mutex.hookuvr(a, tname, 0, 0.5f, 1, 1);
+				//a texture
+				if (!pz) {
+					mbim.curoffset = offset.pz;
+					ModelUtils.buildBackX(a);
+				}
+				if (!nz) {
+					mbim.curoffset = offset.nz;
+					ModelUtils.buildFrontX(a);
+				}
+		    	//a texture
+				Hpb.mutex.hookuvr(a, tname, 0, 0, 1, 0.5f);
+			    if (!px) {
+			    	mbim.curoffset = offset.px;
+			    	ModelUtils.buildRightPZ(a);
+			    }
+			    if (!nx) {
+			    	mbim.curoffset = offset.nx;
+			    	ModelUtils.buildLeftZ(a);
+			    }
+			    if (!py) {
+			    	mbim.curoffset = offset.py;
+			    	ModelUtils.buildTopZ(a);
+			    }
+			    if (!ny) {
+			    	mbim.curoffset = offset.ny;
+			    	ModelUtils.buildTopZ(a);
+			    }
 		    } else if (blockface == BlockFace.NX || blockface == BlockFace.PX) {
-		    	top.setUVRange(0, 0.5f, 1, 1);
-				if (!nx) ModelUtils.buildLeftY(top);
-			    if (!px) ModelUtils.buildRightY(top);
-		    	//bottom texture
-			    bottom.setUVRange(0, 0, 1, 0.5f);
-			    if (!nz) ModelUtils.buildFrontX(bottom);
-			    if (!pz) ModelUtils.buildBackX(bottom);
-			    if (!py) ModelUtils.buildTopX(bottom);
-			    if (!ny) ModelUtils.buildBottomX(bottom);
+		    	Hpb.mutex.hookuvr(a, tname, 0, 0.5f, 1, 1);
+				if (!nx) {
+					mbim.curoffset = offset.nx;
+					ModelUtils.buildLeftY(a);
+				}
+			    if (!px) {
+			    	mbim.curoffset = offset.px;
+			    	ModelUtils.buildRightY(a);
+			    }
+		    	//a texture
+			    Hpb.mutex.hookuvr(a, tname, 0, 0, 1, 0.5f);
+			    if (!nz) {
+			    	mbim.curoffset = offset.nz;
+			    	ModelUtils.buildFrontX(a);
+			    }
+			    if (!pz) {
+			    	mbim.curoffset = offset.pz;
+			    	ModelUtils.buildBackX(a);
+			    }
+			    if (!py) {
+			    	mbim.curoffset = offset.py;
+			    	ModelUtils.buildTopX(a);
+			    }
+			    if (!ny) {
+			    	mbim.curoffset = offset.ny;
+			    	ModelUtils.buildTopX(a);
+			    }
 		    }
 		}
 	}

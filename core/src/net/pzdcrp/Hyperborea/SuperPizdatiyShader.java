@@ -1,6 +1,8 @@
 package net.pzdcrp.Hyperborea;
 
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.nio.ShortBuffer;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -12,6 +14,7 @@ import com.badlogic.gdx.graphics.GLTexture;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g3d.Attribute;
 import com.badlogic.gdx.graphics.g3d.Attributes;
 import com.badlogic.gdx.graphics.g3d.Renderable;
 import com.badlogic.gdx.graphics.g3d.Shader;
@@ -21,6 +24,7 @@ import com.badlogic.gdx.graphics.g3d.utils.BaseShaderProvider;
 import com.badlogic.gdx.graphics.g3d.utils.DefaultShaderProvider;
 import com.badlogic.gdx.graphics.g3d.utils.RenderContext;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.GdxRuntimeException; 
@@ -114,7 +118,7 @@ class TestShader extends DefaultShader {
 	protected int sdvigx = register(new Uniform("sdvigx"));
 	protected int sdvigz = register(new Uniform("sdvigz"));
 	protected int sdvigy = register(new Uniform("sdvigy"));
-	protected int intArrayTexture = register(new Uniform("intArrayTexture"));
+	protected int lightdata = register(new Uniform("lightdata"));
 
 	public TestShader(Renderable renderable, Config config, SuperPizdatiyShader s) {
 		super(renderable, config);
@@ -136,26 +140,14 @@ class TestShader extends DefaultShader {
 			/*for (Object o : data) {
 				System.out.println(o.toString());
 			}*/
-			if (data.length >= 3 && data[2] instanceof Texture) {//если есть система освещения
+			if (data.length >= 3) {//если есть система освещения
 				//System.out.println("zaebis: "+data[1]);
-				Texture casted = (Texture)data[2];
-				set(haslight, 1);
-				set(intArrayTexture, casted);
+				//ByteBuffer casted = (ByteBuffer)data[2];
 				
-				/*if (casted.length <= 4096) {
-				    set(haslight, 1);
-				    Gdx.gl20.glUniform1iv(loc, casted.length, casted, 0);
-				} else if (casted.length <= 8192) {
-				    set(haslight, 2);
-				    Gdx.gl20.glUniform2iv(loc, casted.length / 2, casted, 0);
-				} else if (casted.length <= 12288) {
-				    set(haslight, 3);
-				    Gdx.gl20.glUniform3iv(loc, casted.length / 3, casted, 0);
-				} else {
-					//максимальное количество вершин ~64к но данных вмещается ток 16384. надо переделать класс SexyMeshBuilder там кароче поменять надо maxvertices На 16383
-					throw new Exception("массив данных об освещении не вмещается в шейдер");
-				}*/
-				//1-4096 2-8192 3-12288 4-16384
+				//this.program.setVertexAttribute("lightdata", 4, GL20.GL_FLOAT, false, Float.SIZE, casted);
+				//this.program.enableVertexAttribute("lightdata");
+				set(haslight, 1);
+				//set(intArrayTexture, casted);
 			} else {
 				//System.out.println("huevo");
 				this.set(haslight, 0);

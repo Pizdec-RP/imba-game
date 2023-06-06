@@ -27,6 +27,11 @@ public class Air extends Liquifyable {
 	}
 	
 	@Override
+	public boolean isTransparent() {
+		return true;
+	}
+	
+	@Override
 	public Block clone(Vector3D poss) {
 		return new Air(poss);
 	}

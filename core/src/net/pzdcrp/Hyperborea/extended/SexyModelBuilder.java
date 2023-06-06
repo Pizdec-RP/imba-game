@@ -3,7 +3,9 @@ package net.pzdcrp.Hyperborea.extended;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
+import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes;
+import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
@@ -12,6 +14,7 @@ import com.badlogic.gdx.graphics.g3d.model.NodePart;
 import com.badlogic.gdx.graphics.g3d.utils.MeshBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
@@ -165,7 +168,26 @@ public class SexyModelBuilder {
 	 *           and TextureCoordinates is supported.
 	 * @return The {@link MeshPartBuilder} you can use to build the MeshPart. */
 	public MeshPartBuilder part (final String id, int primitiveType, final long attributes, final Material material) {
-		return part(id, primitiveType, MeshBuilder.createAttributes(attributes), material);
+		return part(id, primitiveType, createAttributes(attributes), material);
+	}
+	
+	public static VertexAttributes createAttributes (long usage) {
+		final Array<VertexAttribute> attrs = new Array<VertexAttribute>();
+		if ((usage & Usage.Position) == Usage.Position)
+			attrs.add(new VertexAttribute(Usage.Position, 3, ShaderProgram.POSITION_ATTRIBUTE));
+		if ((usage & Usage.ColorUnpacked) == Usage.ColorUnpacked)
+			attrs.add(new VertexAttribute(Usage.ColorUnpacked, 4, ShaderProgram.COLOR_ATTRIBUTE));
+		if ((usage & Usage.ColorPacked) == Usage.ColorPacked)
+			attrs.add(new VertexAttribute(Usage.ColorPacked, 4, ShaderProgram.COLOR_ATTRIBUTE));
+		if ((usage & Usage.Normal) == Usage.Normal) attrs.add(new VertexAttribute(Usage.Normal, 3, ShaderProgram.NORMAL_ATTRIBUTE));
+		if ((usage & Usage.TextureCoordinates) == Usage.TextureCoordinates)
+			attrs.add(new VertexAttribute(Usage.TextureCoordinates, 2, ShaderProgram.TEXCOORD_ATTRIBUTE + "0"));
+		if ((usage & 512) == 512)
+			attrs.add(new VertexAttribute(512, 1, "lightdata"));
+		final VertexAttribute attributes[] = new VertexAttribute[attrs.size];
+		for (int i = 0; i < attributes.length; i++)
+			attributes[i] = attrs.get(i);
+		return new VertexAttributes(attributes);
 	}
 
 	/** Convenience method to create a model with a single node containing a box shape. The resources the Material might contain

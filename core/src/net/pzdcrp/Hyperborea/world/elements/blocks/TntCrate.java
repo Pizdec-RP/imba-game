@@ -11,6 +11,7 @@ import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Vector3D;
+import net.pzdcrp.Hyperborea.data.MBIM.offset;
 import net.pzdcrp.Hyperborea.extended.SexyMeshBuilder;
 import net.pzdcrp.Hyperborea.player.Player;
 import net.pzdcrp.Hyperborea.utils.MathU;
@@ -32,19 +33,25 @@ public class TntCrate extends Block {
 	@Override
 	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, MBIM mbim) {
 		if (!py || !ny || !nx || !px || !nz || !pz) {
-			SexyMeshBuilder tnttexture = mbim.obtain("tnt", tname, pos);
+			SexyMeshBuilder a = mbim.obtain(pos);
 			ModelUtils.setTransform(pos);
-			tnttexture.setUVRange(0, 0, 0.5f, 0.5f);
-	    	if (!py) ModelUtils.buildTopX(tnttexture);//PY
+			Hpb.mutex.hookuvr(a, tname, 0, 0, 0.5f, 0.5f);
+			mbim.curoffset = offset.py;
+	    	if (!py) ModelUtils.buildTopX(a);//PY
 	    	//bottom texture
-	    	tnttexture.setUVRange(0, 0.5f, 0.5f, 1);
-		    if (!nx) ModelUtils.buildLeftPY(tnttexture);//NX
-		    if (!px) ModelUtils.buildRightPY(tnttexture);//PX
-		    if (!nz) ModelUtils.buildFrontY(tnttexture);//NZ
-		    if (!pz) ModelUtils.buildBackY(tnttexture);//PZ
+	    	Hpb.mutex.hookuvr(a, tname, 0, 0.5f, 0.5f, 1);
+	    	mbim.curoffset = offset.nx;
+		    if (!nx) ModelUtils.buildLeftPY(a);//NX
+		    mbim.curoffset = offset.px;
+		    if (!px) ModelUtils.buildRightPY(a);//PX
+		    mbim.curoffset = offset.nz;
+		    if (!nz) ModelUtils.buildFrontY(a);//NZ
+		    mbim.curoffset = offset.pz;
+		    if (!pz) ModelUtils.buildBackY(a);//PZ
 		    //down texture
-		    tnttexture.setUVRange(0.5f, 0.5f, 1, 1);
-		    if (!ny) ModelUtils.buildBottomX(tnttexture);//NY
+		    Hpb.mutex.hookuvr(a, tname, 0.5f, 0.5f, 1, 1);
+		    mbim.curoffset = offset.ny;
+		    if (!ny) ModelUtils.buildBottomX(a);//NY
 		}
 	}
 	

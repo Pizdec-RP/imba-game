@@ -9,10 +9,12 @@ import java.util.Map;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.google.gson.JsonObject;
 
+import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.AABB;
 import net.pzdcrp.Hyperborea.data.DM;
 import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Vector3D;
+import net.pzdcrp.Hyperborea.data.MBIM.offset;
 import net.pzdcrp.Hyperborea.extended.SexyMeshBuilder;
 import net.pzdcrp.Hyperborea.utils.ModelUtils;
 
@@ -115,100 +117,116 @@ public class Water extends Liquifyable {
 	
 	@Override
 	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, MBIM mbim) {
-		SexyMeshBuilder mpb = mbim.obtain("tr:water", tname, pos);
+		SexyMeshBuilder a = mbim.obtain(pos);
 		ModelUtils.setTransform(pos);
 		float h = heightMap.get(ll).floatValue();
-		mpb.setUVRange(0, 0, 1, 1);
+		Hpb.mutex.hookuvr(a, tname, 0, 0, 1, 1);
 		Block temp;
 		
-		if (!ny) ModelUtils.buildBottomX(mpb);
+		if (!ny) {
+			mbim.curoffset = offset.ny;
+			ModelUtils.buildBottomX(a);
+		}
 		
 		temp = world.getBlock(new Vector3D(pos.x,pos.y+1,pos.z));
 		if ((temp instanceof Water && ll != 4) || !py) {
-			mpb.rect(
-			ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z+0.5f,
-			ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z-0.5f,
-			ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z-0.5f,
-			ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z+0.5f,
+			if (h==1.0f) {
+				mbim.curoffset = offset.no;
+			} else {
+				mbim.curoffset = offset.py;
+			}
+			a.rect(
+			ModelUtils.sp.x, ModelUtils.sp.y+h, ModelUtils.sp.z+1f,
+			ModelUtils.sp.x, ModelUtils.sp.y+h, ModelUtils.sp.z,
+			ModelUtils.sp.x+1f, ModelUtils.sp.y+h, ModelUtils.sp.z,
+			ModelUtils.sp.x+1f, ModelUtils.sp.y+h, ModelUtils.sp.z+1f,
 			0, 1, 0);
 		}
-		mpb.setUVRange(0, 0, 1, h);
+		Hpb.mutex.hookuvr(a, tname, 0, 0, 1, h);
 		temp = world.getBlock(new Vector3D(pos.x-1,pos.y,pos.z));
 		if (!nx) {
-			mpb.rect(
-			ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f, ModelUtils.sp.z+0.5f,
-			ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f, ModelUtils.sp.z-0.5f,
-			ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z-0.5f,
-			ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z+0.5f,
+			mbim.curoffset = offset.nx;
+			a.rect(
+			ModelUtils.sp.x, ModelUtils.sp.y, ModelUtils.sp.z+1f,
+			ModelUtils.sp.x, ModelUtils.sp.y, ModelUtils.sp.z,
+			ModelUtils.sp.x, ModelUtils.sp.y+h, ModelUtils.sp.z,
+			ModelUtils.sp.x, ModelUtils.sp.y+h, ModelUtils.sp.z+1f,
 	        -1, 0, 0);
 		} else {
 			if (temp instanceof Water && ((Water)temp).ll < this.ll) {
 				Water side = (Water)temp;
-				mpb.rect(
-				ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z+0.5f,
-				ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z-0.5f,
-				ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z-0.5f,
-				ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z+0.5f,
+				mbim.curoffset = offset.nx;
+				a.rect(
+				ModelUtils.sp.x, ModelUtils.sp.y+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z+1f,
+				ModelUtils.sp.x, ModelUtils.sp.y+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z,
+				ModelUtils.sp.x, ModelUtils.sp.y+h, ModelUtils.sp.z,
+				ModelUtils.sp.x, ModelUtils.sp.y+h, ModelUtils.sp.z+1f,
 		        -1, 0, 0);
 			}
 		}
 		
 		temp = world.getBlock(new Vector3D(pos.x+1,pos.y,pos.z));
 		if (!px) {
-			mpb.rect(
-			ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f, ModelUtils.sp.z-0.5f,
-			ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f, ModelUtils.sp.z+0.5f,
-			ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z+0.5f,
-			ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z-0.5f,
+			mbim.curoffset = offset.px;
+			a.rect(
+			ModelUtils.sp.x+1f, ModelUtils.sp.y, ModelUtils.sp.z,
+			ModelUtils.sp.x+1f, ModelUtils.sp.y, ModelUtils.sp.z+1f,
+			ModelUtils.sp.x+1f, ModelUtils.sp.y+h, ModelUtils.sp.z+1f,
+			ModelUtils.sp.x+1f, ModelUtils.sp.y+h, ModelUtils.sp.z,
 	         1, 0, 0);
 		} else {
 			if (temp instanceof Water && ((Water)temp).ll < this.ll) {
+				mbim.curoffset = offset.px;
 				Water side = (Water)temp;
-				mpb.rect(
-				ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z-0.5f,
-				ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z+0.5f,
-				ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z+0.5f,
-				ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z-0.5f,
+				a.rect(
+				ModelUtils.sp.x+1f, ModelUtils.sp.y+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z,
+				ModelUtils.sp.x+1f, ModelUtils.sp.y+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z+1f,
+				ModelUtils.sp.x+1f, ModelUtils.sp.y+h, ModelUtils.sp.z+1f,
+				ModelUtils.sp.x+1f, ModelUtils.sp.y+h, ModelUtils.sp.z,
 		         1, 0, 0);
 			}
 		}
 		
 		temp = world.getBlock(new Vector3D(pos.x,pos.y,pos.z-1));
 		if (!nz) {
-			mpb.rect(
-			ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f, ModelUtils.sp.z-0.5f,
-			ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f, ModelUtils.sp.z-0.5f,
-			ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z-0.5f,
-			ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z-0.5f,
+			mbim.curoffset = offset.nz;
+			a.rect(
+			ModelUtils.sp.x, ModelUtils.sp.y, ModelUtils.sp.z,
+			ModelUtils.sp.x+1f, ModelUtils.sp.y, ModelUtils.sp.z,
+			ModelUtils.sp.x+1f, ModelUtils.sp.y+h, ModelUtils.sp.z,
+			ModelUtils.sp.x, ModelUtils.sp.y+h, ModelUtils.sp.z,
 	        0, 0, -1);
 		} else {
 			if (temp instanceof Water && ((Water)temp).ll < this.ll) {
+				mbim.curoffset = offset.nz;
 				Water side = (Water)temp;
-				mpb.rect(
-				ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z-0.5f,
-				ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z-0.5f,
-				ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z-0.5f,
-				ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z-0.5f,
+				a.rect(
+				ModelUtils.sp.x, ModelUtils.sp.y+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z,
+				ModelUtils.sp.x+1f, ModelUtils.sp.y+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z,
+				ModelUtils.sp.x+1f, ModelUtils.sp.y+h, ModelUtils.sp.z,
+				ModelUtils.sp.x, ModelUtils.sp.y+h, ModelUtils.sp.z,
 		        0, 0, -1);
 			}
 		}
 		
 		temp = world.getBlock(new Vector3D(pos.x,pos.y,pos.z+1));
 		if (!pz) {
-			mpb.rect(
-			ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f, ModelUtils.sp.z+0.5f,
-			ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f, ModelUtils.sp.z+0.5f,
-			ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z+0.5f,
-			ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z+0.5f,
+			mbim.curoffset = offset.pz;
+			a.rect(
+			ModelUtils.sp.x+1f, ModelUtils.sp.y, ModelUtils.sp.z+1f,
+			ModelUtils.sp.x, ModelUtils.sp.y, ModelUtils.sp.z+1f,
+			ModelUtils.sp.x, ModelUtils.sp.y+h, ModelUtils.sp.z+1f,
+			ModelUtils.sp.x+1f, ModelUtils.sp.y+h, ModelUtils.sp.z+1f,
 	         0, 0, 1);
 		} else {
 			if (temp instanceof Water && ((Water)temp).ll < this.ll) {
+				mbim.curoffset = offset.pz;
 				Water side = (Water)temp;
-				mpb.rect(
-				ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z+0.5f,
-				ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z+0.5f,
-				ModelUtils.sp.x-0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z+0.5f,
-				ModelUtils.sp.x+0.5f, ModelUtils.sp.y-0.5f+h, ModelUtils.sp.z+0.5f,
+				a.rect(
+				ModelUtils.sp.x+1f, ModelUtils.sp.y+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z+1f,
+				ModelUtils.sp.x, ModelUtils.sp.y+Liquifyable.heightMap.get(side.ll), ModelUtils.sp.z+1f,
+				ModelUtils.sp.x, ModelUtils.sp.y+h, ModelUtils.sp.z+1f,
+				ModelUtils.sp.x+1f, ModelUtils.sp.y+h, ModelUtils.sp.z+1f,
 		         0, 0, 1);
 			}
 		}

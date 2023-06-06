@@ -193,6 +193,11 @@ public class Vector3D {
 		return "Vec3D [x:"+x+" y:"+y+" z:"+z+"]";
 	}
 	
+	public Vector3D[] bsides() {
+		return new Vector3D[] {add(1, 0, 0),add(0, 0, 1),add(-1, 0, 0),
+				add(0, 0, -1),add(0, 1, 0),add(0, -1, 0)};
+	}
+	
 	public List<Vector3D> sides() {
 		Vector3D target = this.floor().add(0.5, 0.5, 0.5);
 		List<Vector3D> sides = new ArrayList<Vector3D>() {{

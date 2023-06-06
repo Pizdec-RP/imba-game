@@ -18,24 +18,18 @@ public class FallingBlockEntity extends Entity {
 	
 	public int id;
 	public ModelInstance model;
-	private Map<String, Pair> p;
 	private MBIM m;
 	
 	public FallingBlockEntity(Vector3D pos, int bid) {
 		super(pos, new AABB(0,0,0,1,1,1), EntityType.fallingBlock);
 		this.id = bid;
-		p = new HashMap<String, Pair>();
-		m = new MBIM(p,null);//TODO сделать один единственый билдер моделей
+		m = new MBIM(null);//TODO сделать один единственый билдер моделей
 		//блоки должны иметь параметр подбираемости
 		//такие как вода подбираться не должны а значит создание ентити блока с айди такого блока должно выдавать ошибку
 		//должен быть метод в классе блока который будет билдить ModelInstance по вызову метода без аргументов
 		//по хорошему вообще не использовать этот тип ентити
 		Block.getAbstractBlock(bid).addModel(false,false,false,false,false,false, m);
-		Pair firstValue = null;//java moment
-		for (Pair value : p.values()) {
-		    firstValue = value;
-		    break;
-		}
+		Pair firstValue = m.p;
 		model = new ModelInstance(firstValue.mb.end());
 	}
 	

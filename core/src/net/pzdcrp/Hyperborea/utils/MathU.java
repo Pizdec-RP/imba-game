@@ -234,4 +234,12 @@ public class MathU {
             return Math.floor(value);
         }
     }
+
+	public static int max(int[] arr) {
+		int max = Integer.MIN_VALUE;
+		for (int i : arr) {
+			if (i > max) i = max;
+		}
+		return max;
+	}
 }

@@ -24,6 +24,11 @@ public class Voed extends Block {
 	}
 	
 	@Override
+	public boolean isTransparent() {
+		return false;
+	}
+	
+	@Override
 	public Block clone(Vector3D poss) {
 		return new Voed(poss);
 	}

@@ -78,7 +78,7 @@ public class World {// implements RenderableProvider {
 	public Map<Vector2I,Region> memoriedRegions = new ConcurrentHashMap<>();
 	public List<ModelInstance> additional = new CopyOnWriteArrayList<>();
 	public int time = 0;
-	public static final int chunks = 16;
+	public static final int chunks = 16, maxheight = chunks * 16, buildheight = maxheight-1;
 	public static boolean ready = false;
 	public Matrix4 temp = new Matrix4();
 	public Vector3 sunPosition = new Vector3();
@@ -90,7 +90,7 @@ public class World {// implements RenderableProvider {
     
     private static final int DAY_LENGTH = 60000;
     private static final float DISTANCE_FROM_CENTER = 200f;
-    public static int renderRad = 2;
+    public static int renderRad = 1;
     Material skymaterial;
     
     public List<Particle> particles = new CopyOnWriteArrayList<>();
@@ -116,7 +116,7 @@ public class World {// implements RenderableProvider {
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("данных о мире нет");
-			player = new Player(5,chunks*16,5);
+			player = new Player(5,maxheight,5);
 		}
 		updateLoadedColumns();
 		player.tick();
@@ -165,9 +165,20 @@ public class World {// implements RenderableProvider {
 		}
 		return e;
 	}
+	
+	public boolean posDostupna(int x, int y, int z) {
+		if (y < 0 || y > maxheight-1) {
+			return false;
+		}
+		return loadedColumns.containsKey(VectorU.xzToColumn(x,z));
+	}
+	
 	static final float bs = 0.2f;
 	public void setBlock(Block block) {
-		if (block.pos.y < 0 || block.pos.y >= chunks*16) return;
+		if (block.pos.y < 0 || block.pos.y >= buildheight) {
+			Hpb.displayInfo("build limit reached");
+			return;
+		}
 		Column col = getColumn(block.pos.x,block.pos.z);
 		for (Entry<Vector2I, Column> tcol : loadedColumns.entrySet()) {
 			for (Entity en : tcol.getValue().entites) {
@@ -194,7 +205,7 @@ public class World {// implements RenderableProvider {
 	}
 	
 	public void breakBlock(Vector3D pos) {
-		if (pos.y < 0 || pos.y >= chunks*16) return;
+		if (pos.y < 0 || pos.y >= buildheight) return;
 		//спавн партиклов тут по идее
 		setBlock(new Air(pos));
 	}
@@ -203,8 +214,6 @@ public class World {// implements RenderableProvider {
 		try {
 			return getColumn(new Vector2I((int)Math.floor(x) >> 4, (int)Math.floor(z) >> 4));
 		} catch (Exception e) {
-			e.printStackTrace();
-			System.exit(0);
 			return null;
 		}
 	}
@@ -215,22 +224,29 @@ public class World {// implements RenderableProvider {
 		else return this.genOrLoadRegion(VectorU.ColumnToRegion(cc)).getColumn(cc);
 	}
 	
-	public int getLight(int x, int y, int z) throws Exception {
-		int cx = (int)Math.floor(x) >> 4;
-		int cz = (int)Math.floor(z) >> 4;
-		int cy = y&15;
-		return getColumn(new Vector2I(cx,cz)).chunks[cy].rawGetLight(x&15, cy, z&15);
+	public int getLight(int x, int y, int z) {
+		if (y < 0 || y >= maxheight) return 14;
+		try {
+			return getColumn(x,z).chunks[y/16].rawGetLight(x&15, y&15, z&15);
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(0);
+			return 0;
+		}
 	}
 	
-	public void setLight(int x, int y, int z, int num) throws Exception {
-		int cx = (int)Math.floor(x) >> 4;
-		int cz = (int)Math.floor(z) >> 4;
-		int cy = y&15;
-		getColumn(new Vector2I(cx,cz)).chunks[cy].rawSetLight(x&15, cy, z&15, num);
+	public void setLight(int x, int y, int z, int num) {
+		if (y < 0 || y >= maxheight) return;
+		try {
+			getColumn(x,z).chunks[y/16].rawSetLight(x&15, y&15, z&15, num);
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(0);
+		}
 	}
 	
 	public Block getBlock(double x, double y, double z) {
-		if (y < 0 || y >= chunks*16) return new Voed(new Vector3D(x,y,z));
+		if (y < 0 || y >= maxheight) return new Voed(new Vector3D(x,y,z));
 		Column col = getColumn(x,z);
 		if (col == null) return new Voed(new Vector3D(x,y,z));
 		try {
@@ -246,7 +262,7 @@ public class World {// implements RenderableProvider {
 	}
 	
 	public Block getBlock(Vector3D v) {
-		if (v.y < 0 || v.y >= chunks*16) return new Voed(v);
+		if (v.y < 0 || v.y >= maxheight) return new Voed(v);
 		Column col = getColumn(v.x,v.z);
 		if (col == null) return new Voed(v);
 		try {

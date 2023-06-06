@@ -156,6 +156,10 @@ public class VectorU {
     	return new Vector2I((int)Math.floor(pos.x) >> 4, (int)Math.floor(pos.z) >> 4);
     }
     
+    public static Vector2I xzToColumn(int x, int z) {
+    	return new Vector2I(x >> 4, z >> 4);
+    }
+    
     public static Vector2I ColumnToRegion(Vector2I column) {
     	return new Vector2I((int)Math.floor(column.x) >> 3, (int)Math.floor(column.z) >> 3);
     }

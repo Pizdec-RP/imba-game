@@ -1,33 +1,24 @@
 package net.pzdcrp.Hyperborea.world.elements;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.GL30;
-import com.badlogic.gdx.graphics.Mesh;
-import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.math.Vector3;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.AABB;
 import net.pzdcrp.Hyperborea.data.EntityType;
 import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.player.Player;
-import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
 import net.pzdcrp.Hyperborea.world.elements.deGenerator.Noise;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Water;
-import noisy.Noisy;
 
 public class Column {
 	public List<Entity> entites = new CopyOnWriteArrayList<>();
@@ -36,7 +27,7 @@ public class Column {
 	private Vector3 center;
 	private Vector3 dimensions;
 	static boolean flat = true;
-	protected int[][] skylightmaxdown;
+	protected int[][] skylightlenght;
 	
 	public Column(int x, int z, boolean gen) throws Exception {
 		this(new Vector2I(x,z), gen);
@@ -46,11 +37,11 @@ public class Column {
 		this.pos = cords;
 		System.out.println("new col: "+cords.toString());
 		//fill default
-		skylightmaxdown = new int[16][16];
+		skylightlenght = new int[16][16];
 		//TODO remove
 		for (int px = 0; px < 16; px++) {
 	        for (int pz = 0; pz < 16; pz++) {
-	        	skylightmaxdown[px][pz] = 16*World.chunks-1;
+	        	skylightlenght[px][pz] = World.buildheight;
 	        }
 		}
 		
@@ -75,9 +66,9 @@ public class Column {
 	        			}
 	        		}
 	        	} else {
-	        		double noise = Noise.get((16*pos.x+px)*Hpb.world.player.x, Hpb.world.player.y, (16*pos.z+pz)*Hpb.world.player.x);
+	        		double noise = Noise.get((16*pos.x+px)*0.7f, 10, (16*pos.z+pz)*0.7f);
 		        	//System.out.println(noise);
-		        	int maxy = (int) ((noise+Hpb.world.player.z) * (16*0.5));
+		        	int maxy = (int) ((noise+0.7f) * (16*0.5));
 		        	for (int py = 0; py < 16; py++) {
 		        		if (py == 0) {
 		        			fastSetBlock(px,py,pz,6);
@@ -111,9 +102,12 @@ public class Column {
 	}
 	
 	private void recalculateSLMD(int x, int z) {
-		//this.skylightmaxdown[x][z] = 10;
-		for (int y = 16*World.chunks-1; y >= 0; y--) {
-			if (!(getBlock(x,y,z) instanceof Air)) this.skylightmaxdown[x][z] = y+1; 
+		for (int y = World.buildheight; y >= 0; y--) {
+			if (!(getBlock(x,y,z) instanceof Air)) {
+				skylightlenght[x][z] = y+1;
+				//System.out.println(x+" "+z+" "+skylightlenght[x][z]);
+				return;
+			}
 		}
 	}
 	
@@ -123,6 +117,9 @@ public class Column {
 	}
 	
 	public void fastSetBlock(int x ,int y,int z, int id) {
+		/*if (y >= World.buildheight) {
+			System.out.println("build limit reached "+World.buildheight);
+		}*/
 		Chunk c = chunks[y/16];
 		c.setBlock(x,y&15,z, id);
 	}
@@ -133,10 +130,26 @@ public class Column {
 	 *	z = 0-15
 	 */
 	public void setBlock(int x ,int y,int z, Block b) {
+		//System.out.println(y/16+" "+y);
 		Chunk c = chunks[y/16];
 		c.setBlock(x,y&15,z, b);
 		c.updateModel();
-		recalculateSLMD(x,z);
+		int before = skylightlenght[x][z];
+		if (b.pos.y >= before) {
+			System.out.println("updating Multipile chunks");
+			recalculateSLMD(x,z);
+			int after = skylightlenght[x][z];
+			int cfrom = Math.min(before,after)/16;
+			int cto = Math.max(before,after)/16;
+			System.out.println("b: "+before+" a:"+after+" cf:"+cfrom+" ct:"+cto);
+			if (cfrom != cto) {
+				System.out.println("continuing");
+				for (int i = cfrom; i <= cto; i++) {
+					System.out.println("updating chunk: "+i*16+"-"+i*16+16);
+					chunks[i].updateLight();
+				}
+			}
+		}
 	}
 	
 	private void updateModel() {//TODO выключено хз зачем
@@ -198,7 +211,7 @@ public class Column {
 		//blocks
 		JsonArray blocks = new JsonArray();
 		for (int px = 0; px < 16; px++) {
-	        for (int py = 0; py < 16; py++) {
+	        for (int py = 0; py < World.maxheight; py++) {
 	            for (int pz = 0; pz < 16; pz++) {
 	            	Block block = getBlock(px,py,pz);
 	            	JsonObject data = block.toJson();
@@ -244,7 +257,7 @@ public class Column {
 		int i = 0;
 		JsonArray blocks = jcol.get("blocks").getAsJsonArray();
 		for (int px = 0; px < 16; px++) {
-			for (int py = 0; py < 16; py++) {
+			for (int py = 0; py < World.maxheight; py++) {
 				for (int pz = 0; pz < 16; pz++) {
 	            	try {
 		            	JsonElement rawblock = blocks.get(i);
@@ -263,6 +276,20 @@ public class Column {
 	            }
 	        }
 	    }
+		/*for (Chunk c : chunks) {
+			System.out.println("checking: "+(c.height/16));
+			Vector3I pos = null;
+			for (int ii = 0; ii < c.blocks.length; ii++) {
+			    for (int j = 0; j < c.blocks[ii].length; j++) {
+			        for (int k = 0; k < c.blocks[ii][j].length; k++) {
+			            if (c.blocks[ii][j][k] == null) {
+			                pos = new Vector3I(ii,j,k);
+			                System.out.println("pidarras: "+pos.toString());
+			            }
+			        }
+			    }
+			}
+		}*/
 		//entities
 		JsonArray entities = jcol.get("entities").getAsJsonArray();
 		for (JsonElement jene : entities) {
@@ -294,5 +321,6 @@ public class Column {
 			entites.add(entity);
 		}
 		updateSLMDForAll();
+		//updateColumnLight();
 	}
 }
