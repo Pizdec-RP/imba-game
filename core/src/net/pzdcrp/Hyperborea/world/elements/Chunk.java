@@ -2,13 +2,17 @@ package net.pzdcrp.Hyperborea.world.elements;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import net.pzdcrp.Hyperborea.Hpb;
+import net.pzdcrp.Hyperborea.data.BitStorage;
 import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.data.Vector3I;
+import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
@@ -16,31 +20,30 @@ import net.pzdcrp.Hyperborea.world.elements.blocks.Block.BlockType;
 
 public class Chunk {
 	private Block[][][] blocks = new Block[16][16][16];
-	private int[][][] light = new int[16][16][16];//0-14
+	public BitStorage light;
+	
+	
+	//не хранимые данные
 	public ModelInstance allModels;
 	//public ModelInstance transparent;
-	public Column column;
-	public BoundingBox box;
+	private Column column;
 	public int height;
-	private boolean reqmodelupd = false, reqlightupd = false;;
-	public boolean tickable = false;
-	public MBIM m;
+	public boolean reqmodelupd = true;
+	public boolean inlightupd = true, outlightupd = true;
+	private boolean tickable = false;
+	private MBIM m;
 	
 	public Chunk(Column motherCol, int height) throws Exception {
 		this.height = height;
 		this.column = motherCol;
+		this.light = new BitStorage(4, 4096);
 		for(int xx = 0; xx < 16; xx++) {
 			for(int yy = 0; yy < 16; yy++) {
 				for(int zz = 0; zz < 16; zz++) {
 					blocks[xx][yy][zz] = new Air(new Vector3D(normx(xx),normy(yy),normz(zz)));
-					
 				}
 			}
 		}
-	}
-	
-	public void updateLight() {
-		reqlightupd = true;
 	}
 	
 	public void updateModel() {
@@ -53,32 +56,35 @@ public class Chunk {
 			return Hpb.world.getLight(normx(x), normy(y), normz(z));
 			//return 0;
 		}
-		return light[x][y][z];
+		return light.get(index(x,y,z));
 	}
 	public void rawSetLight(int x, int y, int z, int num) {
 		if (x < 0 || x > 15 || y < 0 || y > 15 || z < 0 || z > 15) {
 			Hpb.world.setLight(normx(x), normy(y), normz(z), num);
 			return;
 		}
-		if (light[x][y][z] != num) {
-			light[x][y][z] = num;
+		if (light.get(index(x,y,z)) != num) {
+			light.set(index(x,y,z), num);
 		}
 	}
 	
-	public int normy(int ref) {
+	public Vector3I norm(int x, int y, int z) {
+		return new Vector3I(normx(x),normy(y),normz(z));
+	}
+	
+	private int normy(int ref) {
 		return ref+this.height;
 	}
 	
-	public int normx(int ref) {
+	private int normx(int ref) {
 		return column.pos.x*16+ref;
 	}
 	
-	public int normz(int ref) {
+	private int normz(int ref) {
 		return column.pos.z*16+ref;
 	}
-	
-	private void updateLightFromOutbounds() {
-	    //System.out.println("updating outbound light");
+	public void updateLightFromOutbounds() {
+		//System.out.println("OBlightupd: "+getPos().toString());
 	    List<Vector3I> stack = new ArrayList<>();
 	    for(int x = -1; x <= 16; x++) {
 	        for(int z = -1; z <= 16; z++) {
@@ -91,14 +97,20 @@ public class Chunk {
 	            }
 	        }
 	    }
-	    updateLightStack(stack);
+	    updateLightStack(stack, false);
 	    //System.out.println("updated 2");
 	}
 	
-	private void updateLight(boolean clearnotused) {
-	    //System.out.println("updating light");
+	public void updateLightMain() {
+	    //System.out.println("lightupd: "+getPos().toString());
 	    List<Vector3I> stack = new ArrayList<>();
-	    //тут
+	    for(int x = 0; x < 16; x++) {
+	        for(int z = 0; z < 16; z++) {
+	            for(int y = 0; y < 16; y++) {
+	            	rawSetLight(x,y,z, 0);
+	            }
+	        }
+	    }
 	    for(int x = 0; x < 16; x++) {
 	        for(int z = 0; z < 16; z++) {
 	            int slmd = column.skylightlenght[x][z];
@@ -107,19 +119,16 @@ public class Chunk {
 	                    Vector3I vector = new Vector3I(x,y,z);
 	                    stack.add(vector);
 	                    rawSetLight(x,y,z, 14);
-	                } else if (clearnotused) {
-	                	rawSetLight(x,y,z, 0);
 	                }
 	            }
 	        }
 	    }
-	    updateLightStack(stack);
-	    //System.out.println("updated");
+	    updateLightStack(stack, true);
 	}
 	
-	public void updateLightStack(List<Vector3I> stack) {
+	private void updateLightStack(List<Vector3I> stack, boolean regnewupd) {
 		while (!stack.isEmpty()) {
-	        Vector3I l = stack.remove(stack.size() - 1);
+	        Vector3I l = stack.remove(stack.size() - 1);//он не будет больше 16 или меньше -1!!!
 	        boolean b0 = false;
 	        b0 = l.x < 0 || l.x > 15 || l.y < 0 || l.y > 15 || l.z < 0 || l.z > 15;
 	        
@@ -129,6 +138,7 @@ public class Chunk {
 	        } else {
 	        	b = blocks[l.x][l.y][l.z];
 	        }
+	        
 	        if (b == null) {
 	        	System.out.println("nullblock: "+l.toString());
 	        	System.exit(0);
@@ -144,23 +154,58 @@ public class Chunk {
 	        }
 	    }
 	}
-
+	
 	private void updateLight(int x, int y, int z, int currentLight, List<Vector3I> stack) {
-	    if (x < 0 || x > 15 || y < 0 || y > 15 || z < 0 || z > 15) return;
-
-	    int neighborLight = rawGetLight(x, y, z);
-	    if (currentLight - 1 > neighborLight) {
+	    //обновление стороны от блока который мб на координатах +-1 от 0 или 15
+		if (x < 0 || x > 15 || y < 0 || y > 15 || z < 0 || z > 15) return;
+		int neighborLight = rawGetLight(x, y, z);
+	    int newlight = currentLight - 1;
+	    Vector3I vec = new Vector3I(x, y, z);
+	    if (newlight > neighborLight) {
 	    	rawSetLight(x, y, z, currentLight - 1);
-	        stack.add(new Vector3I(x, y, z));
+	        stack.add(vec);
+			/*if (x < 0 || x > 15 || y < 0 || y > 15 || z < 0 || z > 15) {
+		    	if (regnewupd && newlight > 0 && rawGetLight(x,y,z) != newlight) {
+		    		for (Chunk c : this.norm(x, y, z).getSidesChunks()) {
+		    			if (c.updatePropogation.contains(c)) return;
+		    			c.updatePropogation.add(this);
+		    			c.inlightupd=true;
+		    			c.outlightupd=true;
+		    		}
+		    	}
+		    } else {
+		    	rawSetLight(x, y, z, currentLight - 1);
+		        stack.add(vec);
+		    }*/
 	    }
+	}
+	
+	public void setBlock(int x, int y, int z, Block i) {
+		if (i == null) {
+			System.out.println("pizdec null v setbloke");
+			System.exit(0);
+		}
+		blocks[x][y][z] = i;
+		if (i.tickable()) {
+			this.tickable = true;
+		}
+		
+		//updateModel();
+		inlightupd = true;
+		//System.out.println("placed in: "+this.getPos());
+		if (World.ready) {//TODO этот код полная хуйня
+			for (Chunk c : sides()) {
+				//System.out.println("side: "+c.getPos());
+				c.inlightupd = true;
+			}
+		}
 	}
 	
 	private void lUpdateModel() throws Exception {
 		if (!Thread.currentThread().getName().equals("main thd")) {
 			throw new Exception("Wrong thread exception");
 		}
-		updateLight(true);
-		updateLightFromOutbounds();
+		
 		//Map<String, Pair> modelsById = new HashMap<>();
 		m = new MBIM(this);
 		for(int xx = 0; xx < 16; xx++) {
@@ -189,36 +234,8 @@ public class Chunk {
 				}
 			}
 		}
-		/*List<Model> models = new ArrayList<>();
-		//List<Model> transparents = new ArrayList<>();
-		for (Entry<String, Pair> entry : mbim) {
-			if (entry.getKey().startsWith("tr:")) {
-				//transparents.add(entry.getValue().mb.end());
-			} else {
-				models.add(entry.getValue().mb.end());
-			}
-		}*/
 		allModels = m.end();//ModelUtils.combineModels(models);
-		
-		
-		
 		allModels.userData = new Object[] {"c "+column.pos.toString()+" y:"+height, "chunk", "ithaslight"};
-		
-		//transparent = ModelUtils.combineModels(transparents);
-		//transparent.userData = new Object[] {"c"," transparent"};
-		
-		/*if (allModels.model.meshes.size > 1) {
-			MeshBuilder builder = new MeshBuilder();
-			builder.begin(VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);
-			int i = 0;
-			for (Mesh mesh : allModels.model.meshes) {
-				builder.addMesh(mesh);
-				allModels.model.meshes.removeIndex(i);
-				i++;
-			}
-			Mesh m1 = builder.end();
-			allModels.model.meshes.add(m1);
-		}*/
 	}
 	
 	public void callFromRenderThread() throws Exception {
@@ -226,19 +243,14 @@ public class Chunk {
 			lUpdateModel();
 			reqmodelupd = false;
 			Hpb.world.isCycleFree = false;
-		} else if (reqlightupd) {
-			updateLight(true);
-			updateLightFromOutbounds();
-			reqlightupd = false;
-			Hpb.world.isCycleFree = false;
 		}
 	}
 	
-	public boolean wr(int x, int y, int z, Block current) {//false = рендерится
+	private boolean wr(int x, int y, int z, Block current) {//false = рендерится
 		if (this.height+y < 0) {
 			return true;
 		}
-		Block b = Hpb.world.getBlock(new Vector3D(column.pos.x*16+x,this.height+y,column.pos.z*16+z));
+		Block b = Hpb.world.getBlock(column.pos.x*16+x,this.height+y,column.pos.z*16+z);
 		
 		if (b.getType() == BlockType.air) {
 			return false;
@@ -287,25 +299,22 @@ public class Chunk {
 	}
 
 	public void setBlock(int x, int y, int z, int i) {//xyz = 0-15
-		setBlock(x,y,z,Block.blockById(i, new Vector3D(column.pos.x*16+x,height+y,column.pos.z*16+z)));
-	}
-	
-	public void setBlock(int x, int y, int z, Block i) {
-		if (i == null) {
-			System.out.println("pizdec null v setbloke");
-			System.exit(0);
-		}
-		blocks[x][y][z] = i;
-		if (i.tickable()) {
-			this.tickable = true;
-		}
+		blocks[x][y][z] = Block.blockById(i, new Vector3D(column.pos.x*16+x,height+y,column.pos.z*16+z));
 	}
 	
 	/*public boolean checkCamFrustum() {
 		return GameInstance.world.player.cam.cam.frustum.boundsInFrustum(center, dimensions);
 	}*/
+	
+	public Vector3I getPos() {
+		return new Vector3I(column.pos.x, height/16,column.pos.z);
+	}
+	
+	private static int index(int x, int y, int z) {
+        return y << 8 | z << 4 | x;
+    }
 
-	public void tick() {//TODO clear all shit
+	public void tick() {//TODO оптимизировать до хешсета хранящего векторы блоков для тика
 		if (!this.tickable) return;
 		for (Block[][] blocka : blocks) {
 			for (Block[] blockaa : blocka) {

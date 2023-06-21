@@ -59,7 +59,7 @@ public class MBIM {
 				GL20.GL_TRIANGLES, 
 				atrs.getMask(),
 				new Material(
-		    		TextureAttribute.createDiffuse(Hpb.mutex.comp),
+		    		TextureAttribute.createDiffuse(Hpb.mutex.getComplex()),
 	    			IntAttribute.createCullFace(GL20.GL_FRONT),
 	    			new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
 			    )
@@ -122,29 +122,31 @@ public class MBIM {
 	
 	public ModelInstance end() {
 	    Model model = p.mb.end();
-	    Mesh mesh = model.meshes.get(0);
-	    int numVertices = mesh.getNumVertices();
-	    if (numVertices > 0) {
-		    int vertexSize = mesh.getVertexAttributes().vertexSize / 4;
-		    float[] vertices = new float[numVertices * vertexSize];
-		    int[] nums = getLightArray();
-		    
-		    if (numVertices != nums.length) {
-		        System.err.println("Mismatch between numVertices and nums length");
-		        System.exit(0);
+	    if (chunk != null) {
+		    Mesh mesh = model.meshes.get(0);
+		    int numVertices = mesh.getNumVertices();
+		    if (numVertices > 0) {
+			    int vertexSize = mesh.getVertexAttributes().vertexSize / 4;
+			    float[] vertices = new float[numVertices * vertexSize];
+			    int[] nums = getLightArray();
+			    
+			    if (numVertices != nums.length) {
+			        System.err.println("Mismatch between numVertices and nums length");
+			        System.exit(0);
+			    }
+			    
+			    getVertices(mesh, 0, vertices.length, vertices, 0);
+			    
+			    int attributeOffset = 8; // Замените на соответствующее значение смещения атрибута
+			    
+			    for (int i = attributeOffset; i < vertices.length; i += vertexSize) {
+			        int numsIndex = (i - attributeOffset) / vertexSize;
+			        vertices[i] = nums[numsIndex];
+			        
+			    }
+			    
+			    mesh.updateVertices(0, vertices);
 		    }
-		    
-		    getVertices(mesh, 0, vertices.length, vertices, 0);
-		    
-		    int attributeOffset = 8; // Замените на соответствующее значение смещения атрибута
-		    
-		    for (int i = attributeOffset; i < vertices.length; i += vertexSize) {
-		        int numsIndex = (i - attributeOffset) / vertexSize;
-		        vertices[i] = nums[numsIndex];
-		        
-		    }
-		    
-		    mesh.updateVertices(0, vertices);
 	    }
 	    return new ModelInstance(model);
 	}

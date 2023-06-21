@@ -107,7 +107,7 @@ public class Player extends Entity {
 			if (actcd <= 0) {
 				if (pos != null) {
 					this.inventory.onRClick();
-					actcd = 0;
+					actcd = 2;
 				}
 			}
 		}
@@ -115,7 +115,7 @@ public class Player extends Entity {
 			if (actcd <= 0) {
 				if (pos != null) {
 					this.inventory.onLClick();
-					actcd = 0;
+					actcd = 2;
 				}
 			}
 		}
@@ -212,7 +212,7 @@ public class Player extends Entity {
 		}
 		if (Hpb.controls.curentNumPressed != -1) {
 			this.inventory.setCurrentSlotInt(Hpb.controls.curentNumPressed-1);
-			Hpb.displayInfo(inventory.getSlot(inventory.getCurrentSlotInt()).getName());
+			//Hpb.displayInfo(inventory.getSlot(inventory.getCurrentSlotInt()).getName());
 		}
 		
 		if (down) {

@@ -2,31 +2,21 @@ package net.pzdcrp.Hyperborea.world.elements.entities;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.g3d.Material;
-import com.badlogic.gdx.graphics.g3d.Model;
-import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
-import com.badlogic.gdx.graphics.g3d.Renderable;
-import com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.AABB;
 import net.pzdcrp.Hyperborea.data.DM;
-import net.pzdcrp.Hyperborea.data.Pair;
-import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
 
@@ -142,8 +132,8 @@ public class Particle {
 		modelInstance.transform.setToTranslation(temp);
 		Vector3 direction = Hpb.world.player.getEyeLocation().translate().sub(temp).nor();
 		float yAngle = MathUtils.atan2(direction.x, direction.z) * MathUtils.radiansToDegrees;
-		float xAngle = -MathUtils.atan2(direction.y, direction.z) * MathUtils.radiansToDegrees;
-		modelInstance.transform.rotate(Vector3.X, xAngle).rotate(Vector3.Y, yAngle);
+		float xAngle = -MathUtils.atan2(direction.y, (float)Math.sqrt(direction.x * direction.x + direction.z * direction.z)) * MathUtils.radiansToDegrees;
+		modelInstance.transform.rotate(Vector3.Y, yAngle).rotate(Vector3.X, xAngle);
 
 		Hpb.render(modelInstance);
 		//System.out.println("render");

@@ -38,15 +38,9 @@ public class Column {
 		System.out.println("new col: "+cords.toString());
 		//fill default
 		skylightlenght = new int[16][16];
-		//TODO remove
-		for (int px = 0; px < 16; px++) {
-	        for (int pz = 0; pz < 16; pz++) {
-	        	skylightlenght[px][pz] = World.buildheight;
-	        }
-		}
 		
-		center = new Vector3(pos.x*16+8,16/2,pos.z*16+8);
-		dimensions = new Vector3(16, 16, 16);
+		center = new Vector3(pos.x*16+8,World.maxheight/2,pos.z*16+8);
+		dimensions = new Vector3(16, World.maxheight, 16);
 		for (int y = 0; y < World.chunks; y++) {
 			chunks[y] = new Chunk(this, y*16);
 		}
@@ -104,7 +98,7 @@ public class Column {
 	private void recalculateSLMD(int x, int z) {
 		for (int y = World.buildheight; y >= 0; y--) {
 			if (!(getBlock(x,y,z) instanceof Air)) {
-				skylightlenght[x][z] = y+1;
+				skylightlenght[x][z] = y;
 				//System.out.println(x+" "+z+" "+skylightlenght[x][z]);
 				return;
 			}
@@ -133,26 +127,27 @@ public class Column {
 		//System.out.println(y/16+" "+y);
 		Chunk c = chunks[y/16];
 		c.setBlock(x,y&15,z, b);
-		c.updateModel();
 		int before = skylightlenght[x][z];
+		//System.out.println("n: "+b.pos.y+"b: "+before);
 		if (b.pos.y >= before) {
-			System.out.println("updating Multipile chunks");
+			//System.out.println("updating Multipile chunks");
 			recalculateSLMD(x,z);
-			int after = skylightlenght[x][z];
-			int cfrom = Math.min(before,after)/16;
-			int cto = Math.max(before,after)/16;
-			System.out.println("b: "+before+" a:"+after+" cf:"+cfrom+" ct:"+cto);
-			if (cfrom != cto) {
-				System.out.println("continuing");
-				for (int i = cfrom; i <= cto; i++) {
-					System.out.println("updating chunk: "+i*16+"-"+i*16+16);
-					chunks[i].updateLight();
-				}
-			}
+			/*int after = skylightlenght[x][z];
+			
+			int miny = Math.min(after, before);
+		    int maxy = Math.max(after, before);
+		    
+		    int cmin = miny / 16;
+		    int cmax = maxy / 16;
+		    
+		    for (int i = cmin; i <= cmax; i++) {
+		    	System.out.println("updating chunk: "+i*16+"-"+(i*16+16));
+				chunks[i].updateLight();
+		    }*/
 		}
 	}
 	
-	private void updateModel() {//TODO выключено хз зачем
+	private void updateModel() {
 		for (int i = 0; i < World.chunks; i++) {
 			chunks[i].updateModel();
 		}
@@ -175,8 +170,12 @@ public class Column {
 		}
 	}
 	
+	public boolean isInFrustum() {
+		return Hpb.world.player.cam.cam.frustum.boundsInFrustum(center, dimensions);
+	}
+	
 	public void renderNormal() throws Exception {
-		if (!Hpb.world.player.cam.cam.frustum.boundsInFrustum(center, dimensions)) return;
+		if (!isInFrustum()) return;
 		if (chunks.length != 0) {
 			if (Hpb.world.isCycleFree) {
 				for (Chunk chunk : chunks) {
@@ -186,8 +185,6 @@ public class Column {
 			for (Chunk chunk : chunks) {
 				if (chunk.allModels != null) {
 					Hpb.render(chunk.allModels);
-				} else {
-					chunk.updateModel();
 				}
 			}
 		}
@@ -276,20 +273,6 @@ public class Column {
 	            }
 	        }
 	    }
-		/*for (Chunk c : chunks) {
-			System.out.println("checking: "+(c.height/16));
-			Vector3I pos = null;
-			for (int ii = 0; ii < c.blocks.length; ii++) {
-			    for (int j = 0; j < c.blocks[ii].length; j++) {
-			        for (int k = 0; k < c.blocks[ii][j].length; k++) {
-			            if (c.blocks[ii][j][k] == null) {
-			                pos = new Vector3I(ii,j,k);
-			                System.out.println("pidarras: "+pos.toString());
-			            }
-			        }
-			    }
-			}
-		}*/
 		//entities
 		JsonArray entities = jcol.get("entities").getAsJsonArray();
 		for (JsonElement jene : entities) {
@@ -321,6 +304,6 @@ public class Column {
 			entites.add(entity);
 		}
 		updateSLMDForAll();
-		//updateColumnLight();
+		
 	}
 }

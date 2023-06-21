@@ -6,6 +6,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.badlogic.gdx.math.Vector3;
 
+import net.pzdcrp.Hyperborea.Hpb;
+import net.pzdcrp.Hyperborea.world.elements.Chunk;
+import net.pzdcrp.Hyperborea.world.elements.Column;
+
 public class Vector3D {
 	public double x;
 	public double y;
@@ -213,6 +217,18 @@ public class Vector3D {
 		//	System.out.println(side.toString());
 		//}
 		return sides;
+	}
+	
+	public List<Chunk> getSidesChunks() {
+		List<Chunk> chunks = new ArrayList<>();
+		Chunk thiss = Hpb.world.getColumn(x, z).chunks[(int)y/16];
+		for (Vector3D side : sides()) {
+			Column col = Hpb.world.loadedColumns.get(new Vector2I((int)x >> 4, (int)z >> 4));
+			if (col == null) continue;
+			Chunk c = Hpb.world.getColumn(side.x, side.z).chunks[(int)side.y/16];
+			if (c != thiss && !chunks.contains(c)) chunks.add(c);
+		}
+		return chunks;
 	}
 	
 	public static Vector3D fromString(String s) {

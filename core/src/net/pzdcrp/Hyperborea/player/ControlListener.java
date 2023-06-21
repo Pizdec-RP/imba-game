@@ -10,7 +10,6 @@ import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
-import net.pzdcrp.Hyperborea.world.elements.entities.FallingBlockEntity;
 import net.pzdcrp.Hyperborea.world.elements.entities.Particle;
 
 public class ControlListener implements InputProcessor {
@@ -32,21 +31,14 @@ public class ControlListener implements InputProcessor {
 		}
 		if (keycode == Input.Keys.ENTER) {
 			if (!Hpb.world.player.chat.isOpened()) {
-				Hpb.world.player.chat.open();
+				Hpb.world.player.chat.openChat();
 			}
 		}
-		if (keycode == Input.Keys.F) {
-			System.out.println("spawned");
-			Vector3D entitypos = Hpb.world.player.getEyeLocation();
-			Entity fbe = new FallingBlockEntity(entitypos,1);
-			Vector3 camdir = Hpb.world.player.cam.cam.direction.cpy().scl(1.5f);
-			fbe.vel.x = camdir.x;
-			fbe.vel.y = camdir.y;
-			fbe.vel.z = camdir.z;
-			Hpb.world.player.curCol.entites.add(fbe);
+		if (keycode == Input.Keys.H) {
+			Hpb.displayInfo("i like sex!");
 		}
 		if (keycode == Input.Keys.V) {
-			Hpb.world.particles.add(new Particle(Hpb.getTexture("firebase"), Hpb.world.player.pos.translate().add(0, 2f, 0), new Vector3(), 120));
+			Hpb.world.particles.add(new Particle(Hpb.mutex.getBlockTexture("dirt"), Hpb.world.player.pos.translate().add(0, 2f, 0), new Vector3(), 120));
 		}
 		if (keycode == Input.Keys.N) {
 			World.renderRad += 1;
@@ -109,7 +101,7 @@ public class ControlListener implements InputProcessor {
 
 	@Override
 	public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-		// TODO Auto-generated method stub
+		//TODO Auto-generated method stub
 		return false;
 	}
 

@@ -206,11 +206,11 @@ void main() {
 	makefragred = 0.0;
 	
 	if (haslight > 0 && haslight < 5) {
-		if (lightdata > 14) {//TODO remove
+		/*if (lightdata > 14) {//debug only
 			makefragred = 1.0;
 		} else if (lightdata < 0) {//shit ass
 			makefragred = 2.0;
-		}
+		}*/
 		vertexlight = lightdata / 14.0;
 	} else {
 		//makefragred = 1.0;

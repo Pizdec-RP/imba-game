@@ -29,11 +29,7 @@ public class PlayerInventory extends IInventory {
 		super(owner);
 		for (int i = 0; i < 40; i++) {
 			addItem(new NoItem(this), i);
-			if (i < 10) {
-				Bhotbar[i] = 0;
-			}
 		}
-		//m = new MBIM(null);//TODO полностью переделать потомучто это говно полное ваще переделать весь рендер инвентаря нахуй
 	}
 	
 	//private MBIM m;
@@ -44,27 +40,8 @@ public class PlayerInventory extends IInventory {
         } else {
         	items.put(index, item);
         }
-        if (index < 10) {
-        	if (item.isModel()) {
-	        	Block n = Block.blockByItem(item);
-	        	if (n.isRenderable()) {
-	        		/*n.addModel(false, false, false, false, false, false, m);
-	        		Pair firstValue = m.p;
-		        	ModelInstance modelInstance = new ModelInstance(firstValue.mb.end());
-		        	modelInstance.transform.set(Hpb.mCamera.invProjectionView);
-		        	modelInstance.transform.rotate(Vector3.X, 35);
-		    	    modelInstance.transform.rotate(Vector3.Y, -45);
-		    	    modelInstance.transform.rotate(Vector3.Z, 0);
-		    	    modelInstance.transform.translate(-.715f+.075f*index, -1.13f, .63f-.075f*index);
-		    	    modelInstance.transform.scale(.05f, .10f, .05f);
-		    	    modelInstance.userData = new Object[] {"hotbar item "+index};
-		    	    Mhotbar[index] = modelInstance;
-		    	    Bhotbar[index] = 1;*/
-	        	}
-        	} else {
-        		Thotbar[index] = item.getTexture();
-        		Bhotbar[index] = 2;
-        	}
+        if (!(item instanceof NoItem) && index < 10) {
+        	Thotbar[index] = item.getTexture();
         }
     }
 	
@@ -94,11 +71,9 @@ public class PlayerInventory extends IInventory {
     	return items.get(index);
     }
     
-    public static final Texture slot = Hpb.getTexture("slot");
-    public static final Texture selectedSlot = Hpb.getTexture("sslot");
-    public ModelInstance[] Mhotbar = new ModelInstance[10];
+    public static final Texture slot = Hpb.mutex.getOTexture("slot");
+    public static final Texture selectedSlot = Hpb.mutex.getOTexture("sslot");
     public Texture[] Thotbar = new Texture[10];
-    public int[] Bhotbar = new int[10];
     @Override
     public void render() {
     	//test();
@@ -108,12 +83,9 @@ public class PlayerInventory extends IInventory {
     		} else {
     			Hpb.spriteBatch.draw(slot, i*64+3.75f*i, 15, 64, 64);
     		}
-    		if (Bhotbar[i] == 1) {
-    			//System.out.println("render "+hotbar[i].transform.getTranslation(new Vector3()).toString());
-    			//Hpb.render(Mhotbar[i]);
-    		} else if (Bhotbar[i] == 2) {
-    			Hpb.spriteBatch.draw(Thotbar[i], i*64+3.75f*i, 15, 64, 64);
-    		}
+    		Texture t = Thotbar[i];
+    		if (t != null)
+    			Hpb.spriteBatch.draw(t, i*64f+3.90f*i, 15f, 64f, 64f);
     	}
     }
     

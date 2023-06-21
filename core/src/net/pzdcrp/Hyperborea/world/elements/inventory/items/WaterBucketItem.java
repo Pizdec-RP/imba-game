@@ -33,13 +33,8 @@ public class WaterBucketItem extends Item {
 	}
 	
 	@Override
-	public boolean isModel() {
-		return false;
-	}
-	
-	@Override
 	public Texture getTexture() {
-		return Hpb.getTexture("waterbucket");
+		return Hpb.mutex.getItemTexture("waterbucket");
 	}
 	
 	@Override

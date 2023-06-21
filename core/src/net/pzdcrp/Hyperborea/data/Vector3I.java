@@ -1,5 +1,13 @@
 package net.pzdcrp.Hyperborea.data;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import net.pzdcrp.Hyperborea.Hpb;
+import net.pzdcrp.Hyperborea.world.World;
+import net.pzdcrp.Hyperborea.world.elements.Chunk;
+import net.pzdcrp.Hyperborea.world.elements.Column;
+
 public class Vector3I {
 	public int x,y,z;
 	public Vector3I(int x, int y, int z) {
@@ -18,6 +26,35 @@ public class Vector3I {
 		this.x = (int)pos.x;
 		this.y = (int)pos.y; 
 		this.z = (int)pos.z;
+	}
+	
+	public Vector3I addd(int x, int y, int z) {
+		return new Vector3I(this.x + x, this.y + y, this.z + z);
+	}
+	
+	public List<Vector3I> sides() {
+		List<Vector3I> sides = new ArrayList<Vector3I>() {{
+			add(addd(1, 0, 0));
+			add(addd(0, 0, 1));
+			add(addd(-1, 0, 0));
+			add(addd(0, 0, -1));
+			add(addd(0, 1, 0));
+			add(addd(0, -1, 0));
+		}};
+		return sides;
+	}
+
+	public List<Chunk> getSidesChunks() {
+		List<Chunk> chunks = new ArrayList<>();
+		Chunk thiss = Hpb.world.getColumn(x, z).chunks[y/16];
+		for (Vector3I side : sides()) {
+			if (side.y >= World.maxheight) continue;
+			Column col = Hpb.world.loadedColumns.get(new Vector2I(x >> 4, z >> 4));
+			if (col == null) continue;
+			Chunk c = Hpb.world.getColumn(side.x, side.z).chunks[side.y/16];
+			if (c != thiss && !chunks.contains(c)) chunks.add(c);
+		}
+		return chunks;
 	}
 	
 	@Override

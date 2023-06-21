@@ -21,7 +21,31 @@ import net.pzdcrp.Hyperborea.world.elements.inventory.items.Item;
 public class Block {
 	public static World world;// = GameInstance.world;
 	public Vector3D pos;
-	private static Map<Integer, Block> blocks;
+	private static Map<Integer, Block> blocks = new ConcurrentHashMap<Integer, Block>( ) {
+		private static final long serialVersionUID = 3707964282902670945L;
+		{
+			put(0, new Air(new Vector3D()));
+			put(1, new Dirt(new Vector3D()));
+			put(2, new Stone(new Vector3D()));
+			put(3, new Glass(new Vector3D()));
+			put(5, new Voed(new Vector3D()));
+			put(6, new Grass(new Vector3D()));
+			put(7, new OakLog(new Vector3D(),BlockFace.PX));
+			put(8, new OakLog(new Vector3D(),BlockFace.PY));
+			put(9, new OakLog(new Vector3D(),BlockFace.PZ));
+			put(10, new OakLog(new Vector3D(),BlockFace.NX));
+			put(11, new OakLog(new Vector3D(),BlockFace.NY));
+			put(12, new OakLog(new Vector3D(),BlockFace.NZ));
+			put(13, new Planks(new Vector3D()));
+			put(14, new TntCrate(new Vector3D()));
+			put(15, new Water(new Vector3D(), 1));
+			put(16, new Water(new Vector3D(), 2));
+			put(17, new Water(new Vector3D(), 3));
+			put(18, new Water(new Vector3D(), 4));
+			put(19, new Water(new Vector3D(), 5));
+			put(20, new Water(new Vector3D(), 6));
+			put(21, new Water(new Vector3D(), 7));
+		}};;
 	private static Map<Integer, Integer> BlockidToItemid = new ConcurrentHashMap<Integer, Integer>() {
 		private static final long serialVersionUID = 37079642665568945L;
 		{
@@ -45,35 +69,6 @@ public class Block {
 	}
 	public String texture;
 	protected AABB hitbox;
-	
-	public static void init() {
-		
-		blocks = new ConcurrentHashMap<Integer, Block>( ) {
-			private static final long serialVersionUID = 3707964282902670945L;
-			{
-				put(0, new Air(new Vector3D()));
-				put(1, new Dirt(new Vector3D()));
-				put(2, new Stone(new Vector3D()));
-				put(3, new Glass(new Vector3D()));
-				put(5, new Voed(new Vector3D()));
-				put(6, new Grass(new Vector3D()));
-				put(7, new OakLog(new Vector3D(),BlockFace.PX));
-				put(8, new OakLog(new Vector3D(),BlockFace.PY));
-				put(9, new OakLog(new Vector3D(),BlockFace.PZ));
-				put(10, new OakLog(new Vector3D(),BlockFace.NX));
-				put(11, new OakLog(new Vector3D(),BlockFace.NY));
-				put(12, new OakLog(new Vector3D(),BlockFace.NZ));
-				put(13, new Planks(new Vector3D()));
-				put(14, new TntCrate(new Vector3D()));
-				put(15, new Water(new Vector3D(), 1));
-				put(16, new Water(new Vector3D(), 2));
-				put(17, new Water(new Vector3D(), 3));
-				put(18, new Water(new Vector3D(), 4));
-				put(19, new Water(new Vector3D(), 5));
-				put(20, new Water(new Vector3D(), 6));
-				put(21, new Water(new Vector3D(), 7));
-			}};
-	}
 	
 	public Block(Vector3D pos, String texture, AABB hitbox) {
 		this.pos = pos.VecToInt();

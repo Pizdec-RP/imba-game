@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -65,6 +66,7 @@ import net.pzdcrp.Hyperborea.utils.VectorU;
 import net.pzdcrp.Hyperborea.world.elements.Chunk;
 import net.pzdcrp.Hyperborea.world.elements.Column;
 import net.pzdcrp.Hyperborea.world.elements.Region;
+import net.pzdcrp.Hyperborea.world.elements.Weather;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Voed;
@@ -90,14 +92,16 @@ public class World {// implements RenderableProvider {
     
     private static final int DAY_LENGTH = 60000;
     private static final float DISTANCE_FROM_CENTER = 200f;
-    public static int renderRad = 1;
+    public static int renderRad = 2;
     Material skymaterial;
     
-    public List<Particle> particles = new CopyOnWriteArrayList<>();
-	
+    //public ModelInstance particlesModel = new ModelInstance(new Model());
+    public List<Particle> particles = new CopyOnWriteArrayList<>();//TODO оптимизировать
+	public Weather weather;
+    
 	public World() {
 		Block.world = this;
-		Block.init();
+		this.weather = new Weather(this);
 	}
 	
 	public void load() throws Exception {
@@ -113,10 +117,12 @@ public class World {// implements RenderableProvider {
 			
 			this.loadedColumns.put(cpos, genOrLoadRegion(rpos).getColumn(cpos));
 			player.beforeechc = cpos;
+			weather.fromJson(obj.get("weather").getAsJsonObject());
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("данных о мире нет");
 			player = new Player(5,maxheight,5);
+			weather.initAsNew();
 		}
 		updateLoadedColumns();
 		player.tick();
@@ -131,7 +137,7 @@ public class World {// implements RenderableProvider {
 		
 		ModelBuilder modelBuilder = new ModelBuilder();
 		skymaterial = new Material(ColorAttribute.createDiffuse(0, 0, 255, 255), IntAttribute.createCullFace(GL20.GL_NONE));
-		Model model = modelBuilder.createSphere(DISTANCE_FROM_CENTER*2, DISTANCE_FROM_CENTER*2, DISTANCE_FROM_CENTER*2, 20, 20,skymaterial, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
+		Model model = modelBuilder.createBox(DISTANCE_FROM_CENTER*5, DISTANCE_FROM_CENTER*5, DISTANCE_FROM_CENTER*5, skymaterial, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);
 		sky = new ModelInstance(model);
 		sky.userData = new Object[] {"c", "sky"};
 		Matrix4 transform = new Matrix4();
@@ -139,8 +145,8 @@ public class World {// implements RenderableProvider {
 		sky.transform.set(transform);
 		
 		modelBuilder = new ModelBuilder();
-		Material material = new Material(ColorAttribute.createDiffuse(Color.YELLOW));
-		model = modelBuilder.createSphere(20f, 20f, 20f, 15, 15, material, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
+		Material material = new Material(TextureAttribute.createDiffuse(Hpb.mutex.getOTexture("sun")));
+		model = modelBuilder.createBox(60f, 60f, 60f, material, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);
 		sun = new ModelInstance(model);
 		sun.userData = new Object[] {"c", "sun"};
 		
@@ -196,12 +202,12 @@ public class World {// implements RenderableProvider {
 		col.setBlock((int)block.pos.x&15,(int)block.pos.y,(int)block.pos.z&15, block);
 		for (Block block1 : block.getSides()) {
 			block1.onNeighUpdate();
-			block1.callChunkUpdate();//лаганая хуйня
+			block1.callChunkUpdate();
 		}
 	}
 	
 	public void spawnParticle(String tname, Vector3 pos, Vector3 vel, int lifetime) {
-		particles.add(new Particle(Hpb.getTexture(tname), pos, vel, lifetime));
+		particles.add(new Particle(Hpb.mutex.getBlockTexture(tname), pos, vel, lifetime));
 	}
 	
 	public void breakBlock(Vector3D pos) {
@@ -227,7 +233,9 @@ public class World {// implements RenderableProvider {
 	public int getLight(int x, int y, int z) {
 		if (y < 0 || y >= maxheight) return 14;
 		try {
-			return getColumn(x,z).chunks[y/16].rawGetLight(x&15, y&15, z&15);
+			Column col = loadedColumns.get(new Vector2I(x>>4, z>>4));
+			if (col == null) return 0;
+			return col.chunks[y/16].rawGetLight(x&15, y&15, z&15);
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(0);
@@ -280,20 +288,23 @@ public class World {// implements RenderableProvider {
 	
 	public ModelInstance sky;
 	public void renderSky() {
-		time = (int) time % DAY_LENGTH;
+	    time = (int) time % DAY_LENGTH;
+	    float px = (float)player.pos.x, py = (float)player.pos.y, pz = (float)player.pos.z;
+	    float angle = 2f * (float) Math.PI * time / DAY_LENGTH;
+	    float x = (DISTANCE_FROM_CENTER * MathU.cos(angle) + px);
+	    float y = (DISTANCE_FROM_CENTER * MathU.sin(angle) + py);
 
-        float angle = 2f * (float) Math.PI * time / DAY_LENGTH;
-        float x = (float) ((DISTANCE_FROM_CENTER * (float) Math.cos(angle)) + player.pos.x);
-        float y = (float) ((DISTANCE_FROM_CENTER * (float) Math.sin(angle)) + player.pos.y);
-        sky.transform.setToTranslation((float)player.pos.x, (float)player.pos.y, (float)player.pos.z);
-        sun.transform.setToTranslation(x, y, (float) player.pos.z);
-        //moon.transform.setToTranslation(x, y, (float) player.pos.z);
-		Hpb.render(sun);
-		//GameInstance.modelBatch.render(moon);
-		//sundl.direction.set(-x, -y, (float) player.pos.z);
-		Hpb.render(sky);
-        //lightDirection.set(player.pos.translate()).sub(sunPosition).nor();
+	    sky.transform.setToTranslation(px,py,pz);
+
+	    Vector3 translation = new Vector3();
+	    sun.transform.getTranslation(translation);
+	    sun.transform.rotate(1, 1, 1, 0.01f);
+	    sun.transform.setTranslation(x, y, pz);
+
+	    Hpb.render(sun);
+	    Hpb.render(sky);
 	}
+
 	
 	public void tick() throws Exception {
 		if (!ready || Hpb.exit) {
@@ -320,41 +331,65 @@ public class World {// implements RenderableProvider {
 	}
 	
 	public void updateLoadedColumns() throws Exception {
-		List<Vector2I> cl = new ArrayList<>();
-	    for (int x = -renderRad; x < renderRad;x++) {
-	    	for (int z = -renderRad; z < renderRad;z++) {
-		    	cl.add(new Vector2I(player.beforeechc.x+x,player.beforeechc.z+z));
-		    }
+	    Set<Vector2I> cl = new HashSet<>();
+	    for (int x = -renderRad; x < renderRad; x++) {
+	        for (int z = -renderRad; z < renderRad; z++) {
+	            cl.add(new Vector2I(player.beforeechc.x+x, player.beforeechc.z+z));
+	        }
 	    }
-	    //чекаем какие есть и убирает из cl то что есть
+	    // Хранит ключи столбцов, которые нужно удалить
+	    List<Vector2I> toRemove = new ArrayList<>();
+	    // Проверяем какие столбцы уже загружены и убираем из cl то что есть
 	    for (Entry<Vector2I, Column> col : loadedColumns.entrySet()) {
-	    	if (cl.contains(col.getValue().pos)) {
-	    		cl.remove(col.getValue().pos);
-	    	} else {//отгружаем чанки которых нет в cl
-	    		loadedColumns.remove(col.getKey());
-	    		//((Disposable) col.getValue().chunks[0].allModels).dispose();
-	    		//memoriedColumns.put(col.getKey(), col.getValue());
-	    	}
+	        if (cl.contains(col.getValue().pos)) {
+	            cl.remove(col.getValue().pos);
+	        } else { // отмечаем для удаления столбцы, которых нет в cl
+	            toRemove.add(col.getKey());
+	        }
 	    }
-	    //подгружаем недостдавшиеся
+	    // Удаляем столбцы
+	    for (Vector2I key : toRemove) {
+	        loadedColumns.remove(key);
+	    }
+	    // подгружаем недоставшиеся
 	    for (Vector2I c : cl) {
-	    	//System.out.println("managing columns: "+i+++"/"+cl.size());
-	    	loadedColumns.put(c,genOrLoadRegion(VectorU.ColumnToRegion(c)).getColumn(c));
+	        loadedColumns.put(c, genOrLoadRegion(VectorU.ColumnToRegion(c)).getColumn(c));
 	    }
 	}
 	
 	public boolean isCycleFree = true;
 	public void render() throws Exception {
 		if (Hpb.exit) return;
-		renderSky();
-		for (Entry<Vector2I, Column> col : loadedColumns.entrySet()) {
-			col.getValue().renderNormal();
+		for (Column col : loadedColumns.values()) {
+			//if (!Hpb.world.isCycleFree) break;
+			for (Chunk chunk : col.chunks) {
+				if (chunk.inlightupd) {
+					chunk.updateLightMain();
+					chunk.inlightupd = false;
+					chunk.outlightupd = true;
+					Hpb.world.isCycleFree = false;
+					break;
+				}
+			}
 		}
-		/*for (Entry<Vector2I, Column> col : loadedColumns.entrySet()) {
-			col.getValue().renderTransparent();
-		}*/
-		for (Entry<Vector2I, Column> col : loadedColumns.entrySet()) {
-			col.getValue().renderEntites();
+		if (Hpb.world.isCycleFree) {
+			for (Column col : loadedColumns.values()) {
+				//if (!Hpb.world.isCycleFree) break;
+				for (Chunk chunk : col.chunks) {
+					if (chunk.outlightupd) {
+						chunk.updateLightFromOutbounds();
+						Hpb.world.isCycleFree = false;
+						chunk.outlightupd = false;
+						chunk.updateModel();
+						break;
+					}
+				}
+			}
+		}
+		renderSky();
+		for (Column col : loadedColumns.values()) {
+			col.renderNormal();
+			col.renderEntites();
 		}
 		for (ModelInstance a : additional) {
 			Hpb.render(a);
@@ -382,6 +417,7 @@ public class World {// implements RenderableProvider {
 			jwd.addProperty("playerreg", memoriedRegions.get(VectorU.posToRegion(player.pos)).pos.toString());
 			jwd.addProperty("playercol", player.curCol.pos.toString());
 			jwd.addProperty("time", this.time);
+			jwd.add("weather", weather.toJson());
 			
 			FileWriter writer = new FileWriter("save/wdata.dat");
 			writer.write(jwd.toString());

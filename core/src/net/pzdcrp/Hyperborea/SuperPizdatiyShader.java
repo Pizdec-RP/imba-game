@@ -37,8 +37,6 @@ public class SuperPizdatiyShader extends BaseShaderProvider {
     public List<Shader> stage2 = new CopyOnWriteArrayList<>();
     public Texture stage2pic;
     public int stage = 0;
-    public float testx = 0,testz = 0;
-    public int testy = 0;
  
     public SuperPizdatiyShader () {
     }
@@ -136,26 +134,11 @@ class TestShader extends DefaultShader {
 	public void render (Renderable renderable, Attributes combinedAttributes) {
 		try {
 			Object[] data = (Object[])renderable.userData;
-			//System.out.println("--------");
-			/*for (Object o : data) {
-				System.out.println(o.toString());
-			}*/
 			if (data.length >= 3) {//если есть система освещения
-				//System.out.println("zaebis: "+data[1]);
-				//ByteBuffer casted = (ByteBuffer)data[2];
-				
-				//this.program.setVertexAttribute("lightdata", 4, GL20.GL_FLOAT, false, Float.SIZE, casted);
-				//this.program.enableVertexAttribute("lightdata");
 				set(haslight, 1);
-				//set(intArrayTexture, casted);
 			} else {
-				//System.out.println("huevo");
 				this.set(haslight, 0);
 			}
-			set(test, new Vector3(1,1,0));//TODO удалить
-			set(sdvigx, s.testx);//TODO удалить
-			set(sdvigy, s.testy);//TODO удалить
-			set(sdvigz, s.testz);//TODO удалить
 			super.render(renderable, combinedAttributes);
 		} catch (Exception e) {
 			e.printStackTrace();

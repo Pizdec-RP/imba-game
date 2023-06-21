@@ -28,4 +28,9 @@ public class GlassItem extends Item {
 	public String getName() {
 		return "Glass";
 	}
+	
+	@Override
+	public boolean isModel() {
+		return true;
+	}
 }

@@ -11,20 +11,26 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.g2d.PixmapPacker;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.g3d.Environment;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
+import com.badlogic.gdx.graphics.g3d.Material;
+import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
-import com.badlogic.gdx.graphics.g3d.Renderable;
-import com.badlogic.gdx.graphics.g3d.RenderableProvider;
+import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
+import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.utils.Align;
+import com.badlogic.gdx.utils.Timer;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -33,6 +39,7 @@ import net.pzdcrp.Hyperborea.player.ControlListener;
 import net.pzdcrp.Hyperborea.utils.ThreadU;
 import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.Column;
+import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Stone;
 
 public class Hpb extends ApplicationAdapter {
@@ -50,7 +57,6 @@ public class Hpb extends ApplicationAdapter {
 	public static OrthographicCamera mCamera;
 	public static Mutex mutex = new Mutex();
 	
-	public static Map<String, Texture> textures = new HashMap<>();
 	public static final Vector3 forAnyReason = new Vector3();
 	public static World world;
 	//public static SpriteBatch gui = new SpriteBatch();
@@ -61,6 +67,12 @@ public class Hpb extends ApplicationAdapter {
 	public static FrameBuffer buffer;
 	public static TextureRegion textureRegion;
 	
+	public State state = State.PREPARE;
+	
+	public enum State {
+		PREPARE, INGAME
+	}
+	
 	@Override
 	public void create() {
 		System.out.println("loading textures");
@@ -69,8 +81,14 @@ public class Hpb extends ApplicationAdapter {
 		modelBatch = new ModelBatch(shaderprovider = new SuperPizdatiyShader());
 		
 		spriteBatch = new SpriteBatch();
-		
-		BitmapFont font = new BitmapFont(Gdx.files.classpath("com/badlogic/gdx/utils/lsans-15.fnt"), Gdx.files.classpath("com/badlogic/gdx/utils/lsans-15.png"), false);
+		FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/Underdog.ttf"));
+		FreeTypeFontParameter parameter = new FreeTypeFontParameter();
+		parameter.size = 30;
+		parameter.minFilter = TextureFilter.Linear;
+		parameter.magFilter = TextureFilter.Linear;
+		parameter.genMipMaps = true;
+		parameter.characters = FreeTypeFontGenerator.DEFAULT_CHARS + "йцукенгшщзфывапролджэячсмитьбюъё";
+		font = generator.generateFont(parameter);
 		//font.getRegion().getTexture().setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
 		label = new Label(" ", new Label.LabelStyle(font, Color.WHITE));
 		label.setVisible(true);
@@ -99,42 +117,21 @@ public class Hpb extends ApplicationAdapter {
 	    mCamera.setToOrtho(false, 720, 720);
 	    
 		
-		world = new World();
-		try {
-			world.load();
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.out.println("мир не подгружается");
-			System.exit(0);
-		}
+		
 		buffer = new FrameBuffer(Pixmap.Format.RGBA8888, 1280, 720, true);
 		textureRegion = new TextureRegion();
 		textureRegion.flip(false, true);
-		tickLoop();
 		Thread.currentThread().setName("main thd");
-		
-		
 	}
 	
 	public void tick() throws Exception {
 		world.tick();
 	}
 	
-	static long startdisplay = 0L;
-	static boolean disp = false;
-	public static void displayInfo(String text) {
-		infoLabel.setText(text);
-		infoLabel.setAlignment(Align.center);
-		startdisplay = System.currentTimeMillis();
-		disp = true;
-		infoLabel.setVisible(true);
-	}
-	
 	long last = System.currentTimeMillis();
 	//public static ModelInstance modelInstance;
 	private static long /*delta, */now;
 	private static int en;
-	private static TextureRegion allTextures;//TODO remove
 	
 	public static float lerp(float a, float b) {
 	    float t = (float)(System.nanoTime() - timeone) / (tickrate * 1000000);
@@ -142,12 +139,47 @@ public class Hpb extends ApplicationAdapter {
 	    return a * (1.0f - t) + b * t;
 	}
 	
+	static String fullText;
+    static String currentText = "";
+    static int currentIndex = 0;
+    static float delay = 0.03f;
+    static float vanishDelay = 5f;
+    static Timer.Task textTimer;
+    static GlyphLayout layout = new GlyphLayout();
+    
+    public static void displayInfo(String text) {
+        if(textTimer != null) {
+            textTimer.cancel();
+        }
+
+        fullText = text;
+        currentIndex = 0;
+        currentText = "";
+
+        textTimer = Timer.schedule(new Timer.Task(){
+            @Override
+            public void run() {
+                if(currentIndex < fullText.length()) {
+                    currentText += fullText.charAt(currentIndex);
+                    currentIndex++;
+                } else {
+                    this.cancel();
+                    Timer.schedule(new Timer.Task(){
+                        @Override
+                        public void run() {
+                            currentText = "";
+                        }
+                    }, vanishDelay);
+                }
+            }
+        }, delay, delay);
+    }
+	
 	public void renderWorld() throws Exception {
 		//хуцня с обычным рендером
 		//buffer.begin();
 		
 		//Gdx.gl.glViewport(0, 0, 1280, 720);
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 		
 		//1 стадия
 		
@@ -178,6 +210,13 @@ public class Hpb extends ApplicationAdapter {
 		//Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 		modelBatch.begin(mCamera);
 		spriteBatch.begin();
+		
+		//displayinfo
+		layout.setText(font, currentText);
+	    float textWidth = layout.width;
+		font.draw(spriteBatch, currentText, Gdx.graphics.getWidth()/2 - textWidth / 2, Gdx.graphics.getHeight()*0.2f);
+		//end
+		
 		//spriteBatch.draw(mutex.comp, 0,0,mutex.comp.getWidth(),mutex.comp.getHeight(), 0, 0, mutex.comp.getWidth(),mutex.comp.getHeight(), false, true);
 		world.player.inventory.render();
 		spriteBatch.end();
@@ -194,36 +233,47 @@ public class Hpb extends ApplicationAdapter {
 			return;
 		}
 		try {
-			now = System.currentTimeMillis();
-			//delta = now - last;
-			last = now;
-			
-			renderWorld();
-			
-			
-			StringBuilder builder = new StringBuilder();
-			builder.append("onGround: ").append(world.player.onGround);
-			builder.append(" time: ").append(world.time);
-			builder.append(" col: ").append(world.loadedColumns.size());
-			builder.append(" | pos: ").append("x:"+String.format("%.2f",world.player.pos.x)+" y:"+String.format("%.2f",world.player.pos.y)+" z:"+String.format("%.2f",world.player.pos.z));
-			en = 0;
-			for (Column col : world.loadedColumns.values()) {
-				en += col.entites.size();
-			}
-			builder.append(" | ent: ").append(en);
-			builder.append(" | fps: ").append(Gdx.app.getGraphics().getFramesPerSecond());
-			builder.append(" | youInCol: ").append(world.player.beforeechc.toString());
-			label.setText(builder);
-			stage.draw();
-			
-			if (disp) {
-				float dispdelta = (float) (now - startdisplay);
-				if (dispdelta < 4000) {//TODO надо сделать чтоб 2 секунды горело а потом плавно исчезало
-					infoLabel.setColor(1, 1, 1, 1f-dispdelta/4000);
-				} else {
-					disp = false;
-					infoLabel.setVisible(false);
+			if (state == State.PREPARE) {
+				int bw = Gdx.graphics.getWidth(), bh = Gdx.graphics.getHeight();
+				Gdx.graphics.setWindowedMode(500, 500);
+				mutex.prepare();
+				mutex.render();
+				mutex.endrender();
+				state = State.INGAME;
+				Gdx.graphics.setWindowedMode(bw, bh);
+				world = new World();
+				try {
+					world.load();
+				} catch (Exception e) {
+					e.printStackTrace();
+					System.out.println("мир не подгружается");
+					System.exit(0);
 				}
+				tickLoop();
+			} else if (state == State.INGAME) {
+				now = System.currentTimeMillis();
+				//delta = now - last;
+				last = now;
+				
+				Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+				
+				renderWorld();
+				
+				StringBuilder builder = new StringBuilder();
+				builder.append("onGround: ").append(world.player.onGround);
+				builder.append(" time: ").append(world.time);
+				builder.append(" col: ").append(world.loadedColumns.size());
+				builder.append(" | pos: ").append("x:"+String.format("%.2f",world.player.pos.x)+" y:"+String.format("%.2f",world.player.pos.y)+" z:"+String.format("%.2f",world.player.pos.z));
+				en = 0;
+				for (Column col : world.loadedColumns.values()) {
+					en += col.entites.size();
+				}
+				builder.append(" | ent: ").append(en);
+				builder.append(" | fps: ").append(Gdx.app.getGraphics().getFramesPerSecond());
+				builder.append(" | youInCol: ").append(world.player.beforeechc.toString());
+				label.setText(builder);
+				stage.act(Gdx.graphics.getDeltaTime());
+				stage.draw();
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -241,22 +291,33 @@ public class Hpb extends ApplicationAdapter {
 		exit = true;
 	}
 	
-	public static Texture getTexture(String s) {
-		return textures.get(s);
-	}
-	
 	@SuppressWarnings("deprecation")
 	public static void loadTextures() {
 		mutex.begin();
 		System.out.println(Gdx.files.getLocalStoragePath());
 		JsonObject obj = (JsonObject) new JsonParser().parse(Gdx.files.internal("textureData.json").readString());
-		System.out.println("грузим "+obj.keySet().size()+" тектур");
-		for (String key : obj.keySet()) {
-			Texture texture;
-			textures.put(key, texture = new Texture(Gdx.files.internal("textures/"+obj.get(key).getAsString()),Format.RGBA8888,true));
+		
+		JsonObject blocks = obj.get("blocks").getAsJsonObject();
+		for (String key : blocks.keySet()) {
+			Texture texture = new Texture(Gdx.files.internal("textures/blocks/"+blocks.get(key).getAsString()),Format.RGBA8888,true);
 			texture.setFilter(TextureFilter.MipMap,TextureFilter.Nearest);
 			mutex.addTexture(texture, key);
 		}
+		
+		JsonObject other = obj.get("other").getAsJsonObject();
+		for (String key : other.keySet()) {
+			Texture texture  = new Texture(Gdx.files.internal("textures/other/"+other.get(key).getAsString()),Format.RGBA8888,true);
+			texture.setFilter(TextureFilter.MipMap,TextureFilter.Nearest);
+			mutex.addOtherTexture(texture, key);
+		}
+		
+		JsonObject items = obj.get("items").getAsJsonObject();
+		for (String key : items.keySet()) {
+			Texture texture  = new Texture(Gdx.files.internal("textures/items/"+items.get(key).getAsString()),Format.RGBA8888,true);
+			texture.setFilter(TextureFilter.MipMap,TextureFilter.Nearest);
+			mutex.addItemTexture(texture, key);
+		}
+		
 		mutex.end();
 	}
 	
@@ -321,19 +382,22 @@ public class Hpb extends ApplicationAdapter {
 			exit=false;
 		} else if (command.equals("setblock")) {
 			world.setBlock(new Stone(world.player.pos.clone().func_vf()));
-			world.player.chat.currentLine.setText("setted");
-			world.player.chat.send();
+			world.player.chat.addMessage("setted");
 		} else if (command.equals("gl")) {
 			if (args.length < 4) {
-				world.player.chat.currentLine.setText("no args");
-				world.player.chat.send();
+				world.player.chat.addMessage("no args");
 			} else {
 				int x = Integer.parseInt(args[1]);
 				int y = Integer.parseInt(args[2]);
 				int z = Integer.parseInt(args[3]);
 				int light = world.getLight(x, y, z);
-				world.player.chat.currentLine.setText("light at ["+x+" "+y+" "+z+"] is "+light);
-				world.player.chat.send();
+				world.player.chat.addMessage("light at ["+x+" "+y+" "+z+"] is "+light);
+			}
+		} else if (command.equals("weather")) {
+			String type = args[1];
+			switch (type) {
+			case "rain":
+				return;//TODO
 			}
 		}
 	}

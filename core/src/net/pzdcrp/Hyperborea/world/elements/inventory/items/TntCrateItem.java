@@ -30,4 +30,9 @@ public class TntCrateItem extends Item {
 	public String getName() {
 		return "TNT crate";
 	}
+	
+	@Override
+	public boolean isModel() {
+		return true;
+	}
 }

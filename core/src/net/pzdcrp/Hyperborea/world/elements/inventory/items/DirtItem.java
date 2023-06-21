@@ -22,6 +22,11 @@ public class DirtItem extends Item {
 	}
 	
 	@Override
+	public boolean isModel() {
+		return true;
+	}
+	
+	@Override
 	public String getName() {
 		return "Dirt";
 	}

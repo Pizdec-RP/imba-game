@@ -257,7 +257,8 @@ public class Water extends Liquifyable {
 	}
 	
 	@Override
-	public JsonObject toJson() {//TODO если в блоке не должна обновляться информация в следующем тике то он сохраняется как int начение
+	public JsonObject toJson() {
+		if (!ableToTick) return null;
 		JsonObject j = new JsonObject();
 		j.addProperty("id", Block.idByBlock(this));
 		j.addProperty("a", this.ableToTick);

@@ -30,4 +30,9 @@ public class StoneItem extends Item {
 	public String getName() {
 		return "Stone";
 	}
+	
+	@Override
+	public boolean isModel() {
+		return true;
+	}
 }

@@ -73,7 +73,7 @@ public class TntCrate extends Block {
 		if (timer>0) {
 			System.out.println(timer);
 			timer--;
-			world.particles.add(new Particle(Hpb.getTexture("firebase"), pos.translate().add(0.5f, 1f, 0.5f), new Vector3(MathU.rndf(0.2f, -0.2f),MathU.rndf(0.6f, 0.1f),MathU.rndf(0.2f, -0.2f)), 60));
+			world.particles.add(new Particle(Hpb.mutex.getBlockTexture("firebase"), pos.translate().add(0.5f, 1f, 0.5f), new Vector3(MathU.rndf(0.2f, -0.2f),MathU.rndf(0.6f, 0.1f),MathU.rndf(0.2f, -0.2f)), 60));
 			return;
 		}
 		world.setBlock(new Air(this.pos));

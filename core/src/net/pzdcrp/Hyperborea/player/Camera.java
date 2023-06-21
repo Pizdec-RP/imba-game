@@ -20,7 +20,7 @@ public class Camera {
 		cam.lookAt(0, 0, 0);
 		cam.near = 0.1f;
 		
-		cam.far = 500f;
+		cam.far = 1000f;
 		cam.update();
 	}
 	

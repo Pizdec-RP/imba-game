@@ -28,4 +28,9 @@ public class GrassItem extends Item {
 	public String getName() {
 		return "Grass";
 	}
+	
+	@Override
+	public boolean isModel() {
+		return true;
+	}
 }

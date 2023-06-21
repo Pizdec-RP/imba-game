@@ -29,4 +29,9 @@ public class PlanksItem extends Item {
 	public String getName() {
 		return "Planks";
 	}
+	
+	@Override
+	public boolean isModel() {
+		return true;
+	}
 }

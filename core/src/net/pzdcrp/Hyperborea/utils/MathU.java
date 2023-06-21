@@ -1,5 +1,6 @@
 package net.pzdcrp.Hyperborea.utils;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -241,5 +242,20 @@ public class MathU {
 			if (i > max) i = max;
 		}
 		return max;
+	}
+	
+	public static int[][][] deepCopy3DArray(int[][][] original) {
+	    int[][][] copy = new int[original.length][][];
+	    
+	    for (int i = 0; i < original.length; i++) {
+	        copy[i] = new int[original[i].length][];
+	        
+	        for (int j = 0; j < original[i].length; j++) {
+	            // Копирование каждого подмассива
+	            copy[i][j] = Arrays.copyOf(original[i][j], original[i][j].length);
+	        }
+	    }
+	    
+	    return copy;
 	}
 }

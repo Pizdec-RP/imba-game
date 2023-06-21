@@ -33,5 +33,10 @@ public class OakLogItem extends Item {
 	public String getName() {
 		return "Oak log";
 	}
+	
+	@Override
+	public boolean isModel() {
+		return true;
+	}
 }
 
