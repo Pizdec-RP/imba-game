@@ -28,7 +28,7 @@ public class OakLog extends FacingBlock {
 	
 	@Override
 	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, MBIM mbim) {
-		SexyMeshBuilder a = mbim.obtain(pos);
+		SexyMeshBuilder a = mbim.obtain(pos, this.isTransparent());
 		if (!py || !ny || !nx || !px || !nz || !pz) {
 			ModelUtils.setTransform(pos);
 		    if (blockface == BlockFace.PY || blockface == BlockFace.NY) {
@@ -40,7 +40,7 @@ public class OakLog extends FacingBlock {
 		    	}
 		    	if (!ny) {
 		    		mbim.curoffset = offset.ny;
-		    		ModelUtils.buildTopX(a);//NY
+		    		ModelUtils.buildBottomX(a);//NY
 		    	}
 		    	//a texture
 		    	Hpb.mutex.hookuvr(a, tname, 0, 0, 1, 0.5f);
@@ -87,7 +87,7 @@ public class OakLog extends FacingBlock {
 			    }
 			    if (!ny) {
 			    	mbim.curoffset = offset.ny;
-			    	ModelUtils.buildTopZ(a);
+			    	ModelUtils.buildBottomZ(a);
 			    }
 		    } else if (blockface == BlockFace.NX || blockface == BlockFace.PX) {
 		    	Hpb.mutex.hookuvr(a, tname, 0, 0.5f, 1, 1);
@@ -115,7 +115,7 @@ public class OakLog extends FacingBlock {
 			    }
 			    if (!ny) {
 			    	mbim.curoffset = offset.ny;
-			    	ModelUtils.buildTopX(a);
+			    	ModelUtils.buildBottomX(a);
 			    }
 		    }
 		}

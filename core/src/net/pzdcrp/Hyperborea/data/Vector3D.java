@@ -11,6 +11,7 @@ import net.pzdcrp.Hyperborea.world.elements.Chunk;
 import net.pzdcrp.Hyperborea.world.elements.Column;
 
 public class Vector3D {
+	public static final Vector3D ZERO = new Vector3D();
 	public double x;
 	public double y;
 	public double z;
@@ -30,6 +31,12 @@ public class Vector3D {
 		//BotU.log(Main.allVec+" vectors created lol");
 	}
 	
+	public Vector3D(Vector3 p) {
+		this.x = p.x;
+		this.y = p.y;
+		this.z = p.z;
+	}
+
 	@Override
 	public int hashCode() {
 		int hash = 7;
@@ -56,8 +63,18 @@ public class Vector3D {
 		return new Vector3D(x,y+1,z);
 	}
 	
+	public Vector3D up(double d) {
+		return new Vector3D(x,y+d,z);
+	}
+	
 	public boolean isZero() {
 		return x == 0 && y == 0 && z == 0;
+	}
+	
+	public void setZero() {
+		this.x = 0d;
+		this.y = 0d;
+		this.z = 0d;
 	}
 
 	public double getX() {
@@ -267,14 +284,14 @@ public class Vector3D {
 	}
 	
 	public double distanceSq(double toX, double toY, double toZ) {
-        double var7 = (double)this.getX() - toX;
-        double var9 = (double)this.getY() - toY;
-        double var11 = (double)this.getZ() - toZ;
-        return var7 * var7 + var9 * var9 + var11 * var11;
+        double var7 = this.getX() - toX;
+        double var9 = this.getY() - toY;
+        double var11 = this.getZ() - toZ;
+        return Math.sqrt(var7 * var7 + var9 * var9 + var11 * var11);
     }
 	
 	public double distanceSq(Vector3D to) {
-        return this.distanceSq((double)to.getX(), (double)to.getY(), (double)to.getZ());
+        return this.distanceSq(to.getX(), to.getY(), to.getZ());
     }
 	
 	public Vector3D normalize() {

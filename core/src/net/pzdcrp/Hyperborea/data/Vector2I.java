@@ -6,6 +6,7 @@ import net.pzdcrp.Hyperborea.world.World;
 public class Vector2I {
 	public final int x;
 	public final int z;
+	public boolean updated = false;
 	
 	public Vector2I(int columnX, int columnZ) {
 		this.x = columnX;
@@ -75,4 +76,10 @@ public class Vector2I {
 			return null;
 		}
 	}
+
+	public double distanceTo(Vector2I other) {
+        int dx = other.x - x;
+        int dz = other.z - z;
+        return Math.sqrt(dx * dx + dz * dz);
+    }
 }

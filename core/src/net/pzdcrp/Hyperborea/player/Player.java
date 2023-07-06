@@ -2,10 +2,7 @@ package net.pzdcrp.Hyperborea.player;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector3;
 
 import net.pzdcrp.Hyperborea.Hpb;
@@ -14,11 +11,8 @@ import net.pzdcrp.Hyperborea.data.DM;
 import net.pzdcrp.Hyperborea.data.EntityType;
 import net.pzdcrp.Hyperborea.data.Settings;
 import net.pzdcrp.Hyperborea.data.Vector3D;
-import net.pzdcrp.Hyperborea.world.elements.Chunk;
-import net.pzdcrp.Hyperborea.world.elements.Column;
 import net.pzdcrp.Hyperborea.world.elements.chat.Chat;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
-import net.pzdcrp.Hyperborea.world.elements.inventory.PlayerInventory;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.DirtItem;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.GlassItem;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.GrassItem;
@@ -27,6 +21,7 @@ import net.pzdcrp.Hyperborea.world.elements.inventory.items.PlanksItem;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.StoneItem;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.TntCrateItem;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.WaterBucketItem;
+import net.pzdcrp.Hyperborea.world.elements.inventory.items.WeedItem;
 
 public class Player extends Entity {
 	//public float pitch, yaw;//yaw left-right
@@ -54,6 +49,7 @@ public class Player extends Entity {
 		this.inventory.addItem(new PlanksItem(this.inventory, 99), 5);
 		this.inventory.addItem(new DirtItem(this.inventory, 99), 6);
 		this.inventory.addItem(new WaterBucketItem(this.inventory, 1), 7);
+		this.inventory.addItem(new WeedItem(this.inventory, 99), 8);
 	}
 	
 	public void tick() throws Exception {
@@ -65,8 +61,6 @@ public class Player extends Entity {
 		
 		updatePlayerActions();
 		cam.setpos(getEyeLocation());
-		//updateCamRotation();
-		//System.out.println("x:"+x+" y:"+y+" z:"+z+" wp:"+Gdx.input.isKeyPressed(Input.Keys.W));
 	}
 	
 	public void movement() {
@@ -93,12 +87,9 @@ public class Player extends Entity {
 		}
         vel.x += velocityGoal.x * (float) Math.sin(yaw) + velocityGoal.z * (float) Math.cos(yaw);
         vel.z += velocityGoal.z * (float) Math.sin(yaw) - velocityGoal.x * (float) Math.cos(yaw);
-		//gravity
-        if (up) {
-			if (this.onGround) {
-				this.vel.y += 0.5099999904632568F;
-				this.onGround = false;
-			}
+        if (up && this.onGround) {
+			this.vel.y += 0.509838175463746F;
+			this.onGround = false;
 		}
 	}
 	
@@ -107,7 +98,7 @@ public class Player extends Entity {
 			if (actcd <= 0) {
 				if (pos != null) {
 					this.inventory.onRClick();
-					actcd = 2;
+					actcd = 4;
 				}
 			}
 		}
@@ -115,7 +106,7 @@ public class Player extends Entity {
 			if (actcd <= 0) {
 				if (pos != null) {
 					this.inventory.onLClick();
-					actcd = 2;
+					actcd = 4;
 				}
 			}
 		}
@@ -135,33 +126,7 @@ public class Player extends Entity {
 	}
 	
 	boolean b1 = false;
-	//public int x = 0, y = 0, z = 0, scl = 1;
 	public void updateControls() {
-		/*if (Gdx.input.isKeyPressed(Input.Keys.U)) {
-			x+=scl;
-			test();
-		}
-		if (Gdx.input.isKeyPressed(Input.Keys.J)) {
-			x-=scl;
-			test();
-		}
-		if (Gdx.input.isKeyPressed(Input.Keys.I)) {
-			y+=scl;
-			test();
-		}
-		if (Gdx.input.isKeyPressed(Input.Keys.K)) {
-			y-=scl;
-			test();
-		}
-		if (Gdx.input.isKeyPressed(Input.Keys.O)) {
-			z+=1;
-			test();
-		}
-		if (Gdx.input.isKeyPressed(Input.Keys.L)) {
-			z-=1;
-			test();
-		}*/
-		//System.out.println("x:"+x+" y:"+y+" z:"+z);
 		if (chat.isOpened()) return;
 		if (Gdx.input.isKeyPressed(Input.Keys.T)) {
 			this.pos.y += 5;
@@ -212,7 +177,6 @@ public class Player extends Entity {
 		}
 		if (Hpb.controls.curentNumPressed != -1) {
 			this.inventory.setCurrentSlotInt(Hpb.controls.curentNumPressed-1);
-			//Hpb.displayInfo(inventory.getSlot(inventory.getCurrentSlotInt()).getName());
 		}
 		
 		if (down) {

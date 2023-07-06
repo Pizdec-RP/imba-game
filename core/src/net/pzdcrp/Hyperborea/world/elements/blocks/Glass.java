@@ -28,7 +28,7 @@ public class Glass extends Block {
 	
 	@Override
 	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, MBIM mbim) {
-		SexyMeshBuilder a = mbim.obtain(pos);
+		SexyMeshBuilder a = mbim.obtain(pos, this.isTransparent());
 		ModelUtils.setTransform(pos);
 		Hpb.mutex.hookuvr(a, tname, 0, 0, 1, 1);
 		mbim.curoffset = offset.py;
@@ -45,4 +45,8 @@ public class Glass extends Block {
 	    if (!ny) ModelUtils.buildBottomX(a);//NY
 	}
 	
+	@Override
+	public boolean isTransparent() {
+		return true;
+	}
 }

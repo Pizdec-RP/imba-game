@@ -34,15 +34,17 @@ public class SexyModelBuilder {
 	private Matrix4 tmpTransform = new Matrix4();
 	
 	public MBIM mbim;
+	private boolean tr;
 
-	public SexyModelBuilder(MBIM mbim) {
+	public SexyModelBuilder(MBIM mbim, boolean tr) {
 		this.mbim = mbim;
+		this.tr = tr;
 	}
 
 	private MeshBuilder getBuilder (final VertexAttributes attributes) {//INFO here it is
 		for (final MeshBuilder mb : builders)
 			if (mb.getAttributes().equals(attributes) && mb.lastIndex() < Short.MAX_VALUE / 2) return mb;
-		final MeshBuilder result = new SexyMeshBuilder(mbim);
+		final MeshBuilder result = new SexyMeshBuilder(mbim, tr);
 		result.begin(attributes);
 		builders.add(result);
 		return result;

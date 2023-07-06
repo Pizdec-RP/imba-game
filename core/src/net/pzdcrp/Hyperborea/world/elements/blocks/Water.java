@@ -117,7 +117,7 @@ public class Water extends Liquifyable {
 	
 	@Override
 	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, MBIM mbim) {
-		SexyMeshBuilder a = mbim.obtain(pos);
+		SexyMeshBuilder a = mbim.obtain(pos, this.isTransparent());
 		ModelUtils.setTransform(pos);
 		float h = heightMap.get(ll).floatValue();
 		Hpb.mutex.hookuvr(a, tname, 0, 0, 1, 1);
@@ -235,6 +235,11 @@ public class Water extends Liquifyable {
 	@Override
 	public Block clone(Vector3D poss) {
 		return new Water(poss,ll);
+	}
+	
+	@Override
+	public boolean isTransparent() {
+		return true;
 	}
 	
 	@Override

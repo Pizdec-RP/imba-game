@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -26,6 +27,7 @@ import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
+import com.badlogic.gdx.graphics.glutils.PixmapTextureData;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.ScreenUtils;
 
@@ -64,11 +66,14 @@ public class Mutex {
 			if (tex.getHeight() > height) height = tex.getHeight();
 			width += tex.getWidth();
 		}
-		comp = new Texture(width, height, Format.RGBA8888);
-		//comp.setFilter(TextureFilter.MipMap,TextureFilter.Nearest);
+		comp = new Texture(new PixmapTextureData(new Pixmap(width, height, Format.RGBA8888), null, true, true));
+		comp.setFilter(TextureFilter.Linear, TextureFilter.MipMapLinearLinear);
+		
+		comp.setAnisotropicFilter(GL30.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT);
 		int twidth = 0;
 		TextureData dt;
 		for (Entry<String, Texture> tex : ar.entrySet()) {
+			//tex.getValue().setFilter(TextureFilter.MipMap,TextureFilter.Nearest);
 			dt = tex.getValue().getTextureData();
 			dt.prepare();
 			comp.draw(dt.consumePixmap(), twidth, 0);
@@ -180,7 +185,11 @@ public class Mutex {
 	    		Block block = Block.blockByItem(item).clone(new Vector3D(0,0,5));
 	    		if (block == null) continue;
 	    		block.addModel(false, false, false, false, false, false, m);
-	    	    ModelInstance model = m.end();
+	    		ModelInstance model;
+	    		if (block.isTransparent())
+	    			model = m.endTransparent();
+	    		else
+	    			model = m.endSolid();
 	    	    
 	    	    fbo.begin();
 	            Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());

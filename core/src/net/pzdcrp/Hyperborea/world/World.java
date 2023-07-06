@@ -5,74 +5,53 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.IntStream;
-
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Mesh;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes;
-import com.badlogic.gdx.graphics.VertexAttributes.Usage;
-import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
-import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
-import com.badlogic.gdx.graphics.g3d.Renderable;
-import com.badlogic.gdx.graphics.g3d.RenderableProvider;
-import com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
-import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
-import com.badlogic.gdx.graphics.g3d.particles.ParticleSystem;
-import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.Disposable;
-import com.badlogic.gdx.utils.Pool;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.JsonPrimitive;
 import com.google.gson.stream.JsonReader;
 
 import net.pzdcrp.Hyperborea.Hpb;
-import net.pzdcrp.Hyperborea.data.AABB;
-import net.pzdcrp.Hyperborea.data.EntityType;
+import net.pzdcrp.Hyperborea.data.ActionAuthor;
+import net.pzdcrp.Hyperborea.data.MBIM;
+import net.pzdcrp.Hyperborea.data.Settings;
 import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.player.Player;
 import net.pzdcrp.Hyperborea.utils.MathU;
-import net.pzdcrp.Hyperborea.utils.ModelUtils;
-import net.pzdcrp.Hyperborea.utils.ThreadU;
 import net.pzdcrp.Hyperborea.utils.VectorU;
 import net.pzdcrp.Hyperborea.world.elements.Chunk;
 import net.pzdcrp.Hyperborea.world.elements.Column;
+import net.pzdcrp.Hyperborea.world.elements.Particle;
 import net.pzdcrp.Hyperborea.world.elements.Region;
 import net.pzdcrp.Hyperborea.world.elements.Weather;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
+import net.pzdcrp.Hyperborea.world.elements.blocks.Glass;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Voed;
-import net.pzdcrp.Hyperborea.world.elements.blocks.Block.BlockType;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
-import net.pzdcrp.Hyperborea.world.elements.entities.Particle;
+import net.pzdcrp.Hyperborea.world.elements.generators.ColumnGenerator;
+import net.pzdcrp.Hyperborea.world.elements.generators.DefaultWorldGenerator;
 
 public class World {// implements RenderableProvider {
 	public Player player;
@@ -83,35 +62,42 @@ public class World {// implements RenderableProvider {
 	public static final int chunks = 16, maxheight = chunks * 16, buildheight = maxheight-1;
 	public static boolean ready = false;
 	public Matrix4 temp = new Matrix4();
+	
 	public Vector3 sunPosition = new Vector3();
 	public ModelInstance sun;
+	
     public Vector3 moonPosition = new Vector3();
     public ModelInstance moon;
     public Vector3 lightDirection = new Vector3();
-    public int seed = 228;
+    public static int seed = 228;
     
     private static final int DAY_LENGTH = 60000;
     private static final float DISTANCE_FROM_CENTER = 200f;
-    public static int renderRad = 2;
     Material skymaterial;
     
-    //public ModelInstance particlesModel = new ModelInstance(new Model());
-    public List<Particle> particles = new CopyOnWriteArrayList<>();//TODO оптимизировать
+    public ModelInstance particlesModel = new ModelInstance(new Model());
+    public List<Particle> particles = new CopyOnWriteArrayList<>();
 	public Weather weather;
+	public ColumnGenerator generator;
+	
+	public boolean needToUpdateLoadedColumns = true;
+	public int skylight = 13;
     
 	public World() {
 		Block.world = this;
 		this.weather = new Weather(this);
+		generator = new DefaultWorldGenerator();
 	}
 	
 	public void load() throws Exception {
-		
 		System.out.println("подгружаем мир");
+		boolean newworld = false;
 		try {
 			JsonReader reader = new JsonReader(new FileReader("save/wdata.dat"));
 			JsonObject obj = (JsonObject) new JsonParser().parse(reader);
 			
 			this.time = obj.get("time").getAsInt();
+			this.skylight = obj.get("skylight").getAsInt();
 			Vector2I cpos = Vector2I.fromString(obj.get("playercol").getAsString());
 			Vector2I rpos = Vector2I.fromString(obj.get("playerreg").getAsString());
 			
@@ -121,16 +107,17 @@ public class World {// implements RenderableProvider {
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("данных о мире нет");
-			player = new Player(5,maxheight,5);
+			player = new Player(5,maxheight/2,5);
 			weather.initAsNew();
+			newworld = true;
 		}
-		updateLoadedColumns();
+		updateLoadedColumns(VectorU.posToColumn(player.pos));
 		player.tick();
+		if (newworld) player.teleport(new Vector3D(player.pos.x+0.5d, loadedColumns.get(player.echc).getSLMD((int)player.pos.x, (int)player.pos.z)+2, player.pos.z+0.5d));
 		System.out.println("подгружаем окружение");
 		loadEnvironment();
 		World.ready = true;
 		System.out.println("все заебок");
-		//particles.add(new Particle(Hpb.getTexture("dirt"), player.pos.translate().add(0, 1.5f,0), new Vector3(0.02f,0,0), 99999));
 	}
 
 	public void loadEnvironment() {
@@ -139,7 +126,7 @@ public class World {// implements RenderableProvider {
 		skymaterial = new Material(ColorAttribute.createDiffuse(0, 0, 255, 255), IntAttribute.createCullFace(GL20.GL_NONE));
 		Model model = modelBuilder.createBox(DISTANCE_FROM_CENTER*5, DISTANCE_FROM_CENTER*5, DISTANCE_FROM_CENTER*5, skymaterial, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);
 		sky = new ModelInstance(model);
-		sky.userData = new Object[] {"c", "sky"};
+		sky.userData = new Object[] {"sky"};
 		Matrix4 transform = new Matrix4();
 		transform.translate((float)player.pos.x,(float)player.pos.y,(float)player.pos.z);
 		sky.transform.set(transform);
@@ -148,13 +135,13 @@ public class World {// implements RenderableProvider {
 		Material material = new Material(TextureAttribute.createDiffuse(Hpb.mutex.getOTexture("sun")));
 		model = modelBuilder.createBox(60f, 60f, 60f, material, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);
 		sun = new ModelInstance(model);
-		sun.userData = new Object[] {"c", "sun"};
+		sun.userData = new Object[] {"sun"};
 		
 		modelBuilder = new ModelBuilder();
 		material = new Material(ColorAttribute.createDiffuse(Color.DARK_GRAY));
 		model = modelBuilder.createSphere(5f, 5f, 5f, 5, 5, material, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
 		moon = new ModelInstance(model);
-		moon.userData = new Object[] {"c", "moon"};
+		moon.userData = new Object[] {"moon"};
 		
 		model = modelBuilder.createBox(1, 1, 1, material, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
 		
@@ -180,15 +167,17 @@ public class World {// implements RenderableProvider {
 	}
 	
 	static final float bs = 0.2f;
-	public void setBlock(Block block) {
+	public void setBlock(Block block, ActionAuthor author) {
 		if (block.pos.y < 0 || block.pos.y >= buildheight) {
 			Hpb.displayInfo("build limit reached");
 			return;
 		}
-		Column col = getColumn(block.pos.x,block.pos.z);
-		for (Entry<Vector2I, Column> tcol : loadedColumns.entrySet()) {
-			for (Entity en : tcol.getValue().entites) {
-				if (block.isCollide() && block.collide(en.getHitbox())) return;
+		
+		if (author == ActionAuthor.player) {
+			for (Entry<Vector2I, Column> tcol : loadedColumns.entrySet()) {
+				for (Entity en : tcol.getValue().entites) {
+					if (block.isCollide() && block.collide(en.getHitbox())) return;
+				}
 			}
 		}
 		if (block instanceof Air) {
@@ -199,21 +188,28 @@ public class World {// implements RenderableProvider {
 				}
 			}
 		}
-		col.setBlock((int)block.pos.x&15,(int)block.pos.y,(int)block.pos.z&15, block);
+		Column col = getColumn(block.pos.x,block.pos.z);
+		col.setBlock(block);
 		for (Block block1 : block.getSides()) {
 			block1.onNeighUpdate();
 			block1.callChunkUpdate();
 		}
 	}
 	
+	static final int maxpart = 1000;
 	public void spawnParticle(String tname, Vector3 pos, Vector3 vel, int lifetime) {
+		if (particles.size() >= maxpart) {
+			return;
+		} else if (particles.size()/2 >= maxpart) {
+			if (Math.random() > 0.5) return;
+		}
 		particles.add(new Particle(Hpb.mutex.getBlockTexture(tname), pos, vel, lifetime));
 	}
 	
 	public void breakBlock(Vector3D pos) {
 		if (pos.y < 0 || pos.y >= buildheight) return;
 		//спавн партиклов тут по идее
-		setBlock(new Air(pos));
+		setBlock(new Air(pos), ActionAuthor.player);
 	}
 	
 	public Column getColumn(double x, double z) {
@@ -285,7 +281,22 @@ public class World {// implements RenderableProvider {
 		return new Voed(v);
 	}
 	
+	public int calculateSkylight(double abstracty) {
+	    if (abstracty < -50) {
+	    	Hpb.shaderprovider.skylightlevel = 0f;
+	    	return skylight;
+	    } else if (abstracty > 50) {
+	    	Hpb.shaderprovider.skylightlevel = 1f;
+	        return skylight;
+	    }
+	    double norm = (abstracty - (-50)) / (50 - (-50));
+	    int skylight = (int) (minSkylight + norm * (maxSkylight - minSkylight));
+	    Hpb.shaderprovider.skylightlevel = (float)norm;
+	    return skylight;
+	}
 	
+	final int minSkylight = 1;
+    final int maxSkylight = 13;
 	public ModelInstance sky;
 	public void renderSky() {
 	    time = (int) time % DAY_LENGTH;
@@ -300,11 +311,33 @@ public class World {// implements RenderableProvider {
 	    sun.transform.getTranslation(translation);
 	    sun.transform.rotate(1, 1, 1, 0.01f);
 	    sun.transform.setTranslation(x, y, pz);
+	    
+	    double abstracty = y - player.pos.y;
+	    int newSkylight = calculateSkylight(abstracty);
+	    if (newSkylight != skylight) {
+	        skylight = newSkylight;
+	        for (Region r : memoriedRegions.values()) {
+		        for (Column col : r.columns.values()) {
+		            for (Chunk chunk : col.chunks) {
+		                chunk.inlightupd = true;//TODO желательно сделать чтобы они обновлялись не зависимо от фрустрации
+		            }
+		        }
+	        }
+	    }
 
 	    Hpb.render(sun);
 	    Hpb.render(sky);
 	}
-
+	
+	public void addLC(Column c) {
+		loadedColumns.put(c.pos, c);
+		if (DefaultWorldGenerator.toadd.containsKey(c.pos)) {
+    		for (Block b : DefaultWorldGenerator.toadd.get(c.pos)) {
+    			c.setBlock(b);
+    		}
+    		DefaultWorldGenerator.toadd.remove(c.pos);
+    	}
+	}
 	
 	public void tick() throws Exception {
 		if (!ready || Hpb.exit) {
@@ -330,13 +363,18 @@ public class World {// implements RenderableProvider {
 		beforetime = now;
 	}
 	
-	public void updateLoadedColumns() throws Exception {
+	//Set<Vector2I> updcol = new HashSet<>();
+	public void updateLoadedColumns(Vector2I echc) throws Exception {
+		System.out.println("needToUpdateLoadedColumns");
 	    Set<Vector2I> cl = new HashSet<>();
-	    for (int x = -renderRad; x < renderRad; x++) {
-	        for (int z = -renderRad; z < renderRad; z++) {
-	            cl.add(new Vector2I(player.beforeechc.x+x, player.beforeechc.z+z));
-	        }
-	    }
+	    for (int x = -Settings.renderDistance; x <= Settings.renderDistance; x++) {
+            for (int z = -Settings.renderDistance; z <= Settings.renderDistance; z++) {
+                Vector2I vector = new Vector2I(echc.x + x, echc.z + z);
+                cl.add(vector);
+            }
+        }
+	    //updcol.addAll(VectorU.generateVectorsInRadius(player.echc, Settings.updatingDistance));
+	    
 	    // Хранит ключи столбцов, которые нужно удалить
 	    List<Vector2I> toRemove = new ArrayList<>();
 	    // Проверяем какие столбцы уже загружены и убираем из cl то что есть
@@ -353,50 +391,95 @@ public class World {// implements RenderableProvider {
 	    }
 	    // подгружаем недоставшиеся
 	    for (Vector2I c : cl) {
-	        loadedColumns.put(c, genOrLoadRegion(VectorU.ColumnToRegion(c)).getColumn(c));
+	    	addLC(genOrLoadRegion(VectorU.ColumnToRegion(c)).getColumn(c));
 	    }
 	}
+	Comparator<Chunk> chunkComparator = new Comparator<Chunk>() {
+	    @Override
+	    public int compare(Chunk chunk1, Chunk chunk2) {
+	        Vector3 chunk1Pos = new Vector3(chunk1.column.pos.x, chunk1.height, chunk1.column.pos.z);
+	        Vector3 chunk2Pos = new Vector3(chunk2.column.pos.x, chunk2.height, chunk2.column.pos.z);
+	        float distance1 = chunk1Pos.dst2(player.cam.cam.position); // Расстояние до первого чанка
+	        float distance2 = chunk2Pos.dst2(player.cam.cam.position); // Расстояние до второго чанка
+	        return Float.compare(distance2, distance1); // Сортировка в обратном порядке
+	    }
+	};
 	
-	public boolean isCycleFree = true;
-	public void render() throws Exception {
-		if (Hpb.exit) return;
+	public void fromChunkUpdateThread() {
 		for (Column col : loadedColumns.values()) {
-			//if (!Hpb.world.isCycleFree) break;
 			for (Chunk chunk : col.chunks) {
 				if (chunk.inlightupd) {
 					chunk.updateLightMain();
 					chunk.inlightupd = false;
 					chunk.outlightupd = true;
 					Hpb.world.isCycleFree = false;
-					break;
 				}
 			}
 		}
 		if (Hpb.world.isCycleFree) {
 			for (Column col : loadedColumns.values()) {
-				//if (!Hpb.world.isCycleFree) break;
 				for (Chunk chunk : col.chunks) {
 					if (chunk.outlightupd) {
 						chunk.updateLightFromOutbounds();
 						Hpb.world.isCycleFree = false;
 						chunk.outlightupd = false;
 						chunk.updateModel();
-						break;
 					}
 				}
 			}
+		}
+	}
+	
+	public boolean isCycleFree = true;
+	public void render() throws Exception {
+		if (Hpb.exit) return;
+		byte upd = 0;
+		for (Column col : loadedColumns.values()) {
+			for (Chunk chunk : col.chunks) {
+				if (chunk.reqmodelupd && chunk.boundsInFrustum()) {
+					upd++;
+					chunk.lUpdateModel();
+					chunk.reqmodelupd=false;
+					if (upd > 3) break;
+				}
+			}
+			if (upd > 3) break;
 		}
 		renderSky();
 		for (Column col : loadedColumns.values()) {
 			col.renderNormal();
 			col.renderEntites();
+			/*if (!player.pos.equals(player.beforepos)) {
+				for (Chunk c : col.chunks) {
+					c.rebuildTransparent();
+				}
+			}
+			col.renderTransparent();*/
 		}
+		
+		Set<Chunk> notSorted = new HashSet<>();
+		for (Column col : loadedColumns.values()) {
+			if (col.isInFrustum()) {
+				for (Chunk chunk : col.chunks) {
+					if (chunk.boundsInFrustum()) notSorted.add(chunk);
+				}
+			}
+		}
+		List<Chunk> sortedChunks = new ArrayList<>(notSorted);
+		Collections.sort(sortedChunks, chunkComparator);
+		for (Chunk c : sortedChunks) {
+			if (!Vector3D.ZERO.equals(player.vel) && VectorU.sqrt(new Vector3D(player.echc.x, player.pos.y/16, player.echc.z), c.pos) <= Settings.updatingDistance) c.rebuildTransparent();
+			if (c.transparent != null) Hpb.render(c.transparent);
+		}
+		//System.out.println(Vector3D.ZERO.equals(player.vel));
 		for (ModelInstance a : additional) {
 			Hpb.render(a);
 		}
 		for (Particle p : particles) {
 			p.render();
 		}
+		//particlesModel.calculateTransforms();
+		Hpb.render(particlesModel);
 		player.render();
 		isCycleFree = true;
 	}
@@ -418,6 +501,7 @@ public class World {// implements RenderableProvider {
 			jwd.addProperty("playercol", player.curCol.pos.toString());
 			jwd.addProperty("time", this.time);
 			jwd.add("weather", weather.toJson());
+			jwd.addProperty("skylight", this.skylight);
 			
 			FileWriter writer = new FileWriter("save/wdata.dat");
 			writer.write(jwd.toString());

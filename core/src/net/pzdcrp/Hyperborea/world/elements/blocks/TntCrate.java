@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.math.Vector3;
 
 import net.pzdcrp.Hyperborea.Hpb;
+import net.pzdcrp.Hyperborea.data.ActionAuthor;
 import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Vector3D;
@@ -17,9 +18,9 @@ import net.pzdcrp.Hyperborea.player.Player;
 import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.utils.ModelUtils;
 import net.pzdcrp.Hyperborea.utils.VectorU;
+import net.pzdcrp.Hyperborea.world.elements.Particle;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block.BlockType;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
-import net.pzdcrp.Hyperborea.world.elements.entities.Particle;
 
 public class TntCrate extends Block {
 	public static String tname = "tntcrate";
@@ -33,7 +34,7 @@ public class TntCrate extends Block {
 	@Override
 	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, MBIM mbim) {
 		if (!py || !ny || !nx || !px || !nz || !pz) {
-			SexyMeshBuilder a = mbim.obtain(pos);
+			SexyMeshBuilder a = mbim.obtain(pos, this.isTransparent());
 			ModelUtils.setTransform(pos);
 			Hpb.mutex.hookuvr(a, tname, 0, 0, 0.5f, 0.5f);
 			mbim.curoffset = offset.py;
@@ -76,7 +77,7 @@ public class TntCrate extends Block {
 			world.particles.add(new Particle(Hpb.mutex.getBlockTexture("firebase"), pos.translate().add(0.5f, 1f, 0.5f), new Vector3(MathU.rndf(0.2f, -0.2f),MathU.rndf(0.6f, 0.1f),MathU.rndf(0.2f, -0.2f)), 60));
 			return;
 		}
-		world.setBlock(new Air(this.pos));
+		world.setBlock(new Air(this.pos), ActionAuthor.world);
 		explode();
 	}
 	

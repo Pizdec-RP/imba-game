@@ -10,8 +10,10 @@ import net.pzdcrp.Hyperborea.data.Vector3D;
 
 public class SexyMeshBuilder extends MeshBuilder {
 	private MBIM mbim;
-	public SexyMeshBuilder(MBIM mbim) {
+	private boolean transparent = true;
+	public SexyMeshBuilder(MBIM mbim, boolean transparent) {
 		this.mbim = mbim;
+		this.transparent = transparent;
 	}
 
 	@Override
@@ -25,9 +27,16 @@ public class SexyMeshBuilder extends MeshBuilder {
 		super.rect(x00, y00, z00, x10, y10, z10, x11, y11, z11, x01, y01, z01, normalX, normalY, normalZ);
 		if (mbim.chunk == null) return;
 		int light = mbim.getCurLight();
-		mbim.lightarray.add(light);
-		mbim.lightarray.add(light);
-		mbim.lightarray.add(light);
-		mbim.lightarray.add(light);
+		if (transparent) {
+			mbim.Tlightarray.add(light);
+			mbim.Tlightarray.add(light);
+			mbim.Tlightarray.add(light);
+			mbim.Tlightarray.add(light);
+		} else {
+			mbim.Slightarray.add(light);
+			mbim.Slightarray.add(light);
+			mbim.Slightarray.add(light);
+			mbim.Slightarray.add(light);
+		}
 	}
 }

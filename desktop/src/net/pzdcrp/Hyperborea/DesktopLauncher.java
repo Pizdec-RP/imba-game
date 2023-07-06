@@ -6,9 +6,11 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
+import net.pzdcrp.Hyperborea.world.elements.generators.Noise;
 
 import java.io.File;
 import java.io.FileReader;
+import java.text.DecimalFormat;
 import java.util.Random;
 
 
@@ -24,5 +26,14 @@ public class DesktopLauncher {
 		config.setTitle("Hyperborea "+ver);
 		//new Lwjgl3Application(new rendertest(), config);
 		new Lwjgl3Application(new Hpb(), config);
+		/*float scl = 0.1f;
+		DecimalFormat decimalFormat = new DecimalFormat("#.##");
+		
+		for (int x = 0; x < 16; x++) {
+	        for (int z = 0; z < 16; z++) {
+	        	System.out.print(decimalFormat.format(Noise.get(x*scl, z*scl))+" ");
+	        }
+	        System.out.println("");
+		}*/
 	}
 }

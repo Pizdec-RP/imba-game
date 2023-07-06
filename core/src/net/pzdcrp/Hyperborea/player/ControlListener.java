@@ -1,16 +1,23 @@
 package net.pzdcrp.Hyperborea.player;
 
+import java.util.Random;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.math.Vector3;
 
 import net.pzdcrp.Hyperborea.Hpb;
+import net.pzdcrp.Hyperborea.data.BlockFace;
+import net.pzdcrp.Hyperborea.data.Settings;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.world.World;
+import net.pzdcrp.Hyperborea.world.elements.Particle;
+import net.pzdcrp.Hyperborea.world.elements.blocks.OakLog;
+import net.pzdcrp.Hyperborea.world.elements.blocks.OakLeaves;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
-import net.pzdcrp.Hyperborea.world.elements.entities.Particle;
+import net.pzdcrp.Hyperborea.world.elements.generators.DefaultWorldGenerator;
 
 public class ControlListener implements InputProcessor {
 
@@ -38,13 +45,15 @@ public class ControlListener implements InputProcessor {
 			Hpb.displayInfo("i like sex!");
 		}
 		if (keycode == Input.Keys.V) {
-			Hpb.world.particles.add(new Particle(Hpb.mutex.getBlockTexture("dirt"), Hpb.world.player.pos.translate().add(0, 2f, 0), new Vector3(), 120));
+			Hpb.world.particles.add(new Particle(Hpb.mutex.getBlockTexture("dirt"), Hpb.world.player.pos.translate().add(0, 2f, 0), new Vector3(), 1200));
 		}
 		if (keycode == Input.Keys.N) {
-			World.renderRad += 1;
+			Settings.renderDistance += 1;
+			Hpb.world.needToUpdateLoadedColumns = true;
 		}
 		if (keycode == Input.Keys.B) {
-			World.renderRad -= 1;
+			Settings.renderDistance -= 1;
+			Hpb.world.needToUpdateLoadedColumns = true;
 		}
 		switch (keycode) {
 			case Input.Keys.NUM_1:
@@ -77,6 +86,9 @@ public class ControlListener implements InputProcessor {
 	        case Input.Keys.NUM_0:
 	        	curentNumPressed = 10;
 	            break;
+		}
+		if (keycode == Input.Keys.L) {
+			DefaultWorldGenerator.generateTree(Hpb.world.player.pos);
 		}
 		return true;
 	}

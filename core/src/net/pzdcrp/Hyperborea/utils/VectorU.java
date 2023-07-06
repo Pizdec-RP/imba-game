@@ -1,7 +1,10 @@
 package net.pzdcrp.Hyperborea.utils;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 import com.badlogic.gdx.math.Vector3;
 
@@ -17,6 +20,12 @@ import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
 public class VectorU {
 	public static double sqrt(Vector3D one, Vector3D two) {
 		double distance = Math.sqrt(Math.pow(one.getX() - two.getX(), 2) + Math.pow(one.getY() - two.getY(), 2) + Math.pow(one.getZ() - two.getZ(), 2));
+		return distance;
+	}
+	
+	public static double sqrt(Vector3D one, Vector3 two) {
+		double distance = Math.sqrt(Math.pow(one.getX() - two.x, 2) + Math.pow(one.getY() - two.y, 2) + Math.pow(one.getZ() - two.y, 2));
+		System.out.println(one.toString()+" "+two.toString());
 		return distance;
 	}
 	
@@ -45,7 +54,7 @@ public class VectorU {
 		OTripple tr = new OTripple(null,list.get(0), entity);//aim block, face, aim entity
 		for (Vector3D temppos : list) {
 			Block b = Hpb.world.getBlock(temppos.floor());
-			if (b.isCollide()) {
+			if (b.getHitbox() != null) {
 				tr.one = b;
 				Vector3D face = getNear(temppos, b.pos.floor().sides());
 				tr.two = face;//getFace(b.pos, face);
@@ -162,5 +171,38 @@ public class VectorU {
     
     public static Vector2I ColumnToRegion(Vector2I column) {
     	return new Vector2I((int)Math.floor(column.x) >> 3, (int)Math.floor(column.z) >> 3);
+    }
+    
+    public static void sortBlocksByDistance(Set<Block> blocks, Vector3D cameraPosition) {
+        List<Block> blockList = new ArrayList<>(blocks);
+        
+        // Используем компаратор для сортировки блоков по расстоянию от камеры
+        Comparator<Block> distanceComparator = (block1, block2) -> {
+            double distance1 = VectorU.sqrt(block1.pos, cameraPosition);
+            double distance2 = VectorU.sqrt(block2.pos, cameraPosition);
+            return Double.compare(distance2, distance1); // Сравниваем в обратном порядке (от дальних к ближним)
+        };
+        
+        // Сортируем блоки
+        Collections.sort(blockList, distanceComparator);
+        
+        // Обновляем множество блоков с отсортированной версией
+        blocks.clear();
+        blocks.addAll(blockList);
+    }
+    
+    public static List<Vector2I> generateVectorsInRadius(Vector2I center, int radius) {
+        List<Vector2I> vectors = new ArrayList<>();
+        
+        for (int x = -radius; x <= radius; x++) {
+            for (int z = -radius; z <= radius; z++) {
+                Vector2I vector = new Vector2I(center.x + x, center.z + z);
+                
+                if (vector.distanceTo(center) <= radius) {
+                    vectors.add(vector);
+                }
+            }
+        }
+        return vectors;
     }
 }

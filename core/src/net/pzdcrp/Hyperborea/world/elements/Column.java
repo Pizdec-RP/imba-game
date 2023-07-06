@@ -16,8 +16,10 @@ import net.pzdcrp.Hyperborea.player.Player;
 import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
-import net.pzdcrp.Hyperborea.world.elements.deGenerator.Noise;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
+import net.pzdcrp.Hyperborea.world.elements.generators.ColumnGenerator;
+import net.pzdcrp.Hyperborea.world.elements.generators.DefaultWorldGenerator;
+import net.pzdcrp.Hyperborea.world.elements.generators.Noise;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Water;
 
 public class Column {
@@ -26,17 +28,15 @@ public class Column {
 	public Chunk[] chunks = new Chunk[World.chunks];
 	private Vector3 center;
 	private Vector3 dimensions;
-	static boolean flat = true;
 	protected int[][] skylightlenght;
 	
-	public Column(int x, int z, boolean gen) throws Exception {
+	public Column(int x, int z, ColumnGenerator gen) {
 		this(new Vector2I(x,z), gen);
 	}
 	
-	public Column(Vector2I cords, boolean gen) throws Exception {
+	public Column(Vector2I cords, ColumnGenerator gen) {
 		this.pos = cords;
 		System.out.println("new col: "+cords.toString());
-		//fill default
 		skylightlenght = new int[16][16];
 		
 		center = new Vector3(pos.x*16+8,World.maxheight/2,pos.z*16+8);
@@ -45,46 +45,9 @@ public class Column {
 			chunks[y] = new Chunk(this, y*16);
 		}
 		
-		if (gen) generate();
-	}
-	
-	public void generate() {
-	    for (int px = 0; px < 16; px++) {
-	        for (int pz = 0; pz < 16; pz++) {
-	        	if (flat) {
-	        		for (int py = 0; py < 16; py++) {
-	        			if (py < 10) {
-	        				fastSetBlock(px,py,pz,6);
-	        			} else {
-	        				fastSetBlock(px,py,pz,0);
-	        			}
-	        		}
-	        	} else {
-	        		double noise = Noise.get((16*pos.x+px)*0.7f, 10, (16*pos.z+pz)*0.7f);
-		        	//System.out.println(noise);
-		        	int maxy = (int) ((noise+0.7f) * (16*0.5));
-		        	for (int py = 0; py < 16; py++) {
-		        		if (py == 0) {
-		        			fastSetBlock(px,py,pz,6);
-		        		} else if (py < maxy) {
-		        			fastSetBlock(px,py,pz,1);
-		        		} else if (py == maxy) {
-		        			fastSetBlock(px,py,pz,6);
-		        		} else {
-		        			if (py < 3) {
-		        				fastSetBlock(px,py,pz,18);
-		        				Block block = getBlock(px,py,pz);
-		        				((Water) block).ableToTick = false;
-		        			} else {
-		        				fastSetBlock(px,py,pz,0);
-		        			}
-		        		}
-	        		}
-	        	}
-	        	recalculateSLMD(px,pz);
-	        }
-	    }
-	    updateModel();
+		if (gen != null) {
+			gen.gen(this);
+		}
 	}
 	
 	private void updateSLMDForAll() {
@@ -95,11 +58,14 @@ public class Column {
 		}
 	}
 	
-	private void recalculateSLMD(int x, int z) {
+	public int getSLMD(int x, int z) {
+		return skylightlenght[x][z];
+	}
+	
+	public void recalculateSLMD(int x, int z) {
 		for (int y = World.buildheight; y >= 0; y--) {
 			if (!(getBlock(x,y,z) instanceof Air)) {
 				skylightlenght[x][z] = y;
-				//System.out.println(x+" "+z+" "+skylightlenght[x][z]);
 				return;
 			}
 		}
@@ -110,21 +76,25 @@ public class Column {
 		return c.getBlock(x,y&15,z);
 	}
 	
-	public void fastSetBlock(int x ,int y,int z, int id) {
+	public Block fastSetBlock(int x ,int y,int z, int id) {
 		/*if (y >= World.buildheight) {
 			System.out.println("build limit reached "+World.buildheight);
 		}*/
 		Chunk c = chunks[y/16];
-		c.setBlock(x,y&15,z, id);
+		return c.setBlock(x,y&15,z, id);
 	}
 	
-	/*
-	 *	x = 0-15
-	 *	y = 0-World.chunkWidht
-	 *	z = 0-15
-	 */
-	public void setBlock(int x ,int y,int z, Block b) {
+	public int normx(int ref) {
+		return pos.x*16+ref;
+	}
+	
+	public int normz(int ref) {
+		return pos.z*16+ref;
+	}
+	
+	public void setBlock(Block b) {
 		//System.out.println(y/16+" "+y);
+		int x = (int)b.pos.x&15, z = (int)b.pos.z&15, y = (int)b.pos.y;
 		Chunk c = chunks[y/16];
 		c.setBlock(x,y&15,z, b);
 		int before = skylightlenght[x][z];
@@ -176,30 +146,23 @@ public class Column {
 	
 	public void renderNormal() throws Exception {
 		if (!isInFrustum()) return;
-		if (chunks.length != 0) {
-			if (Hpb.world.isCycleFree) {
-				for (Chunk chunk : chunks) {
-					chunk.callFromRenderThread();
-				}
-			}
-			for (Chunk chunk : chunks) {
-				if (chunk.allModels != null) {
-					Hpb.render(chunk.allModels);
-				}
+		for (Chunk chunk : chunks) {
+			if (chunk.allModels != null && chunk.boundsInFrustum()) {
+				Hpb.render(chunk.allModels);
 			}
 		}
 	}
 	
-	/*public void renderTransparent() {
-		if (!Hpb.world.player.cam.cam.frustum.boundsInFrustum(center, dimensions)) return;
+	public void renderTransparent() {
+		if (!isInFrustum()) return;
 		if (chunks.length != 0) {
 			for (Chunk chunk : chunks) {
-				if (chunk.transparent != null) {
+				if (chunk.transparent != null && chunk.boundsInFrustum()) {
 					Hpb.render(chunk.transparent);
 				}
 			}
 		}
-	}*/
+	}
 	
 	public JsonObject toJson() {
 		JsonObject jcol = new JsonObject();

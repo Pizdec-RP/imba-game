@@ -1,10 +1,13 @@
 package net.pzdcrp.Hyperborea.world.elements;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.BitStorage;
@@ -13,6 +16,7 @@ import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.data.Vector3I;
 import net.pzdcrp.Hyperborea.utils.MathU;
+import net.pzdcrp.Hyperborea.utils.VectorU;
 import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
@@ -20,20 +24,23 @@ import net.pzdcrp.Hyperborea.world.elements.blocks.Block.BlockType;
 
 public class Chunk {
 	private Block[][][] blocks = new Block[16][16][16];
-	public BitStorage light;
-	
 	
 	//не хранимые данные
-	public ModelInstance allModels;
-	//public ModelInstance transparent;
-	private Column column;
+	public ModelInstance allModels, transparent;
+	public Column column;
 	public int height;
 	public boolean reqmodelupd = true;
 	public boolean inlightupd = true, outlightupd = true;
-	private boolean tickable = false;
 	private MBIM m;
+	public Vector3 center;
+	private static final Vector3 dimensions = new Vector3(16,16,16);
+	public Vector3D pos;
 	
-	public Chunk(Column motherCol, int height) throws Exception {
+	//не хранятся, но должны
+	private BitStorage light;
+	private boolean tickable = false;
+	
+	public Chunk(Column motherCol, int height) {
 		this.height = height;
 		this.column = motherCol;
 		this.light = new BitStorage(4, 4096);
@@ -44,6 +51,8 @@ public class Chunk {
 				}
 			}
 		}
+		this.pos = new Vector3D(column.pos.x, height/16, column.pos.z);
+		this.center = new Vector3(column.pos.x*16+8, height+8, column.pos.z*16+8);
 	}
 	
 	public void updateModel() {
@@ -118,7 +127,7 @@ public class Chunk {
 	            	if (normy(y) >= slmd || blocks[x][y][z].emitLight()) {
 	                    Vector3I vector = new Vector3I(x,y,z);
 	                    stack.add(vector);
-	                    rawSetLight(x,y,z, 14);
+	                    rawSetLight(x,y,z, Hpb.world.skylight);
 	                }
 	            }
 	        }
@@ -201,11 +210,11 @@ public class Chunk {
 		}
 	}
 	
-	private void lUpdateModel() throws Exception {
+	public void lUpdateModel() throws Exception {
 		if (!Thread.currentThread().getName().equals("main thd")) {
 			throw new Exception("Wrong thread exception");
 		}
-		
+		System.out.println("upd model");
 		//Map<String, Pair> modelsById = new HashMap<>();
 		m = new MBIM(this);
 		for(int xx = 0; xx < 16; xx++) {
@@ -234,17 +243,25 @@ public class Chunk {
 				}
 			}
 		}
-		allModels = m.end();//ModelUtils.combineModels(models);
-		allModels.userData = new Object[] {"c "+column.pos.toString()+" y:"+height, "chunk", "ithaslight"};
+		allModels = m.endSolid();
+		transparent = m.endTransparent();
+		allModels.userData = new Object[] {"chunk", column.pos.toString()+" y:"+height, "ithaslight", "solid"};
+		transparent.userData = new Object[] {"chunk", column.pos.toString()+" y:"+height, "ithaslight", "transparent"};
 	}
 	
-	public void callFromRenderThread() throws Exception {
+	public void rebuildTransparent() {
+		if (this.m != null) {
+			m.sortTransparent();
+		}
+	}
+	
+	/*public void callFromRenderThread() throws Exception {
 		if (reqmodelupd) {
 			lUpdateModel();
 			reqmodelupd = false;
 			Hpb.world.isCycleFree = false;
 		}
-	}
+	}*/
 	
 	private boolean wr(int x, int y, int z, Block current) {//false = рендерится
 		if (this.height+y < 0) {
@@ -257,6 +274,8 @@ public class Chunk {
 		}
 		if (b.getType() == BlockType.transparent) {
 			if (current.getClass() == b.getClass()) return true;
+			return false;
+		} else if (b.getType() == BlockType.noncollideabe) {
 			return false;
 		}
 		return true;
@@ -298,8 +317,10 @@ public class Chunk {
 		return blocks[x][y][z];
 	}
 
-	public void setBlock(int x, int y, int z, int i) {//xyz = 0-15
-		blocks[x][y][z] = Block.blockById(i, new Vector3D(column.pos.x*16+x,height+y,column.pos.z*16+z));
+	public Block setBlock(int x, int y, int z, int i) {//xyz = 0-15
+		Block block = Block.blockById(i, new Vector3D(column.pos.x*16+x,height+y,column.pos.z*16+z));
+		blocks[x][y][z] = block;
+		return block;
 	}
 	
 	/*public boolean checkCamFrustum() {
@@ -329,5 +350,9 @@ public class Chunk {
 				}
 			}
 		}
+	}
+
+	public boolean boundsInFrustum() {
+		return Hpb.world.player.cam.cam.frustum.boundsInFrustum(center, dimensions);
 	}
 }

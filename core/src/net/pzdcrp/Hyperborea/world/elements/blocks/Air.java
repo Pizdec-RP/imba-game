@@ -2,6 +2,7 @@ package net.pzdcrp.Hyperborea.world.elements.blocks;
 
 import com.badlogic.gdx.graphics.Texture;
 
+import net.pzdcrp.Hyperborea.data.AABB;
 import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block.BlockType;
@@ -19,6 +20,11 @@ public class Air extends Liquifyable {
 	@Override
 	public boolean isCollide() {
 		return false;
+	}
+	
+	@Override
+	public AABB getHitbox() {
+		return null;
 	}
 	
 	@Override

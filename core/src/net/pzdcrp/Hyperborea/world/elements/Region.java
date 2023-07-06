@@ -7,6 +7,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.Vector2I;
 
 public class Region {
@@ -21,7 +22,7 @@ public class Region {
 		if (columns.containsKey(cpos)) {
 			return columns.get(cpos);
 		} else {
-			Column c = new Column(cpos, true);
+			Column c = new Column(cpos, Hpb.world.generator);
 			columns.put(cpos, c);
 			return c;
 		}
@@ -47,7 +48,7 @@ public class Region {
 		for (JsonElement jcole : jcolumns) {
 			JsonObject jcol = jcole.getAsJsonObject();
 			Vector2I cpos = Vector2I.fromString(jcol.get("pos").getAsString());
-			Column col = new Column(cpos, false);
+			Column col = new Column(cpos, Hpb.world.generator);
 			col.fromJson(jcol);
 			columns.put(cpos, col);
 		}

@@ -1,8 +1,11 @@
 package net.pzdcrp.Hyperborea.world.elements.blocks;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
@@ -14,6 +17,7 @@ import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.DM;
 import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Vector3D;
+import net.pzdcrp.Hyperborea.utils.VectorU;
 import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.Item;
@@ -45,6 +49,8 @@ public class Block {
 			put(19, new Water(new Vector3D(), 5));
 			put(20, new Water(new Vector3D(), 6));
 			put(21, new Water(new Vector3D(), 7));
+			put(22, new OakLeaves(new Vector3D()));
+			put(23, new Weed(new Vector3D()));
 		}};;
 	private static Map<Integer, Integer> BlockidToItemid = new ConcurrentHashMap<Integer, Integer>() {
 		private static final long serialVersionUID = 37079642665568945L;
@@ -63,9 +69,10 @@ public class Block {
 			put(12, 6);
 			put(13, 7);
 			put(14, 8);
+			put(23, 9);
 		}};
 	public enum BlockType {
-		air, solid, transparent;
+		air, solid, transparent, noncollideabe;
 	}
 	public String texture;
 	protected AABB hitbox;
@@ -100,15 +107,25 @@ public class Block {
 	}
 	
 	public Block[] getSides() {
-		return new Block[] {
-			world.getBlock(pos.add(1, 0, 0)),
-			world.getBlock(pos.add(-1, 0, 0)),
-			world.getBlock(pos.add(0, 1, 0)),
-			world.getBlock(pos.add(0, -1, 0)),
-			world.getBlock(pos.add(0, 0, 1)),
-			world.getBlock(pos.add(0, 0, -1))
-		};
+	    Set<Vector3D> set = new HashSet<>(Arrays.asList(
+	            pos.add(1, 0, 0),
+	            pos.add(-1, 0, 0),
+	            pos.add(0, 1, 0),
+	            pos.add(0, -1, 0),
+	            pos.add(0, 0, 1),
+	            pos.add(0, 0, -1)
+	    ));
+
+	    set.removeIf(pos -> !world.loadedColumns.containsKey(VectorU.posToColumn(pos)));
+
+	    Set<Block> blockSet = new HashSet<>();
+	    for (Vector3D pos : set) {
+	        blockSet.add(world.getBlock(pos));
+	    }
+
+	    return blockSet.toArray(new Block[0]);
 	}
+
 	
 	public static Block getAbstractBlock(int id) {
 		return blocks.get(id);
@@ -126,7 +143,7 @@ public class Block {
 		world.getColumn(pos.x, pos.z).chunks[(int) (Math.floor(pos.y)/16)].updateModel();
 	}
 	
-	public Block under() throws Exception {
+	public Block under() {
 		return world.getBlock(new Vector3D(pos.x, pos.y-1, pos.z));
 	}
 	

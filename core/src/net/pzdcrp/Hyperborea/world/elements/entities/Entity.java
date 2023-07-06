@@ -10,6 +10,7 @@ import com.google.gson.JsonObject;
 
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.AABB;
+import net.pzdcrp.Hyperborea.data.ActionAuthor;
 import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.EntityType;
 import net.pzdcrp.Hyperborea.data.OTripple;
@@ -19,6 +20,7 @@ import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.player.Player;
 import net.pzdcrp.Hyperborea.utils.VectorU;
 import net.pzdcrp.Hyperborea.world.World;
+import net.pzdcrp.Hyperborea.world.elements.Chunk;
 import net.pzdcrp.Hyperborea.world.elements.Column;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
@@ -45,8 +47,12 @@ public class Entity {
 	public IInventory inventory;
 	protected byte hp; 
 	
+	//не должно сохраняться
+	public Vector2I echc;
+	
 	//классы ссылки
 	public Column curCol;
+	//public Chunk curChnk;
 	
 	public Map<EntityType, Class<? extends Entity>> entities = new HashMap<EntityType, Class<? extends Entity>>() {
 	private static final long serialVersionUID = 5611014785520178934L;
@@ -82,13 +88,9 @@ public class Entity {
 			if (!beforecol.entites.contains(this)) beforecol.entites.add(this);
 			firsttick = false;
 		}
-		Vector2I echc = new Vector2I(pos.x,pos.z);
-		if (this.type == EntityType.player) {
-			if (!beforeechc.equals(echc)) {
-				Hpb.world.updateLoadedColumns();
-			}
-		}
+		echc = new Vector2I(pos.x,pos.z);
 		if (!beforeechc.equals(echc)) {
+			if (isPlayer) Hpb.world.needToUpdateLoadedColumns = true;
 			Column beforecol = Hpb.world.getColumn(beforeechc);
 			Column col = Hpb.world.getColumn(pos.x,pos.z);
 			this.curCol = col;
@@ -114,6 +116,11 @@ public class Entity {
 		vel.y *= DM.airdrag;
 	}
 	
+	public void teleport(Vector3D pos) {
+		this.pos = pos;
+		this.vel.setZero();
+	}
+	
 	public List<AABB> getNearBlocks() {
 		AABB cube = getHitbox();
 		cube = cube.grow(Math.max(vel.x,1),Math.max(vel.y,1),Math.max(vel.z,1));
@@ -136,60 +143,65 @@ public class Entity {
 	}
 	
 	public void applyMovement() {
-		if (vel.x != 0 || vel.y != 0 || vel.z != 0) {
-			List<AABB> nb = getNearBlocks();
-			double bx,by,bz;
-			for (AABB collidedBB : nb) {
-				by = vel.y;
-				vel.y = collidedBB.calculateYOffset(this.getHitbox(), vel.y);
-				if (by != vel.y) {
-					coly = true;
-				}
-			}
-			if (vel.y > 0) {
-				onGround = false;
-			} else if (vel.y == 0) {
-				onGround = true;
-			}
-			this.pos.y += vel.y;
-			
-			for (AABB collidedBB : nb) {
-				bx = vel.x;
-				vel.x = collidedBB.calculateXOffset(this.getHitbox(), vel.x);
-				if (bx != vel.x) {
-					colx = true;
-				}
-			}
-			this.pos.x += vel.x;
-			
-			for (AABB collidedBB : nb) {
-				bz = vel.z;
-				vel.z = collidedBB.calculateZOffset(this.getHitbox(), vel.z);
-				if (bz != vel.z) {
-					colz = true;
-				}
-			}
-			this.pos.z += vel.z;
-			
-			
-			if (this.isPlayer) {
-				vel.x *= 0.6;
-				vel.z *= 0.6;
-			} else {
-				if (this.onGround) {
-					vel.x *= 0.6;
-					vel.z *= 0.6;
-				} else {
-					vel.x *= 0.98;
-					vel.z *= 0.98;
-				} 
-			}
-			
-			if (Math.abs(vel.x) < DM.badVel) vel.x = 0;
-			if (Math.abs(vel.y) < DM.badVel) vel.y = 0;
-			if (Math.abs(vel.z) < DM.badVel) vel.z = 0;
-		}
+	    if (vel.x != 0 || vel.y != 0 || vel.z != 0) {
+	        List<AABB> nb = getNearBlocks();
+	        double bx, by, bz;
+	        boolean wasMovingDown = vel.y < 0;
+	        
+	        for (AABB collidedBB : nb) {
+	            by = vel.y;
+	            vel.y = collidedBB.calculateYOffset(this.getHitbox(), vel.y);
+	            if (by != vel.y) {
+	                coly = true;
+	            }
+	        }
+	        
+	        // Обновленная проверка onGround
+	        if (wasMovingDown && vel.y == 0) {
+	            onGround = true;
+	        } else {
+	            onGround = false;
+	        }
+	        
+	        this.pos.y += vel.y;
+	        
+	        for (AABB collidedBB : nb) {
+	            bx = vel.x;
+	            vel.x = collidedBB.calculateXOffset(this.getHitbox(), vel.x);
+	            if (bx != vel.x) {
+	                colx = true;
+	            }
+	        }
+	        this.pos.x += vel.x;
+	        
+	        for (AABB collidedBB : nb) {
+	            bz = vel.z;
+	            vel.z = collidedBB.calculateZOffset(this.getHitbox(), vel.z);
+	            if (bz != vel.z) {
+	                colz = true;
+	            }
+	        }
+	        this.pos.z += vel.z;
+	        
+	        if (this.isPlayer) {
+	            vel.x *= 0.6;
+	            vel.z *= 0.6;
+	        } else {
+	            if (this.onGround) {
+	                vel.x *= 0.6;
+	                vel.z *= 0.6;
+	            } else {
+	                vel.x *= 0.98;
+	                vel.z *= 0.98;
+	            } 
+	        }
+	        
+	        if (Math.abs(vel.x) < DM.badVel) vel.x = 0;
+	        if (Math.abs(vel.y) < DM.badVel) vel.y = 0;
+	        if (Math.abs(vel.z) < DM.badVel) vel.z = 0;
+	    }
 	}
+
 	
 	public AABB getHitbox() {//FIXME
 		return hitbox.noffset(pos);
@@ -213,7 +225,11 @@ public class Entity {
 	}
 
 	public void placeBlock(Block block) {
-		Hpb.world.setBlock(block);
+		if (!this.isPlayer) {
+			System.out.println("mob "+this.getClass().getName()+" cannot place blocks");
+			System.exit(0);
+		}
+		Hpb.world.setBlock(block, ActionAuthor.player);
 	}
 
 	public Vector3D getEyeLocation() {

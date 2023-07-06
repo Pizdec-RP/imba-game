@@ -5,18 +5,23 @@
         "glass": "glass.png",
         "grassblock": "grass.png",
         "oaklog": "oaklog.png",
+        "oakleaves": "oakleaves.png",
         "planks": "planks.png",
         "tntcrate": "tntcrate.png",
         "water": "water.png",
-        "firebase": "firebase.png"
+        "firebase": "firebase.png",
+        "weed": "weed.png"
     },
     "other": {
         "sun": "sun.png",
         "slot": "slot.png",
-        "sslot": "selectedslot.png"
+        "sslot": "selectedslot.png",
+        "crosshair": "crosshair.png",
+        "cloud": "cloud.png"
     },
     "items": {
         "bucket": "bucket.png",
-        "waterbucket": "waterbucket.png"
+        "waterbucket": "waterbucket.png",
+        "weed": "weed.png"
     }
 }

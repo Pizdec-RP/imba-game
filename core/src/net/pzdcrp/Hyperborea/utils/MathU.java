@@ -258,4 +258,19 @@ public class MathU {
 	    
 	    return copy;
 	}
+	
+	public static int diap(int min, int max, double scl) {
+		return (int) ((max - min) * scl) + min;
+	}
+	
+	public static double lerp(double minValue, double maxValue, double t) {
+	    return minValue + (maxValue - minValue) * t;
+	}
+	
+	public static double norm(double minValue, double maxValue, double value) {
+        if (minValue == maxValue) {
+            return .0d; // Защита от деления на ноль
+        }
+        return (value - minValue) / (maxValue - minValue);
+    }
 }

@@ -1,5 +1,6 @@
 package net.pzdcrp.Hyperborea.world.elements.blocks;
 
+import net.pzdcrp.Hyperborea.data.AABB;
 import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 
@@ -16,6 +17,11 @@ public class Voed extends Block {
 	@Override
 	public boolean isCollide() {
 		return false;
+	}
+	
+	@Override
+	public AABB getHitbox() {
+		return null;
 	}
 	
 	@Override

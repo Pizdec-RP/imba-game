@@ -7,12 +7,15 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
+import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.PixmapPacker;
@@ -20,11 +23,17 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
+import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
+import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
+import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
+import com.badlogic.gdx.graphics.g3d.model.MeshPart;
+import com.badlogic.gdx.graphics.g3d.model.Node;
+import com.badlogic.gdx.graphics.g3d.model.NodePart;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.math.Vector3;
@@ -34,17 +43,23 @@ import com.badlogic.gdx.utils.Timer;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import net.pzdcrp.Hyperborea.data.ActionAuthor;
+import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Mutex;
+import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.player.ControlListener;
+import net.pzdcrp.Hyperborea.player.Player;
+import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.utils.ThreadU;
+import net.pzdcrp.Hyperborea.utils.VectorU;
 import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.Column;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
+import net.pzdcrp.Hyperborea.world.elements.blocks.Glass;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Stone;
+import net.pzdcrp.Hyperborea.world.elements.generators.DefaultWorldGenerator;
 
 public class Hpb extends ApplicationAdapter {
-	Texture img;
-	public static int renderDistance = 3;
 	private static ModelBatch modelBatch;
 	public static SpriteBatch spriteBatch;
 	public static BitmapFont font;
@@ -54,7 +69,7 @@ public class Hpb extends ApplicationAdapter {
 	public static ControlListener controls;
 	public static Stage stage;
 	public static SuperPizdatiyShader shaderprovider;
-	public static OrthographicCamera mCamera;
+	//public static OrthographicCamera mCamera;
 	public static Mutex mutex = new Mutex();
 	
 	public static final Vector3 forAnyReason = new Vector3();
@@ -64,8 +79,8 @@ public class Hpb extends ApplicationAdapter {
 	public static Label infoLabel;
 	public static InputMultiplexer multiplexer;
 	//private static ShaderProgram sp;
-	public static FrameBuffer buffer;
-	public static TextureRegion textureRegion;
+	//public static FrameBuffer buffer;
+	//public static TextureRegion textureRegion;
 	
 	public State state = State.PREPARE;
 	
@@ -77,6 +92,8 @@ public class Hpb extends ApplicationAdapter {
 	public void create() {
 		System.out.println("loading textures");
 		loadTextures();
+		crosshair = mutex.getOTexture("crosshair");
+		
 		System.out.println("lessgo");
 		modelBatch = new ModelBatch(shaderprovider = new SuperPizdatiyShader());
 		
@@ -108,20 +125,27 @@ public class Hpb extends ApplicationAdapter {
 		Gdx.input.setInputProcessor(multiplexer);
 		
 		Gdx.input.setCursorCatched(true);
-		Gdx.gl.glEnable(GL20.GL_BLEND);
-		Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+		//Gdx.gl.glDisable(GL20.GL_BLEND);
+		//Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 		Gdx.gl.glTexParameterf(GL20.GL_TEXTURE_2D, GL20.GL_TEXTURE_MIN_FILTER, GL20.GL_LINEAR_MIPMAP_LINEAR);
 		
-		mCamera = new OrthographicCamera();
-		mCamera.far = 500;
-	    mCamera.setToOrtho(false, 720, 720);
-	    
+		//mCamera = new OrthographicCamera();
+		///mCamera.far = 500;
+	    //mCamera.setToOrtho(false, 720, 720);
 		
 		
-		buffer = new FrameBuffer(Pixmap.Format.RGBA8888, 1280, 720, true);
-		textureRegion = new TextureRegion();
-		textureRegion.flip(false, true);
+		//buffer = new FrameBuffer(Pixmap.Format.RGBA8888, 1280, 720, true);
+		//textureRegion = new TextureRegion();
+		//textureRegion.flip(false, true);
 		Thread.currentThread().setName("main thd");
+	}
+	
+	@Override
+	public void resize (int width, int height) {
+		if (world == null) return;
+		world.player.cam.cam.viewportWidth = width;
+		world.player.cam.cam.viewportHeight = height;
+	    spriteBatch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
 	}
 	
 	public void tick() throws Exception {
@@ -175,56 +199,39 @@ public class Hpb extends ApplicationAdapter {
         }, delay, delay);
     }
 	
+    private Texture crosshair;
+	private final int crosshairsize = 30;
 	public void renderWorld() throws Exception {
-		//хуцня с обычным рендером
-		//buffer.begin();
-		
-		//Gdx.gl.glViewport(0, 0, 1280, 720);
-		
-		//1 стадия
+		int halfwidth = Gdx.graphics.getWidth()/2;
+		int halfheight = Gdx.graphics.getHeight()/2;
 		
 		shaderprovider.newstage();
 		modelBatch.begin(world.player.cam.cam);
 		world.render();
 		modelBatch.end();
 		
-		//2 стадия
-		
-		/*shaderprovider.newstage();
-		
-		textureRegion.setRegion(buffer.getColorBufferTexture());
-		shaderprovider.stage2pic = textureRegion.getTexture();
-		
-		buffer.end();
-		
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-		
-		modelBatch.begin(world.player.cam.cam);
-		world.render();
-		modelBatch.end();*/
-		
 		shaderprovider.end();
 		
-		//отрисовка gui
-		
-		//Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-		modelBatch.begin(mCamera);
 		spriteBatch.begin();
-		
 		//displayinfo
 		layout.setText(font, currentText);
 	    float textWidth = layout.width;
-		font.draw(spriteBatch, currentText, Gdx.graphics.getWidth()/2 - textWidth / 2, Gdx.graphics.getHeight()*0.2f);
-		//end
+		font.draw(spriteBatch, currentText, halfwidth - textWidth / 2, Gdx.graphics.getHeight()*0.2f);
+		
+		world.player.inventory.render();
+		
+		//render crosshair
+		spriteBatch.draw(crosshair, halfwidth-crosshairsize, halfheight-crosshairsize, crosshairsize, crosshairsize);
 		
 		//spriteBatch.draw(mutex.comp, 0,0,mutex.comp.getWidth(),mutex.comp.getHeight(), 0, 0, mutex.comp.getWidth(),mutex.comp.getHeight(), false, true);
-		world.player.inventory.render();
 		spriteBatch.end();
-		modelBatch.end();
 	}
 	
 	public static void render(ModelInstance obj) {
 		modelBatch.render(obj);
+	}
+	public static void render(ModelInstance obj, Environment env) {
+		modelBatch.render(obj, env);
 	}
 	
 	@Override
@@ -260,15 +267,15 @@ public class Hpb extends ApplicationAdapter {
 				renderWorld();
 				
 				StringBuilder builder = new StringBuilder();
-				builder.append("onGround: ").append(world.player.onGround);
-				builder.append(" time: ").append(world.time);
+				//builder.append("onGround: ").append(world.player.onGround);
+				//builder.append(" time: ").append(world.time);
 				builder.append(" col: ").append(world.loadedColumns.size());
 				builder.append(" | pos: ").append("x:"+String.format("%.2f",world.player.pos.x)+" y:"+String.format("%.2f",world.player.pos.y)+" z:"+String.format("%.2f",world.player.pos.z));
 				en = 0;
 				for (Column col : world.loadedColumns.values()) {
 					en += col.entites.size();
 				}
-				builder.append(" | ent: ").append(en);
+				//builder.append(" | ent: ").append(en);
 				builder.append(" | fps: ").append(Gdx.app.getGraphics().getFramesPerSecond());
 				builder.append(" | youInCol: ").append(world.player.beforeechc.toString());
 				label.setText(builder);
@@ -326,14 +333,19 @@ public class Hpb extends ApplicationAdapter {
 	        while (true) {
 	            try {
 	            	if (exit) Thread.currentThread().stop();
-	                world.updateLoadedColumns();
-	                ThreadU.sleep(200);
+	            	if (Hpb.world != null) {
+		                if (world.needToUpdateLoadedColumns) {
+		                	world.updateLoadedColumns(VectorU.posToColumn(Hpb.world.player.pos));
+		                	world.needToUpdateLoadedColumns = false;
+		                }
+		                world.fromChunkUpdateThread();
+	            	}
 	            } catch (Exception e) {
 	            	e.printStackTrace();
-					System.exit(2);
+					System.exit(0);
 	            }
 	        }
-	    }).start();
+	    }, "chunk updates").start();
 	}
 	
 	static long timeone = System.nanoTime();
@@ -361,7 +373,7 @@ public class Hpb extends ApplicationAdapter {
 				e.printStackTrace();
 				System.exit(0);
 			}
-	    }).start();
+	    }, "tick thread").start();
 	}
 	
 	public static void onCommand(String rawcommand) {
@@ -381,7 +393,7 @@ public class Hpb extends ApplicationAdapter {
 			Hpb.world.save();
 			exit=false;
 		} else if (command.equals("setblock")) {
-			world.setBlock(new Stone(world.player.pos.clone().func_vf()));
+			world.setBlock(new Stone(world.player.pos.clone().func_vf()), ActionAuthor.command);
 			world.player.chat.addMessage("setted");
 		} else if (command.equals("gl")) {
 			if (args.length < 4) {
@@ -402,3 +414,60 @@ public class Hpb extends ApplicationAdapter {
 		}
 	}
 }
+
+/*
+public void renderWorld() throws Exception {
+		int halfwidth = Gdx.graphics.getWidth()/2;
+		int halfheight = Gdx.graphics.getHeight()/2;
+		System.out.println(halfwidth+" "+halfheight);
+		//хуцня с обычным рендером
+		//buffer.begin();
+		
+		//Gdx.gl.glViewport(0, 0, 1280, 720);
+		
+		//1 стадия
+		
+		shaderprovider.newstage();
+		modelBatch.begin(world.player.cam.cam);
+		world.render();
+		modelBatch.end();
+		
+		//2 стадия
+		
+		shaderprovider.newstage();
+		
+		textureRegion.setRegion(buffer.getColorBufferTexture());
+		shaderprovider.stage2pic = textureRegion.getTexture();
+		
+		buffer.end();
+		
+		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+		
+		modelBatch.begin(world.player.cam.cam);
+		world.render();
+		modelBatch.end();
+		
+		shaderprovider.end();
+		
+		//отрисовка gui
+		
+		//Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+		modelBatch.begin(mCamera);
+		spriteBatch.begin();
+		
+		//displayinfo
+		layout.setText(font, currentText);
+	    float textWidth = layout.width;
+		font.draw(spriteBatch, currentText, halfwidth - textWidth / 2, Gdx.graphics.getHeight()*0.2f);
+		
+		world.player.inventory.render();
+		
+		//render crosshair
+		spriteBatch.draw(crosshair, halfwidth-crosshairsize, halfheight-crosshairsize, crosshairsize, crosshairsize);
+		
+		
+		//spriteBatch.draw(mutex.comp, 0,0,mutex.comp.getWidth(),mutex.comp.getHeight(), 0, 0, mutex.comp.getWidth(),mutex.comp.getHeight(), false, true);
+		spriteBatch.end();
+		modelBatch.end();
+	}
+ */

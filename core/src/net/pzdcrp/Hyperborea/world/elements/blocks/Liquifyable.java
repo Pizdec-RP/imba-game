@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import net.pzdcrp.Hyperborea.data.AABB;
+import net.pzdcrp.Hyperborea.data.ActionAuthor;
 import net.pzdcrp.Hyperborea.data.DM;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 
@@ -28,7 +29,7 @@ public class Liquifyable extends Block {
 	public void setLl(int newll) {
 		boolean b0 = this instanceof Air;
 		if (newll == 0) {
-			if (!b0) world.setBlock(new Air(this.pos));
+			if (!b0) world.setBlock(new Air(this.pos), ActionAuthor.world);
 			return;
 		}
 		this.ll = newll;
@@ -36,7 +37,7 @@ public class Liquifyable extends Block {
 			block1.onNeighUpdate();
 		}
 		if (b0) {
-			world.setBlock(new Water(this.pos, this.ll));
+			world.setBlock(new Water(this.pos, this.ll), ActionAuthor.world);
 		}
 	}
 	
