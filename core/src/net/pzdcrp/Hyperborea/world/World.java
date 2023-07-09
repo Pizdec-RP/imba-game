@@ -21,9 +21,11 @@ import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
+import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
@@ -62,17 +64,14 @@ public class World {// implements RenderableProvider {
 	public static final int chunks = 16, maxheight = chunks * 16, buildheight = maxheight-1;
 	public static boolean ready = false;
 	public Matrix4 temp = new Matrix4();
-	
-	public Vector3 sunPosition = new Vector3();
-	public ModelInstance sun;
-	
-    public Vector3 moonPosition = new Vector3();
-    public ModelInstance moon;
+	private ModelInstance sun;
+    private ModelInstance moon;
+    private ModelInstance shield;
     public Vector3 lightDirection = new Vector3();
     public static int seed = 228;
     
     private static final int DAY_LENGTH = 60000;
-    private static final float DISTANCE_FROM_CENTER = 200f;
+    private static final float DISTANCE_FROM_CENTER = 2000f;
     Material skymaterial;
     
     public ModelInstance particlesModel = new ModelInstance(new Model());
@@ -123,8 +122,8 @@ public class World {// implements RenderableProvider {
 	public void loadEnvironment() {
 		
 		ModelBuilder modelBuilder = new ModelBuilder();
-		skymaterial = new Material(ColorAttribute.createDiffuse(0, 0, 255, 255), IntAttribute.createCullFace(GL20.GL_NONE));
-		Model model = modelBuilder.createBox(DISTANCE_FROM_CENTER*5, DISTANCE_FROM_CENTER*5, DISTANCE_FROM_CENTER*5, skymaterial, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);
+		skymaterial = new Material(IntAttribute.createCullFace(GL20.GL_FRONT));
+		Model model = modelBuilder.createBox(DISTANCE_FROM_CENTER*10, DISTANCE_FROM_CENTER*10, DISTANCE_FROM_CENTER*10, skymaterial, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);
 		sky = new ModelInstance(model);
 		sky.userData = new Object[] {"sky"};
 		Matrix4 transform = new Matrix4();
@@ -133,7 +132,7 @@ public class World {// implements RenderableProvider {
 		
 		modelBuilder = new ModelBuilder();
 		Material material = new Material(TextureAttribute.createDiffuse(Hpb.mutex.getOTexture("sun")));
-		model = modelBuilder.createBox(60f, 60f, 60f, material, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);
+		model = modelBuilder.createBox(700f, 700f, 700f, material, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);
 		sun = new ModelInstance(model);
 		sun.userData = new Object[] {"sun"};
 		
@@ -143,8 +142,22 @@ public class World {// implements RenderableProvider {
 		moon = new ModelInstance(model);
 		moon.userData = new Object[] {"moon"};
 		
-		model = modelBuilder.createBox(1, 1, 1, material, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
-		
+		modelBuilder = new ModelBuilder();
+		material = new Material(
+				ColorAttribute.createDiffuse(0,0,0,0.01f), 
+				new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA));
+		modelBuilder.begin();
+		MeshPartBuilder meshBuilder = modelBuilder.part("8bytes", GL20.GL_TRIANGLES, VertexAttributes.Usage.Position, material);
+		meshBuilder.rect(
+				-DISTANCE_FROM_CENTER, 0, -DISTANCE_FROM_CENTER,
+				DISTANCE_FROM_CENTER, 0, -DISTANCE_FROM_CENTER,
+				DISTANCE_FROM_CENTER, 0, DISTANCE_FROM_CENTER,
+				-DISTANCE_FROM_CENTER, 0, DISTANCE_FROM_CENTER,
+		        0, -1, 0
+		);
+		model = modelBuilder.end();
+		shield = new ModelInstance(model);
+		shield.userData = new Object[] {"shi"};
 	}
 	
 	public List<Entity> getEntities(Vector3D pos, double radius) {
@@ -281,17 +294,21 @@ public class World {// implements RenderableProvider {
 		return new Voed(v);
 	}
 	
-	public int calculateSkylight(double abstracty) {
-	    if (abstracty < -50) {
+	public int calculateSkylight(float abstracty) {
+	    if (abstracty < 50) {
+	    	System.out.println("night");
 	    	Hpb.shaderprovider.skylightlevel = 0f;
 	    	return skylight;
-	    } else if (abstracty > 50) {
+	    } else if (abstracty > 800) {
+	    	System.out.println("day");
 	    	Hpb.shaderprovider.skylightlevel = 1f;
 	        return skylight;
 	    }
-	    double norm = (abstracty - (-50)) / (50 - (-50));
+	    float norm = (abstracty - (50)) / (800 - (50));
+	    System.out.println("norm: "+norm);
 	    int skylight = (int) (minSkylight + norm * (maxSkylight - minSkylight));
-	    Hpb.shaderprovider.skylightlevel = (float)norm;
+	    System.out.println("sl: "+skylight);
+	    Hpb.shaderprovider.skylightlevel = norm;
 	    return skylight;
 	}
 	
@@ -300,20 +317,21 @@ public class World {// implements RenderableProvider {
 	public ModelInstance sky;
 	public void renderSky() {
 	    time = (int) time % DAY_LENGTH;
-	    float px = (float)player.pos.x, py = (float)player.pos.y, pz = (float)player.pos.z;
+	    float px = (float)player.pos.x/*, py = (float)player.pos.y*/, pz = (float)player.pos.z;
 	    float angle = 2f * (float) Math.PI * time / DAY_LENGTH;
-	    float x = (DISTANCE_FROM_CENTER * MathU.cos(angle) + px);
-	    float y = (DISTANCE_FROM_CENTER * MathU.sin(angle) + py);
+	    float x = (DISTANCE_FROM_CENTER * MathU.cos(angle) + px) * 2;
+	    float y = (DISTANCE_FROM_CENTER * MathU.sin(angle)) * 2;
 
-	    sky.transform.setToTranslation(px,py,pz);
+	    sky.transform.setToTranslation(px,0,pz);
+	    shield.transform.setToTranslation(px,400,pz);
 
 	    Vector3 translation = new Vector3();
 	    sun.transform.getTranslation(translation);
 	    sun.transform.rotate(1, 1, 1, 0.01f);
 	    sun.transform.setTranslation(x, y, pz);
 	    
-	    double abstracty = y - player.pos.y;
-	    int newSkylight = calculateSkylight(abstracty);
+	    System.out.println("suny: "+y);
+	    int newSkylight = calculateSkylight(y);
 	    if (newSkylight != skylight) {
 	        skylight = newSkylight;
 	        for (Region r : memoriedRegions.values()) {
@@ -327,6 +345,7 @@ public class World {// implements RenderableProvider {
 
 	    Hpb.render(sun);
 	    Hpb.render(sky);
+	    Hpb.render(shield);
 	}
 	
 	public void addLC(Column c) {
@@ -468,7 +487,7 @@ public class World {// implements RenderableProvider {
 		List<Chunk> sortedChunks = new ArrayList<>(notSorted);
 		Collections.sort(sortedChunks, chunkComparator);
 		for (Chunk c : sortedChunks) {
-			if (!Vector3D.ZERO.equals(player.vel) && VectorU.sqrt(new Vector3D(player.echc.x, player.pos.y/16, player.echc.z), c.pos) <= Settings.updatingDistance) c.rebuildTransparent();
+			if (!Vector3D.ZERO.equals(player.vel)/* || c.needUpdateTransp())*/ && VectorU.sqrt(new Vector3D(player.echc.x, player.pos.y/16, player.echc.z), c.pos) <= Settings.updatingDistance) c.rebuildTransparent();
 			if (c.transparent != null) Hpb.render(c.transparent);
 		}
 		//System.out.println(Vector3D.ZERO.equals(player.vel));

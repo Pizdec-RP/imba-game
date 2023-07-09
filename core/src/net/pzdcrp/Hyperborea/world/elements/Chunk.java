@@ -251,7 +251,7 @@ public class Chunk {
 	
 	public void rebuildTransparent() {
 		if (this.m != null) {
-			m.sortTransparent();
+			m.sortTransparent(Hpb.world.player.cam.cam.position);
 		}
 	}
 	
@@ -355,4 +355,14 @@ public class Chunk {
 	public boolean boundsInFrustum() {
 		return Hpb.world.player.cam.cam.frustum.boundsInFrustum(center, dimensions);
 	}
+	
+	/*private boolean updateTransp = false;
+	public boolean needUpdateTransp() {
+		if (updateTransp) {
+			updateTransp = false;
+			return true;
+		} else {
+			return updateTransp;
+		}
+	}*/
 }

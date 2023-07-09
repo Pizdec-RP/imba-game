@@ -36,6 +36,7 @@ import com.badlogic.gdx.graphics.g3d.model.Node;
 import com.badlogic.gdx.graphics.g3d.model.NodePart;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
@@ -83,6 +84,7 @@ public class Hpb extends ApplicationAdapter {
 	//public static TextureRegion textureRegion;
 	
 	public State state = State.PREPARE;
+	private ShaderProgram stage2shader;
 	
 	public enum State {
 		PREPARE, INGAME
@@ -128,6 +130,10 @@ public class Hpb extends ApplicationAdapter {
 		//Gdx.gl.glDisable(GL20.GL_BLEND);
 		//Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 		Gdx.gl.glTexParameterf(GL20.GL_TEXTURE_2D, GL20.GL_TEXTURE_MIN_FILTER, GL20.GL_LINEAR_MIPMAP_LINEAR);
+		buffer = new FrameBuffer(Pixmap.Format.RGBA8888, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
+		textureRegion = new TextureRegion();
+		stage2shader = new ShaderProgram(Gdx.files.internal("shaders/2stageV.vert"), Gdx.files.internal("shaders/2stageF.frag"));
+		screensizeatr = stage2shader.getUniformLocation("screensize");
 		
 		//mCamera = new OrthographicCamera();
 		///mCamera.far = 500;
@@ -146,6 +152,7 @@ public class Hpb extends ApplicationAdapter {
 		world.player.cam.cam.viewportWidth = width;
 		world.player.cam.cam.viewportHeight = height;
 	    spriteBatch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
+	    buffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, true);
 	}
 	
 	public void tick() throws Exception {
@@ -201,18 +208,40 @@ public class Hpb extends ApplicationAdapter {
 	
     private Texture crosshair;
 	private final int crosshairsize = 30;
+	private static FrameBuffer buffer;
+	private static TextureRegion textureRegion;
+	private static int screensizeatr;
 	public void renderWorld() throws Exception {
+		buffer.begin();
+
+		Gdx.gl.glViewport(0, 0, 1280, 720);
+		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+		
 		int halfwidth = Gdx.graphics.getWidth()/2;
 		int halfheight = Gdx.graphics.getHeight()/2;
 		
+		//1 стадия
 		shaderprovider.newstage();
 		modelBatch.begin(world.player.cam.cam);
 		world.render();
 		modelBatch.end();
-		
 		shaderprovider.end();
+		//конец 1 стадии
+		
+		//2 стадия
+		textureRegion.setRegion(buffer.getColorBufferTexture());
+		
+		buffer.end();
+		
+		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 		
 		spriteBatch.begin();
+		spriteBatch.setShader(stage2shader);
+		stage2shader.setUniformf(screensizeatr, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		Texture buftex = textureRegion.getTexture();
+		spriteBatch.draw(buftex, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, buftex.getWidth(), buftex.getHeight(), false, true);
+		spriteBatch.setShader(null);
+		
 		//displayinfo
 		layout.setText(font, currentText);
 	    float textWidth = layout.width;
@@ -225,6 +254,7 @@ public class Hpb extends ApplicationAdapter {
 		
 		//spriteBatch.draw(mutex.comp, 0,0,mutex.comp.getWidth(),mutex.comp.getHeight(), 0, 0, mutex.comp.getWidth(),mutex.comp.getHeight(), false, true);
 		spriteBatch.end();
+		//конец 2 стадии
 	}
 	
 	public static void render(ModelInstance obj) {

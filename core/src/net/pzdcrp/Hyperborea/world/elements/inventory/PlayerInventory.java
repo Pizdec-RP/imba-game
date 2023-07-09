@@ -74,19 +74,28 @@ public class PlayerInventory extends IInventory {
     public static final Texture slot = Hpb.mutex.getOTexture("slot");
     public static final Texture selectedSlot = Hpb.mutex.getOTexture("sslot");
     public Texture[] Thotbar = new Texture[10];
+    private static float 
+    		x = 10,
+    		y = 30, 
+    		slotWidth = 64f,
+    		slotHeight = 64f,
+    		spacing = 3.75f;
     @Override
     public void render() {
-    	//test();
     	for (int i = 0; i < 10; i++) {
-    		if (this.chs == i) {
-    			Hpb.spriteBatch.draw(selectedSlot, i*64+3.75f*i, 15, 64, 64);
-    		} else {
-    			Hpb.spriteBatch.draw(slot, i*64+3.75f*i, 15, 64, 64);
-    		}
-    		Texture t = Thotbar[i];
-    		if (t != null)
-    			Hpb.spriteBatch.draw(t, i*64f+3.90f*i, 15f, 64f, 64f);
-    	}
+            float slotX = x + i * (slotWidth + spacing);
+            float slotY = y;
+
+            if (this.chs == i) {
+                Hpb.spriteBatch.draw(selectedSlot, slotX, slotY, slotWidth, slotHeight);
+            } else {
+                Hpb.spriteBatch.draw(slot, slotX, slotY, slotWidth, slotHeight);
+            }
+
+            Texture t = Thotbar[i];
+            if (t != null)
+                Hpb.spriteBatch.draw(t, slotX + spacing, slotY + spacing, slotWidth - spacing * 2, slotHeight - spacing * 2);
+        }
     }
     
     @Override

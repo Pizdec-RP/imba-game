@@ -14,13 +14,13 @@ public class Camera {
 	public Vector3 before = new Vector3(0,0,0), now = new Vector3(0,0,0);
 
 	public Camera() {
-		cam = new PerspectiveCamera(nowfov, 1280, 720);
+		cam = new PerspectiveCamera(nowfov, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		cam.position.set(0,0,0);
 		
 		cam.lookAt(0, 0, 0);
 		cam.near = 0.1f;
 		
-		cam.far = 1000f;
+		cam.far = 300000f;
 		cam.update();
 	}
 	

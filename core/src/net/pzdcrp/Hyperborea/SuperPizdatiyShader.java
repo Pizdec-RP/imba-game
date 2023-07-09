@@ -35,8 +35,6 @@ import net.pzdcrp.Hyperborea.utils.MathU;
 public class SuperPizdatiyShader extends BaseShaderProvider {
     //public int test;
     public List<DefaultShader> local = new CopyOnWriteArrayList<>();
-    //public List<Shader> stage2 = new CopyOnWriteArrayList<>();
-    public Texture stage2pic;
     public int stage = 0;
     public float skylightlevel = 1;
     
@@ -67,15 +65,19 @@ public class SuperPizdatiyShader extends BaseShaderProvider {
     	if (renderable.userData != null) {
     		Object[] args = (Object[])renderable.userData;
     		String type = (String)args[0];
+    		System.out.println("renderable tag: "+type);
     		if (type.equals("chunk")) {
-	    		System.out.println("renderable tag: "+(String)((Object[])renderable.userData)[0]);
-	    		String vert = Gdx.files.internal("shaders/skyVertexShader.vert").readString();
-		        String frag = Gdx.files.internal("shaders/skyFragmentShader.frag").readString();
+	    		String vert = Gdx.files.internal("shaders/chunkVertexShader.vert").readString();
+		        String frag = Gdx.files.internal("shaders/chunkFragmentShader.frag").readString();
 		        DefaultShader shader = new ChunkModelShader(renderable, new DefaultShader.Config(vert, frag),this);
 		        local.add(shader);
 		        return shader;
 	    	} else if (type.equals("sky")) {
-	    		
+	    		String vert = Gdx.files.internal("shaders/skyVertexShader.vert").readString();
+		        String frag = Gdx.files.internal("shaders/skyFragmentShader.frag").readString();
+		        DefaultShader shader = new SkyModelShader(renderable, new DefaultShader.Config(vert, frag),this);
+		        local.add(shader);
+		        return shader;
 	    	}
     	}
     	System.out.println("creating default shader for");
@@ -90,11 +92,6 @@ class ChunkModelShader extends DefaultShader {
 	public ChunkModelShader(Renderable renderable, Config config, SuperPizdatiyShader s) {
 		super(renderable, config);
 		this.s = s;
-	}
-	
-	@Override
-	public void begin(final Camera camera, final RenderContext context) {
-		super.begin(camera, context);
 	}
 	
 	@Override
@@ -114,38 +111,8 @@ class SkyModelShader extends DefaultShader {
 	}
 	
 	@Override
-	public void begin(final Camera camera, final RenderContext context) {
-		super.begin(camera, context);
-	}
-	
-	@Override
 	public void render (Renderable renderable, Attributes combinedAttributes) {
 		set(lightlevel, s.skylightlevel);
 		super.render(renderable, combinedAttributes);
 	}
 }
-
-/*class Stage2Shader extends DefaultShader {
-	private SuperPizdatiyShader s;
-	private int rmt = register(new Uniform("u_reflectionTexture"));
-
-	public Stage2Shader(Renderable renderable, Config config, SuperPizdatiyShader s) {
-		super(renderable, config);
-		this.s = s;
-	}
-	
-	@Override
-	public void begin(final Camera camera, final RenderContext context) {
-		super.begin(camera, context);
-	}
-	
-	@Override
-	public void render (Renderable renderable, Attributes combinedAttributes) {
-		if (s.stage2pic == null) {
-			System.out.println("notexture");
-			System.exit(0);
-		}
-		this.set(rmt, s.stage2pic);
-		super.render(renderable, combinedAttributes);
-	}
-}*/

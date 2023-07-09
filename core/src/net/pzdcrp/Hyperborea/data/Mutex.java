@@ -67,9 +67,8 @@ public class Mutex {
 			width += tex.getWidth();
 		}
 		comp = new Texture(new PixmapTextureData(new Pixmap(width, height, Format.RGBA8888), null, true, true));
-		comp.setFilter(TextureFilter.Linear, TextureFilter.MipMapLinearLinear);
-		
-		comp.setAnisotropicFilter(GL30.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT);
+		comp.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+		comp.setAnisotropicFilter(GL20.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT);
 		int twidth = 0;
 		TextureData dt;
 		for (Entry<String, Texture> tex : ar.entrySet()) {
@@ -78,17 +77,13 @@ public class Mutex {
 			dt.prepare();
 			comp.draw(dt.consumePixmap(), twidth, 0);
 			float[] razm = new float[4];
-			
 			razm[1] = 0;
 			float hep = (float)tex.getValue().getHeight() / (float)height;
 			razm[3] = hep;
-			
 			razm[0] = (float)twidth / (float)width;
 			twidth+=tex.getValue().getWidth();
 			razm[2] = (float)twidth / (float)width;
-			
 			razmetka.put(tex.getKey(), razm);
-			//System.out.println(tex.getKey()+" 53f "+razm[0]+" "+razm[1]+" "+razm[2]+" "+razm[3]+" "+" "+tex.getValue().getWidth()+" "+tex.getValue().getHeight());
 		}
 	}
 	
@@ -186,9 +181,10 @@ public class Mutex {
 	    		if (block == null) continue;
 	    		block.addModel(false, false, false, false, false, false, m);
 	    		ModelInstance model;
-	    		if (block.isTransparent())
+	    		if (block.isTransparent()) {
 	    			model = m.endTransparent();
-	    		else
+	    		    m.sortTransparent(camera.position);
+	    		} else
 	    			model = m.endSolid();
 	    	    
 	    	    fbo.begin();

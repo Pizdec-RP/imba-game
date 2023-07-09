@@ -47,7 +47,7 @@ public class MBIM {
 	public Pair p;
 	public Pair t;
 	private VertexAttribute lightdata;
-	private ModelInstance transparentmodel;
+	public ModelInstance transparentmodel;
 	
 	public enum offset {
 		py,ny,px,nx,pz,nz,no;
@@ -56,7 +56,8 @@ public class MBIM {
 	@SuppressWarnings("serial")
 	public MBIM(Chunk chunk) {
 		lightdata = new VertexAttribute(512, 1, "lightdata");
-		VertexAttributes atrs = createMixedVertexAttribute(VertexAttributes.Usage.Position
+		VertexAttributes atrs = createMixedVertexAttribute(
+		VertexAttributes.Usage.Position
 		| VertexAttributes.Usage.Normal
 		| VertexAttributes.Usage.TextureCoordinates,
 		new ArrayList<VertexAttribute>() {{add(lightdata);}});
@@ -209,7 +210,7 @@ public class MBIM {
 	    return transparentmodel = new ModelInstance(model);
 	}
 	
-	public void sortTransparent() {
+	public void sortTransparent(Vector3 campos) {
 	    Mesh mesh = transparentmodel.model.meshes.get(0);
 	    int numVertices = mesh.getNumVertices();
 	    if (numVertices > 0) {
@@ -257,8 +258,6 @@ public class MBIM {
 	                }
 	            }
 	        }
-	        
-	        Vector3 campos = Hpb.world.player.cam.cam.position;
 
 	        float[] sortedVerticesArray = new float[numVertices * vertexSize];
 	        int i = 0;

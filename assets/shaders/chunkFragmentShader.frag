@@ -75,12 +75,6 @@ void main() {
 	#else
 		gl_FragColor.a = 1.0;
 	#endif
-	//--------vignette------
-	vec2 position = (gl_FragCoord.xy / screensize) - vec2(0.5);
-	float len = length(position);
-	float vignette = smoothstep(0.75, 0.75-0.45, len);
-	gl_FragColor.rgb = mix(gl_FragColor.rgb, gl_FragColor.rgb * vignette, 0.5);
-	//--------vignette------
 	
 	//--------block vertex light------
 	gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0), 1.0-vertexlight);
