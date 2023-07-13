@@ -38,7 +38,8 @@ public class VectorU {
 		return null;
 	}
 	
-	public static OTripple findFacingPair(Vector3D from, Vector3 dir, Entity curen) {
+	public static Object[] findFacingPair(Vector3D from, Vector3 dir, Entity curen) {
+		Object[] oarr = new Object[4];
 		List<Vector3D> list = ray(from, dir);
 		Entity entity = null;
 		for (Column column : Hpb.world.loadedColumns.values()) {
@@ -51,20 +52,22 @@ public class VectorU {
 				}
 			}
 		}
-		OTripple tr = new OTripple(null,list.get(0), entity);//aim block, face, aim entity
+		oarr[0] = null;
+		oarr[1] = list.get(0);
+		oarr[2] = entity;
 		for (Vector3D temppos : list) {
 			Block b = Hpb.world.getBlock(temppos.floor());
 			if (b.getHitbox() != null) {
-				tr.one = b;
+				oarr[0] = b;
 				Vector3D face = getNear(temppos, b.pos.floor().sides());
-				tr.two = face;//getFace(b.pos, face);
-				//System.out.println(getFace(b.pos, face));
-				return tr;
+				oarr[1] = face;
+				oarr[3] = temppos;
+				return oarr;
 			}
 		}
-		tr.one = null;
-		tr.two = null;
-		return tr;
+		oarr[0] = null;
+		oarr[1] = null;
+		return oarr;
 	}
 	
 	public static List<Vector3D> ray(Vector3D pos, Vector3 direction) {
@@ -115,8 +118,7 @@ public class VectorU {
 		} else if (face == BlockFace.PZ) {
 			return target.add(0,0,1);
 		} else {
-			System.out.println("wtf?");
-			System.exit(0);
+			ThreadU.end("unknown face");
 			return null;
 		}
 	}
@@ -140,7 +142,7 @@ public class VectorU {
 	        		double distanceminpos = sqrt(minpos, target);
 	        		if (distance < distanceminpos) {
 	        			minpos = position;
-	        		} else if (distance == distanceminpos && MathU.rnd(1, 2) == 1) {
+	        		} else if (distance == distanceminpos && MathU.rndi(1, 2) == 1) {
 	        			minpos = position;
 	        		}
 	        	}
@@ -153,7 +155,7 @@ public class VectorU {
         		temp.add(position);
         	}
         }
-        return temp.get(MathU.rnd(0, temp.size()-1));
+        return temp.get(MathU.rndi(0, temp.size()-1));
     }
 	
 

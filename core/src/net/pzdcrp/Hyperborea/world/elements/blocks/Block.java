@@ -2,6 +2,7 @@ package net.pzdcrp.Hyperborea.world.elements.blocks;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -17,16 +18,23 @@ import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.DM;
 import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Vector3D;
+import net.pzdcrp.Hyperborea.data.MBIM.offset;
+import net.pzdcrp.Hyperborea.extended.SexyMeshBuilder;
+import net.pzdcrp.Hyperborea.utils.ModelUtils;
+import net.pzdcrp.Hyperborea.utils.ThreadU;
 import net.pzdcrp.Hyperborea.utils.VectorU;
 import net.pzdcrp.Hyperborea.world.World;
+import net.pzdcrp.Hyperborea.world.elements.Chunk;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
+import net.pzdcrp.Hyperborea.world.elements.entities.ItemEntity;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.Item;
+import net.pzdcrp.Hyperborea.world.elements.inventory.items.NoItem;
 
 public class Block {
 	public static World world;// = GameInstance.world;
 	public Vector3D pos;
-	private static Map<Integer, Block> blocks = new ConcurrentHashMap<Integer, Block>( ) {
-		private static final long serialVersionUID = 3707964282902670945L;
+	public static final Map<Integer, Block> blocks = new HashMap<Integer, Block>() {
+		private static final long serialVersionUID = 3707568282902670945L;
 		{
 			put(0, new Air(new Vector3D()));
 			put(1, new Dirt(new Vector3D()));
@@ -71,11 +79,13 @@ public class Block {
 			put(14, 8);
 			put(23, 9);
 		}};
+	public static Map<Integer, ModelInstance> blockModels = new HashMap<>();
 	public enum BlockType {
 		air, solid, transparent, noncollideabe;
 	}
 	public String texture;
 	protected AABB hitbox;
+	private int id = -1;
 	
 	public Block(Vector3D pos, String texture, AABB hitbox) {
 		this.pos = pos.VecToInt();
@@ -90,20 +100,13 @@ public class Block {
 		for (Entry<Integer, Block> entry : blocks.entrySet()) {
 			if (entry.getValue().equals(block)) return entry.getKey();
 		}
-		System.out.println("unregistered block: "+block.toString());
-		System.exit(0);
+		ThreadU.end("unregistered block: "+block.toString());
 		return 0;
 	}
 	
 	public static Block blockById(int id, Vector3D v) {
-		try {
-			Block block = Block.blocks.get(id).clone(v);
-			return block;
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.exit(0);
-		}
-		return null;
+		Block block = Block.blocks.get(id).clone(v);
+		return block;
 	}
 	
 	public Block[] getSides() {
@@ -141,6 +144,10 @@ public class Block {
 	
 	public void callChunkUpdate() {
 		world.getColumn(pos.x, pos.z).chunks[(int) (Math.floor(pos.y)/16)].updateModel();
+	}
+	
+	public Chunk getChunk() {
+		return world.getColumn(pos.x, pos.z).chunks[(int) (Math.floor(pos.y)/16)];
 	}
 	
 	public Block under() {
@@ -187,8 +194,7 @@ public class Block {
 	@Deprecated
 	@Override
 	public Block clone() {
-		System.out.println("do not use");
-		System.exit(0);
+		ThreadU.end("не юзай этот мтеод");
 		return new Block(pos, texture, hitbox);
 	}
 	
@@ -219,20 +225,28 @@ public class Block {
 		for (Entry<Integer, Integer> entry : BlockidToItemid.entrySet()) {
 			if (entry.getValue() == itemid) return entry.getKey();
 		}
-		System.err.println("eblan chini! nema id: "+itemid);
-		System.exit(0);
+		ThreadU.end("unknown id: "+itemid);
 		return 0;
 	}
 
 	public static Block blockByItem(Item item) {
 		return blocks.get(itemIdToBlockId(item.getId()));
 	}
+	
+	public static Item itemByBlockId(int id) {
+		Integer itemid = BlockidToItemid.get(id);
+		if (itemid == null) return null;
+		for (Item i : Item.items) {
+			if (i.id == itemid) return i;
+		}
+		return null;
+	}
 
 	public void tick() {
 		
 	}
 
-	public int getResistance() {
+	public float getResistance() {
 		return 5;
 	}
 	
@@ -242,5 +256,37 @@ public class Block {
 	
 	public void fromJson(JsonObject data) {
 		
+	}
+	
+	public static void bbmodel(MBIM mbim, Vector3D pos, int stage) {
+		SexyMeshBuilder a = mbim.obtain(pos, true);
+		ModelUtils.setTransform(pos);
+		Hpb.mutex.hookuvr(a, "ds"+stage, 0, 0, 1, 1);
+		mbim.curoffset = offset.py;
+    	ModelUtils.buildTopX(a);//PY
+    	mbim.curoffset = offset.nx;
+	    ModelUtils.buildLeftPY(a);//NX
+	    mbim.curoffset = offset.px;
+	    ModelUtils.buildRightPY(a);//PX
+	    mbim.curoffset = offset.nz;
+	    ModelUtils.buildFrontY(a);//NZ
+	    mbim.curoffset = offset.pz;
+	    ModelUtils.buildBackY(a);//PZ
+	    mbim.curoffset = offset.ny;
+	    ModelUtils.buildBottomX(a);//NY
+	}
+	
+	public int getId() {
+		if (id == -1) {
+			this.id = idByBlock(this);
+		}
+		return id;
+	}
+	public void onBreak() {
+		Item blockItem = Block.itemByBlockId(getId());
+		System.out.println("onb "+isRenderable()+" "+blockItem != null+" "+!(blockItem instanceof NoItem));
+		if (isRenderable() && blockItem != null && !(blockItem instanceof NoItem)) {
+			world.spawnEntity(new ItemEntity(pos.add(0.5d), this));
+		}
 	}
 }

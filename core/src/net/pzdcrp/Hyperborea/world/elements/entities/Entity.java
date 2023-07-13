@@ -15,9 +15,11 @@ import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.EntityType;
 import net.pzdcrp.Hyperborea.data.OTripple;
 import net.pzdcrp.Hyperborea.data.DM;
+import net.pzdcrp.Hyperborea.data.DamageSource;
 import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.player.Player;
+import net.pzdcrp.Hyperborea.utils.ThreadU;
 import net.pzdcrp.Hyperborea.utils.VectorU;
 import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.Chunk;
@@ -30,28 +32,34 @@ import net.pzdcrp.Hyperborea.world.elements.inventory.IInventory;
 import net.pzdcrp.Hyperborea.world.elements.inventory.PlayerInventory;
 
 public class Entity {
-	public Vector3D pos, beforepos;
-	public EntityType type;
-	public AABB hitbox;
+	//сохраняется
+	public Vector3D pos;
 	public Vector3D vel = new Vector3D();
 	public boolean colx=false,coly=false,colz=false,onGround=false;
 	public float yaw = 0,pitch = 0;
+	public byte hp;
 	public Vector2I beforeechc;
-	public boolean firsttick = true;
-	private boolean isPlayer = false;
+	public double fallstartblock = 0;
 	
 	//FIXME не сохраняется
-	public Block currentAimBlock = new Air(new Vector3D());
-	public BlockFace currentAimFace = BlockFace.PX;
-	public Entity currentAimEntity = null;
 	public IInventory inventory;
-	protected byte hp; 
+	
 	
 	//не должно сохраняться
 	public Vector2I echc;
+	public boolean firsttick = true;
+	private boolean isPlayer = false;
+	public EntityType type;
+	public Vector3D beforepos;
+	public AABB hitbox;
+	public int justspawn = 100;
 	
 	//классы ссылки
 	public Column curCol;
+	public Block currentAimBlock = new Air(new Vector3D());
+	public BlockFace currentAimFace = BlockFace.PX;
+	public Entity currentAimEntity = null;
+	public Vector3D currentaimpoint;
 	//public Chunk curChnk;
 	
 	public Map<EntityType, Class<? extends Entity>> entities = new HashMap<EntityType, Class<? extends Entity>>() {
@@ -75,13 +83,14 @@ public class Entity {
 		this.hp = maxhp();
 	}
 	
-	public void tick() throws Exception {
+	public void tick() {
+		if (justspawn > 0) justspawn--;
 		if (curCol == null) {
 			Column col = Hpb.world.getColumn(pos.x,pos.z);
 			this.curCol = col;
 		}
 		updateGravity();
-		if (type == EntityType.player) updateFacing();
+		if (isPlayer) updateFacing();
 		applyMovement();
 		if (firsttick) {
 			Column beforecol = Hpb.world.getColumn(beforeechc);
@@ -103,12 +112,13 @@ public class Entity {
 	}
 	
 	public void updateFacing() {
-		OTripple tripple = VectorU.findFacingPair(this.getEyeLocation(), Hpb.world.player.cam.cam.direction, this);
-		this.currentAimBlock = (Block) tripple.one;
+		Object[] oarr = VectorU.findFacingPair(this.getEyeLocation(), Hpb.world.player.cam.cam.direction, this);
+		this.currentAimBlock = (Block) oarr[0];
 		if (this.currentAimBlock != null) {
-			this.currentAimFace = VectorU.getFace(currentAimBlock.pos, (Vector3D)tripple.two);
+			this.currentAimFace = VectorU.getFace(currentAimBlock.pos, (Vector3D)oarr[1]);
 		}
-		this.currentAimEntity = tripple.three == null ? null : (Entity) tripple.three;
+		this.currentAimEntity = oarr[2] == null ? null : (Entity) oarr[2];
+		this.currentaimpoint = (Vector3D)oarr[3];
 	}
 	
 	public void updateGravity() {
@@ -119,6 +129,10 @@ public class Entity {
 	public void teleport(Vector3D pos) {
 		this.pos = pos;
 		this.vel.setZero();
+	}
+	
+	public void onPlayerClick(Player p) {
+		
 	}
 	
 	public List<AABB> getNearBlocks() {
@@ -156,11 +170,30 @@ public class Entity {
 	            }
 	        }
 	        
-	        // Обновленная проверка onGround
 	        if (wasMovingDown && vel.y == 0) {
 	            onGround = true;
 	        } else {
 	            onGround = false;
+	        }
+	        
+	        if (vel.y < 0) {
+		        if (fallstartblock == 0) {
+		        	fallstartblock = pos.y;
+		        }
+	        } else {
+	        	if (onGround) {
+		        	if (fallstartblock != 0) {
+			        	double falled = fallstartblock - pos.y;
+			        	if (falled > 3.5) {
+			        		int dmg = (int) (falled-3) * 2;
+			        		//System.out.println("fall:"+falled+" fs:"+fallstartblock+" pv:"+pos.y+" dmg:"+dmg);
+			        		hit(DamageSource.Fall, dmg);
+			        	}
+			        	fallstartblock = 0;
+		        	}
+		        } else {
+	        		fallstartblock = 0;
+		        }
 	        }
 	        
 	        this.pos.y += vel.y;
@@ -199,6 +232,7 @@ public class Entity {
 	        if (Math.abs(vel.x) < DM.badVel) vel.x = 0;
 	        if (Math.abs(vel.y) < DM.badVel) vel.y = 0;
 	        if (Math.abs(vel.z) < DM.badVel) vel.z = 0;
+	        
 	    }
 	}
 
@@ -211,12 +245,32 @@ public class Entity {
 		return 5;
 	}
 	
-	public JsonObject getCustomProp() {
-		return new JsonObject();
+	public void getJson(JsonObject jen) {
+		jen.addProperty("type", this.getType());
+		jen.addProperty("pos", pos.toString());
+		jen.addProperty("vel", vel.toString());
+		jen.addProperty("coldata", colx+" "+coly+" "+colz);
+		jen.addProperty("onGround", onGround);
+		jen.addProperty("yawpitch", yaw+" "+pitch);
+		jen.addProperty("beforeechc", beforeechc.toString());
+		jen.addProperty("hp", this.hp);
+		jen.addProperty("fsb", fallstartblock);
 	}
 	
-	public void readCustomProp(JsonObject prop) {
-		
+	public void fromJson(JsonObject jen) {
+		String jvel = jen.get("vel").getAsString();
+		vel = Vector3D.fromString(jvel);
+		String[] jcoll = jen.get("coldata").getAsString().split(" ");
+		colx = Boolean.parseBoolean(jcoll[0]);
+		coly = Boolean.parseBoolean(jcoll[1]);
+		colz = Boolean.parseBoolean(jcoll[2]);
+		onGround = jen.get("onGround").getAsBoolean();
+		String[] rot = jen.get("yawpitch").getAsString().split(" ");
+		setYaw(Float.parseFloat(rot[0]));
+		setPitch(Float.parseFloat(rot[1]));
+		beforeechc = Vector2I.fromString(jen.get("beforeechc").getAsString());
+		hp = jen.get("hp").getAsByte();
+		fallstartblock = jen.get("fsb").getAsDouble();
 	}
 	
 	public void despawn() {
@@ -226,8 +280,7 @@ public class Entity {
 
 	public void placeBlock(Block block) {
 		if (!this.isPlayer) {
-			System.out.println("mob "+this.getClass().getName()+" cannot place blocks");
-			System.exit(0);
+			ThreadU.end("mob "+this.getClass().getName()+" cannot place blocks");
 		}
 		Hpb.world.setBlock(block, ActionAuthor.player);
 	}
@@ -247,17 +300,16 @@ public class Entity {
 	public void render() {
 		
 	}
+	
+	public int getType() {
+		return 0;
+	}
 
-	public void hit(Entity enemy, int damage) {
+	public void hit(DamageSource src, int damage) {
 		if (hp == -Byte.MIN_VALUE) return;
 		this.hp -= damage;
 		if (hp < 0) {
-			//Hpb.world.player.chat.send(this.getClass().getName()+" killed by "+enemy.getClass().getName());
-			if (isPlayer) {
-				((Player)this).deadScreen();
-			} else {
-				this.despawn();
-			}
+			this.despawn();
 		}
 	}
 }

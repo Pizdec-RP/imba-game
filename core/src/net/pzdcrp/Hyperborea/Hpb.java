@@ -1,40 +1,20 @@
 package net.pzdcrp.Hyperborea;
 
-import java.util.HashMap;
-import java.util.Map;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Mesh;
-import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.VertexAttribute;
-import com.badlogic.gdx.graphics.VertexAttributes;
-import com.badlogic.gdx.graphics.Texture.TextureFilter;
-import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
-import com.badlogic.gdx.graphics.g2d.PixmapPacker;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
 import com.badlogic.gdx.graphics.g3d.Environment;
-import com.badlogic.gdx.graphics.g3d.Material;
-import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
-import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
-import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
-import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
-import com.badlogic.gdx.graphics.g3d.model.MeshPart;
-import com.badlogic.gdx.graphics.g3d.model.Node;
-import com.badlogic.gdx.graphics.g3d.model.NodePart;
-import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Vector3;
@@ -45,20 +25,15 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import net.pzdcrp.Hyperborea.data.ActionAuthor;
-import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Mutex;
-import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.player.ControlListener;
-import net.pzdcrp.Hyperborea.player.Player;
 import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.utils.ThreadU;
 import net.pzdcrp.Hyperborea.utils.VectorU;
 import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.Column;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
-import net.pzdcrp.Hyperborea.world.elements.blocks.Glass;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Stone;
-import net.pzdcrp.Hyperborea.world.elements.generators.DefaultWorldGenerator;
 
 public class Hpb extends ApplicationAdapter {
 	private static ModelBatch modelBatch;
@@ -71,7 +46,7 @@ public class Hpb extends ApplicationAdapter {
 	public static Stage stage;
 	public static SuperPizdatiyShader shaderprovider;
 	//public static OrthographicCamera mCamera;
-	public static Mutex mutex = new Mutex();
+	public static Mutex mutex;
 	
 	public static final Vector3 forAnyReason = new Vector3();
 	public static World world;
@@ -83,8 +58,11 @@ public class Hpb extends ApplicationAdapter {
 	//public static FrameBuffer buffer;
 	//public static TextureRegion textureRegion;
 	
-	public State state = State.PREPARE;
+	public static State state = State.PREPARE;
 	private ShaderProgram stage2shader;
+	
+	public static boolean deadplayer = false;
+	private static GlyphLayout respawn;
 	
 	public enum State {
 		PREPARE, INGAME
@@ -92,57 +70,42 @@ public class Hpb extends ApplicationAdapter {
 	
 	@Override
 	public void create() {
+		mutex = new Mutex();
 		System.out.println("loading textures");
 		loadTextures();
-		crosshair = mutex.getOTexture("crosshair");
 		
 		System.out.println("lessgo");
 		modelBatch = new ModelBatch(shaderprovider = new SuperPizdatiyShader());
 		
 		spriteBatch = new SpriteBatch();
-		FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/Underdog.ttf"));
-		FreeTypeFontParameter parameter = new FreeTypeFontParameter();
-		parameter.size = 30;
-		parameter.minFilter = TextureFilter.Linear;
-		parameter.magFilter = TextureFilter.Linear;
-		parameter.genMipMaps = true;
-		parameter.characters = FreeTypeFontGenerator.DEFAULT_CHARS + "йцукенгшщзфывапролджэячсмитьбюъё";
-		font = generator.generateFont(parameter);
+		
+		font = mutex.getFont(30);
 		//font.getRegion().getTexture().setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
 		label = new Label(" ", new Label.LabelStyle(font, Color.WHITE));
 		label.setVisible(true);
 		//chat = new Label("", new Label.LabelStyle(font, Color.WHITE));
 		
 		stage = new Stage();
-		
+		respawn = new GlyphLayout();
+		respawn.setText(mutex.getFont(40), "Respawning...");//TODO переделать на свой класс
 		infoLabel = new Label(" ", new Label.LabelStyle(font, Color.WHITE));
 		infoLabel.setPosition(Gdx.graphics.getWidth() / 2, 100);
-		infoLabel.setFontScale(1.5f);
 		
 		stage.addActor(label);
 		stage.addActor(infoLabel);
 		
 		multiplexer = new InputMultiplexer();
-		multiplexer.addProcessor(controls = new ControlListener(this));
 		Gdx.input.setInputProcessor(multiplexer);
 		
 		Gdx.input.setCursorCatched(true);
-		//Gdx.gl.glDisable(GL20.GL_BLEND);
-		//Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 		Gdx.gl.glTexParameterf(GL20.GL_TEXTURE_2D, GL20.GL_TEXTURE_MIN_FILTER, GL20.GL_LINEAR_MIPMAP_LINEAR);
 		buffer = new FrameBuffer(Pixmap.Format.RGBA8888, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
 		textureRegion = new TextureRegion();
 		stage2shader = new ShaderProgram(Gdx.files.internal("shaders/2stageV.vert"), Gdx.files.internal("shaders/2stageF.frag"));
 		screensizeatr = stage2shader.getUniformLocation("screensize");
-		
-		//mCamera = new OrthographicCamera();
-		///mCamera.far = 500;
-	    //mCamera.setToOrtho(false, 720, 720);
-		
-		
-		//buffer = new FrameBuffer(Pixmap.Format.RGBA8888, 1280, 720, true);
-		//textureRegion = new TextureRegion();
-		//textureRegion.flip(false, true);
+		hurtlevelatr = stage2shader.getUniformLocation("hurtlevel");
+		isdeadatr = stage2shader.getUniformLocation("isdead");
+		randomatr = stage2shader.getUniformLocation("random");
 		Thread.currentThread().setName("main thd");
 	}
 	
@@ -153,9 +116,10 @@ public class Hpb extends ApplicationAdapter {
 		world.player.cam.cam.viewportHeight = height;
 	    spriteBatch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
 	    buffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, true);
+	    world.player.pinterface.resize(width, height);
 	}
 	
-	public void tick() throws Exception {
+	public void tick() {
 		world.tick();
 	}
 	
@@ -168,6 +132,12 @@ public class Hpb extends ApplicationAdapter {
 	    float t = (float)(System.nanoTime() - timeone) / (tickrate * 1000000);
 	    if (t > 1f) t = 1f;
 	    return a * (1.0f - t) + b * t;
+	}
+	
+	public static double lerp(double a, double b) {
+	    float t = (float)(System.nanoTime() - timeone) / (tickrate * 1000000);
+	    if (t > 1f) t = 1f;
+	    return a * (1.0 - t) + b * t;
 	}
 	
 	static String fullText;
@@ -205,16 +175,19 @@ public class Hpb extends ApplicationAdapter {
             }
         }, delay, delay);
     }
-	
-    private Texture crosshair;
-	private final int crosshairsize = 30;
 	private static FrameBuffer buffer;
 	private static TextureRegion textureRegion;
-	private static int screensizeatr;
-	public void renderWorld() throws Exception {
+	private static int screensizeatr, hurtlevelatr, isdeadatr, randomatr;
+	public static float hurtlvl = 0, deadtimer = 0;
+	
+	public void renderWorld() {
+		if (hurtlvl > 0) {
+			hurtlvl--;
+		}
+		shaderprovider.pos.set(world.player.cam.cam.position);
 		buffer.begin();
 
-		Gdx.gl.glViewport(0, 0, 1280, 720);
+		//Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 		
 		int halfwidth = Gdx.graphics.getWidth()/2;
@@ -238,21 +211,35 @@ public class Hpb extends ApplicationAdapter {
 		spriteBatch.begin();
 		spriteBatch.setShader(stage2shader);
 		stage2shader.setUniformf(screensizeatr, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		stage2shader.setUniformf(isdeadatr, deadplayer?1f:0f);
+		stage2shader.setUniformf(hurtlevelatr, hurtlvl);
+		stage2shader.setUniformf(randomatr, MathU.rndnrm());
+		
 		Texture buftex = textureRegion.getTexture();
+		//Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0 + beforeframeatr);
+		
 		spriteBatch.draw(buftex, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, buftex.getWidth(), buftex.getHeight(), false, true);
 		spriteBatch.setShader(null);
 		
-		//displayinfo
-		layout.setText(font, currentText);
-	    float textWidth = layout.width;
-		font.draw(spriteBatch, currentText, halfwidth - textWidth / 2, Gdx.graphics.getHeight()*0.2f);
+		if (deadplayer) { 
+			if (hurtlvl == 0) {
+				deadtimer++;
+				BitmapFont f = mutex.getFont(40);
+				f.draw(spriteBatch, "Respawning...", halfwidth - respawn.width / 2, halfheight);
+				if (deadtimer > 100) {
+					world.player.respawn();
+					deadplayer = false;
+					deadtimer = 0f;
+				}
+			}
+		} else {
+			//displayinfo
+			layout.setText(font, currentText);
+		    float textWidth = layout.width;
+			font.draw(spriteBatch, currentText, halfwidth - textWidth / 2, Gdx.graphics.getHeight()*0.2f);
+			world.player.pinterface.render(halfwidth, halfheight);
+		}
 		
-		world.player.inventory.render();
-		
-		//render crosshair
-		spriteBatch.draw(crosshair, halfwidth-crosshairsize, halfheight-crosshairsize, crosshairsize, crosshairsize);
-		
-		//spriteBatch.draw(mutex.comp, 0,0,mutex.comp.getWidth(),mutex.comp.getHeight(), 0, 0, mutex.comp.getWidth(),mutex.comp.getHeight(), false, true);
 		spriteBatch.end();
 		//конец 2 стадии
 	}
@@ -281,18 +268,15 @@ public class Hpb extends ApplicationAdapter {
 				world = new World();
 				try {
 					world.load();
+					multiplexer.addProcessor(controls = new ControlListener(world.player));
 				} catch (Exception e) {
 					e.printStackTrace();
-					System.out.println("мир не подгружается");
-					System.exit(0);
+					ThreadU.end("мир не подгружается");
 				}
 				tickLoop();
 			} else if (state == State.INGAME) {
 				now = System.currentTimeMillis();
-				//delta = now - last;
 				last = now;
-				
-				Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 				
 				renderWorld();
 				
@@ -305,7 +289,7 @@ public class Hpb extends ApplicationAdapter {
 				for (Column col : world.loadedColumns.values()) {
 					en += col.entites.size();
 				}
-				//builder.append(" | ent: ").append(en);
+				builder.append(" | ent: ").append(en);
 				builder.append(" | fps: ").append(Gdx.app.getGraphics().getFramesPerSecond());
 				builder.append(" | youInCol: ").append(world.player.beforeechc.toString());
 				label.setText(builder);
@@ -337,21 +321,21 @@ public class Hpb extends ApplicationAdapter {
 		JsonObject blocks = obj.get("blocks").getAsJsonObject();
 		for (String key : blocks.keySet()) {
 			Texture texture = new Texture(Gdx.files.internal("textures/blocks/"+blocks.get(key).getAsString()),Format.RGBA8888,true);
-			texture.setFilter(TextureFilter.MipMap,TextureFilter.Nearest);
+			//texture.setFilter(TextureFilter.MipMap,TextureFilter.Nearest);
 			mutex.addTexture(texture, key);
 		}
 		
 		JsonObject other = obj.get("other").getAsJsonObject();
 		for (String key : other.keySet()) {
 			Texture texture  = new Texture(Gdx.files.internal("textures/other/"+other.get(key).getAsString()),Format.RGBA8888,true);
-			texture.setFilter(TextureFilter.MipMap,TextureFilter.Nearest);
+			//texture.setFilter(TextureFilter.MipMap,TextureFilter.Nearest);
 			mutex.addOtherTexture(texture, key);
 		}
 		
 		JsonObject items = obj.get("items").getAsJsonObject();
 		for (String key : items.keySet()) {
 			Texture texture  = new Texture(Gdx.files.internal("textures/items/"+items.get(key).getAsString()),Format.RGBA8888,true);
-			texture.setFilter(TextureFilter.MipMap,TextureFilter.Nearest);
+			//texture.setFilter(TextureFilter.MipMap,TextureFilter.Nearest);
 			mutex.addItemTexture(texture, key);
 		}
 		
@@ -361,48 +345,39 @@ public class Hpb extends ApplicationAdapter {
 	public static void runChunkUpdate() {
 		new Thread(() -> {
 	        while (true) {
-	            try {
-	            	if (exit) Thread.currentThread().stop();
-	            	if (Hpb.world != null) {
-		                if (world.needToUpdateLoadedColumns) {
-		                	world.updateLoadedColumns(VectorU.posToColumn(Hpb.world.player.pos));
-		                	world.needToUpdateLoadedColumns = false;
-		                }
-		                world.fromChunkUpdateThread();
-	            	}
-	            } catch (Exception e) {
-	            	e.printStackTrace();
-					System.exit(0);
-	            }
+            	if (exit) Thread.currentThread().stop();
+            	if (Hpb.world != null) {
+	                if (world.needToUpdateLoadedColumns) {
+	                	world.updateLoadedColumns(VectorU.posToColumn(Hpb.world.player.pos));
+	                	world.needToUpdateLoadedColumns = false;
+	                }
+	                world.fromChunkUpdateThread();
+            	}
 	        }
 	    }, "chunk updates").start();
 	}
 	
 	static long timeone = System.nanoTime();
 	static int curcomp = 0;
+	
 	public void tickLoop() {
 		runChunkUpdate();
 		
 		new Thread(() -> {
-			try {
-				while (true) {
-					if (exit) return;
-		        	timeone = System.nanoTime();
-		    	    tick();
-		    	    long two = System.nanoTime();
-		    	    int elapsed = (int)(two - timeone);
-		    	    int normaled = elapsed/1_000_000;
-		    	    int additional = elapsed/100_000-normaled*10;
-		    	    int itog = normaled + (additional >= 5 ? 1 : 0);
-		    	    int tosleep = tickrate - itog;
-		    	    if (tosleep > 0) {
-		    	    	ThreadU.sleep(tosleep);
-		    	    }
-		        }
-			} catch (Exception e) {
-				e.printStackTrace();
-				System.exit(0);
-			}
+			while (true) {
+				if (exit) return;
+	        	timeone = System.nanoTime();
+	    	    tick();
+	    	    long two = System.nanoTime();
+	    	    int elapsed = (int)(two - timeone);
+	    	    int normaled = elapsed/1_000_000;
+	    	    int additional = elapsed/100_000-normaled*10;
+	    	    int itog = normaled + (additional >= 5 ? 1 : 0);
+	    	    int tosleep = tickrate - itog;
+	    	    if (tosleep > 0) {
+	    	    	ThreadU.sleep(tosleep);
+	    	    }
+	        }
 	    }, "tick thread").start();
 	}
 	
@@ -422,18 +397,19 @@ public class Hpb extends ApplicationAdapter {
 		} else if (command.equals("save")) {
 			Hpb.world.save();
 			exit=false;
+			System.exit(0);
 		} else if (command.equals("setblock")) {
 			world.setBlock(new Stone(world.player.pos.clone().func_vf()), ActionAuthor.command);
-			world.player.chat.addMessage("setted");
+			world.player.chat.send("setted");
 		} else if (command.equals("gl")) {
 			if (args.length < 4) {
-				world.player.chat.addMessage("no args");
+				world.player.chat.send("no args");
 			} else {
 				int x = Integer.parseInt(args[1]);
 				int y = Integer.parseInt(args[2]);
 				int z = Integer.parseInt(args[3]);
 				int light = world.getLight(x, y, z);
-				world.player.chat.addMessage("light at ["+x+" "+y+" "+z+"] is "+light);
+				world.player.chat.send("light at ["+x+" "+y+" "+z+"] is "+light);
 			}
 		} else if (command.equals("weather")) {
 			String type = args[1];
@@ -444,60 +420,3 @@ public class Hpb extends ApplicationAdapter {
 		}
 	}
 }
-
-/*
-public void renderWorld() throws Exception {
-		int halfwidth = Gdx.graphics.getWidth()/2;
-		int halfheight = Gdx.graphics.getHeight()/2;
-		System.out.println(halfwidth+" "+halfheight);
-		//хуцня с обычным рендером
-		//buffer.begin();
-		
-		//Gdx.gl.glViewport(0, 0, 1280, 720);
-		
-		//1 стадия
-		
-		shaderprovider.newstage();
-		modelBatch.begin(world.player.cam.cam);
-		world.render();
-		modelBatch.end();
-		
-		//2 стадия
-		
-		shaderprovider.newstage();
-		
-		textureRegion.setRegion(buffer.getColorBufferTexture());
-		shaderprovider.stage2pic = textureRegion.getTexture();
-		
-		buffer.end();
-		
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-		
-		modelBatch.begin(world.player.cam.cam);
-		world.render();
-		modelBatch.end();
-		
-		shaderprovider.end();
-		
-		//отрисовка gui
-		
-		//Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-		modelBatch.begin(mCamera);
-		spriteBatch.begin();
-		
-		//displayinfo
-		layout.setText(font, currentText);
-	    float textWidth = layout.width;
-		font.draw(spriteBatch, currentText, halfwidth - textWidth / 2, Gdx.graphics.getHeight()*0.2f);
-		
-		world.player.inventory.render();
-		
-		//render crosshair
-		spriteBatch.draw(crosshair, halfwidth-crosshairsize, halfheight-crosshairsize, crosshairsize, crosshairsize);
-		
-		
-		//spriteBatch.draw(mutex.comp, 0,0,mutex.comp.getWidth(),mutex.comp.getHeight(), 0, 0, mutex.comp.getWidth(),mutex.comp.getHeight(), false, true);
-		spriteBatch.end();
-		modelBatch.end();
-	}
- */

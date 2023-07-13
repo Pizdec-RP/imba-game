@@ -88,9 +88,10 @@ public class World {// implements RenderableProvider {
 		generator = new DefaultWorldGenerator();
 	}
 	
-	public void load() throws Exception {
+	public void load() {
 		System.out.println("подгружаем мир");
 		boolean newworld = false;
+		int x=0, z=0;
 		try {
 			JsonReader reader = new JsonReader(new FileReader("save/wdata.dat"));
 			JsonObject obj = (JsonObject) new JsonParser().parse(reader);
@@ -106,13 +107,22 @@ public class World {// implements RenderableProvider {
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("данных о мире нет");
-			player = new Player(5,maxheight/2,5);
+			x = MathU.rndi(-50, 50);
+			z = MathU.rndi(-50, 50);
+			player = new Player(x,0,z);
 			weather.initAsNew();
 			newworld = true;
+			this.time = 6000;
+			this.skylight = 13;
 		}
 		updateLoadedColumns(VectorU.posToColumn(player.pos));
+		if (newworld) {
+			int y = this.getColumn(VectorU.posToColumn(player.pos)).getSLMD(x&15, z&15)+2;
+			player.spawnpoint = new Vector3D(x+0.5d,y,z+0.5d);
+			player.pos.y = y;
+		}
 		player.tick();
-		if (newworld) player.teleport(new Vector3D(player.pos.x+0.5d, loadedColumns.get(player.echc).getSLMD((int)player.pos.x, (int)player.pos.z)+2, player.pos.z+0.5d));
+		//if (newworld) player.teleport(new Vector3D(player.pos.x+0.5d, loadedColumns.get(player.echc).getSLMD((int)player.pos.x&15, (int)player.pos.z&15), player.pos.z+0.5d));
 		System.out.println("подгружаем окружение");
 		loadEnvironment();
 		World.ready = true;
@@ -193,20 +203,17 @@ public class World {// implements RenderableProvider {
 				}
 			}
 		}
-		if (block instanceof Air) {
-			Block before = getBlock(block.pos);
-			if (before.isRenderable()) {
-				for (int i = 0; i < MathU.rnd(10, 20); i++) {
-					spawnParticle(before.texture, block.pos.translate().add(MathU.rndf(0.3f, 0.7f), MathU.rndf(0.3f, 0.7f), MathU.rndf(0.3f, 0.7f)), new Vector3(MathU.rndf(-bs, bs),MathU.rndf(-bs, bs),MathU.rndf(-bs, bs)), MathU.rnd(8, 16));
-				}
-			}
-		}
 		Column col = getColumn(block.pos.x,block.pos.z);
 		col.setBlock(block);
 		for (Block block1 : block.getSides()) {
 			block1.onNeighUpdate();
 			block1.callChunkUpdate();
 		}
+	}
+	
+	public void spawnEntity(Entity entity) {
+		Column spawnin = getColumn(VectorU.posToColumn(entity.pos));
+		spawnin.entites.add(entity);
 	}
 	
 	static final int maxpart = 1000;
@@ -221,8 +228,15 @@ public class World {// implements RenderableProvider {
 	
 	public void breakBlock(Vector3D pos) {
 		if (pos.y < 0 || pos.y >= buildheight) return;
-		//спавн партиклов тут по идее
+		Block before = getBlock(pos);
 		setBlock(new Air(pos), ActionAuthor.player);
+		System.out.println("bb");
+		before.onBreak();
+		if (before.isRenderable()) {
+			for (int i = 0; i < MathU.rndi(10, 20); i++) {
+				spawnParticle(before.texture, pos.translate().add(MathU.rndf(0.3f, 0.7f), MathU.rndf(0.3f, 0.7f), MathU.rndf(0.3f, 0.7f)), new Vector3(MathU.rndf(-bs, bs),MathU.rndf(-bs, bs),MathU.rndf(-bs, bs)), MathU.rndi(8, 16));
+			}
+		}
 	}
 	
 	public Column getColumn(double x, double z) {
@@ -233,7 +247,7 @@ public class World {// implements RenderableProvider {
 		}
 	}
 	
-	public Column getColumn(Vector2I cc) throws Exception {
+	public Column getColumn(Vector2I cc) {
 		if (loadedColumns.containsKey(cc))
 			return loadedColumns.get(cc);
 		else return this.genOrLoadRegion(VectorU.ColumnToRegion(cc)).getColumn(cc);
@@ -241,73 +255,48 @@ public class World {// implements RenderableProvider {
 	
 	public int getLight(int x, int y, int z) {
 		if (y < 0 || y >= maxheight) return 14;
-		try {
-			Column col = loadedColumns.get(new Vector2I(x>>4, z>>4));
-			if (col == null) return 0;
-			return col.chunks[y/16].rawGetLight(x&15, y&15, z&15);
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.exit(0);
-			return 0;
-		}
+		Column col = loadedColumns.get(new Vector2I(x>>4, z>>4));
+		if (col == null) return 0;
+		return col.chunks[y/16].rawGetLight(x&15, y&15, z&15);
 	}
 	
 	public void setLight(int x, int y, int z, int num) {
 		if (y < 0 || y >= maxheight) return;
-		try {
-			getColumn(x,z).chunks[y/16].rawSetLight(x&15, y&15, z&15, num);
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.exit(0);
-		}
+		getColumn(x,z).chunks[y/16].rawSetLight(x&15, y&15, z&15, num);
 	}
 	
 	public Block getBlock(double x, double y, double z) {
 		if (y < 0 || y >= maxheight) return new Voed(new Vector3D(x,y,z));
 		Column col = getColumn(x,z);
 		if (col == null) return new Voed(new Vector3D(x,y,z));
-		try {
-			Block c = col.getBlock((int)x&15,(int)y,(int)z&15);
-			if (c == null) return new Voed(new Vector3D(x,y,z));
-			return c;
-		} catch (Exception e) {
-			System.out.println("pizdec s getblock v worlde");
-			e.printStackTrace();
-			System.exit(0);
-		}
-		return new Voed(new Vector3D(x,y,z));
+		Block c = col.getBlock((int)x&15,(int)y,(int)z&15);
+		if (c == null) return new Voed(new Vector3D(x,y,z));
+		return c;
 	}
 	
 	public Block getBlock(Vector3D v) {
 		if (v.y < 0 || v.y >= maxheight) return new Voed(v);
 		Column col = getColumn(v.x,v.z);
 		if (col == null) return new Voed(v);
-		try {
-			Block c = col.getBlock((int)v.x&15,(int)v.y,(int)v.z&15);
-			if (c == null) return new Voed(v);
-			return c;
-		} catch (Exception e) {
-			System.out.println("pizdec s getblock v worlde");
-			e.printStackTrace();
-			System.exit(0);
-		}
-		return new Voed(v);
+		Block c = col.getBlock((int)v.x&15,(int)v.y,(int)v.z&15);
+		if (c == null) return new Voed(v);
+		return c;
 	}
 	
 	public int calculateSkylight(float abstracty) {
 	    if (abstracty < 50) {
-	    	System.out.println("night");
+	    	//System.out.println("night");
 	    	Hpb.shaderprovider.skylightlevel = 0f;
 	    	return skylight;
 	    } else if (abstracty > 800) {
-	    	System.out.println("day");
+	    	//System.out.println("day");
 	    	Hpb.shaderprovider.skylightlevel = 1f;
 	        return skylight;
 	    }
 	    float norm = (abstracty - (50)) / (800 - (50));
-	    System.out.println("norm: "+norm);
+	    //System.out.println("norm: "+norm);
 	    int skylight = (int) (minSkylight + norm * (maxSkylight - minSkylight));
-	    System.out.println("sl: "+skylight);
+	    //System.out.println("sl: "+skylight);
 	    Hpb.shaderprovider.skylightlevel = norm;
 	    return skylight;
 	}
@@ -323,14 +312,14 @@ public class World {// implements RenderableProvider {
 	    float y = (DISTANCE_FROM_CENTER * MathU.sin(angle)) * 2;
 
 	    sky.transform.setToTranslation(px,0,pz);
-	    shield.transform.setToTranslation(px,400,pz);
+	    //shield.transform.setToTranslation(px,400,pz);
 
 	    Vector3 translation = new Vector3();
 	    sun.transform.getTranslation(translation);
 	    sun.transform.rotate(1, 1, 1, 0.01f);
 	    sun.transform.setTranslation(x, y, pz);
 	    
-	    System.out.println("suny: "+y);
+	    //System.out.println("suny: "+y);
 	    int newSkylight = calculateSkylight(y);
 	    if (newSkylight != skylight) {
 	        skylight = newSkylight;
@@ -345,7 +334,7 @@ public class World {// implements RenderableProvider {
 
 	    Hpb.render(sun);
 	    Hpb.render(sky);
-	    Hpb.render(shield);
+	    //Hpb.render(shield);
 	}
 	
 	public void addLC(Column c) {
@@ -358,7 +347,7 @@ public class World {// implements RenderableProvider {
     	}
 	}
 	
-	public void tick() throws Exception {
+	public void tick() {
 		if (!ready || Hpb.exit) {
 			return;
 		}
@@ -383,7 +372,7 @@ public class World {// implements RenderableProvider {
 	}
 	
 	//Set<Vector2I> updcol = new HashSet<>();
-	public void updateLoadedColumns(Vector2I echc) throws Exception {
+	public void updateLoadedColumns(Vector2I echc)  {
 		System.out.println("needToUpdateLoadedColumns");
 	    Set<Vector2I> cl = new HashSet<>();
 	    for (int x = -Settings.renderDistance; x <= Settings.renderDistance; x++) {
@@ -450,7 +439,7 @@ public class World {// implements RenderableProvider {
 	}
 	
 	public boolean isCycleFree = true;
-	public void render() throws Exception {
+	public void render() {
 		if (Hpb.exit) return;
 		byte upd = 0;
 		for (Column col : loadedColumns.values()) {
@@ -516,7 +505,7 @@ public class World {// implements RenderableProvider {
 			}
 			JsonObject jwd = new JsonObject();
 			
-			jwd.addProperty("playerreg", memoriedRegions.get(VectorU.posToRegion(player.pos)).pos.toString());
+			jwd.addProperty("playerreg", genOrLoadRegion(VectorU.posToRegion(player.pos)).pos.toString());
 			jwd.addProperty("playercol", player.curCol.pos.toString());
 			jwd.addProperty("time", this.time);
 			jwd.add("weather", weather.toJson());
@@ -533,7 +522,7 @@ public class World {// implements RenderableProvider {
 		}
 	}
 	
-	public Region genOrLoadRegion(Vector2I regpos) throws Exception {
+	public Region genOrLoadRegion(Vector2I regpos) {
 		if (memoriedRegions.containsKey(regpos)) {
 			return memoriedRegions.get(regpos);
 		}
@@ -559,7 +548,7 @@ public class World {// implements RenderableProvider {
 	}
 	
 	@SuppressWarnings("deprecation")
-	public Region readRegion(Vector2I regpos) throws Exception {
+	public Region readRegion(Vector2I regpos) {
 		JsonReader reader;
 		try {
 			reader = new JsonReader(new FileReader("save/"+regpos.x+"_"+regpos.z+".reg"));
@@ -574,6 +563,10 @@ public class World {// implements RenderableProvider {
 			System.out.println("nema regiona :"+regpos.toString());
 			System.exit(0);
 			return null;
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(0);
 		}
+		return null;
 	}
 }

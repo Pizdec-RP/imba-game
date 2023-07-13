@@ -7,7 +7,7 @@ import net.pzdcrp.Hyperborea.extended.SexyMeshBuilder;
 import net.pzdcrp.Hyperborea.extended.SexyModelBuilder;
 
 public class Pair {
-	public final SexyMeshBuilder mpb;
+	public SexyMeshBuilder mpb;
 	public final SexyModelBuilder mb;
 	public int calls = 1;
 	public Pair(SexyMeshBuilder one, SexyModelBuilder two) {

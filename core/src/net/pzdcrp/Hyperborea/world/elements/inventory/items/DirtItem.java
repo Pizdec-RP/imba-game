@@ -9,16 +9,17 @@ import net.pzdcrp.Hyperborea.utils.VectorU;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Dirt;
+import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
 import net.pzdcrp.Hyperborea.world.elements.inventory.IInventory;
 
 public class DirtItem extends Item {
-	public DirtItem(IInventory inventory, int count) {
-		super(inventory, 1, count);
+	public DirtItem(int count) {
+		super(1, count);
 	}
 
 	@Override
-	public void onRClick(Vector3D cp) {
-		this.inventory.owner.placeBlock(new Dirt(cp));
+	public void placeBlockAction(Vector3D cp, Entity actor) {
+		actor.placeBlock(new Dirt(cp));
 	}
 	
 	@Override

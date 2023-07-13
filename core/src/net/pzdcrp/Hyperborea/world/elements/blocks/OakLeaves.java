@@ -43,5 +43,10 @@ public class OakLeaves extends Block {
 	    mbim.curoffset = offset.ny;
 	    if (!ny) ModelUtils.buildBottomX(a);//NY
 	}
+	
+	@Override
+	public float getResistance() {
+		return 0.5f;
+	}
 }	
 

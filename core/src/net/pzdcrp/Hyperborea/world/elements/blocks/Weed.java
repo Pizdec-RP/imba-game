@@ -82,4 +82,9 @@ public class Weed extends Block {
 			world.breakBlock(pos);
 		}
 	}
+	
+	@Override
+	public float getResistance() {
+		return 0f;
+	}
 }

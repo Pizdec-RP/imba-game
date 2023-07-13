@@ -6,38 +6,26 @@ import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.Item;
 
-public class IInventory {
-	public Entity owner;
+public interface IInventory {
+	public Item getSlot(int index);
 	
-	public IInventory(Entity owner) {
-		this.owner = owner;
+	public void addItem(Item item, int index);
+
+	public void render();
+	
+	public void setCurrentSlotInt(int i);
+	
+	public int getCurrentSlotInt();
+
+	public default void onRClick() {
+		
 	}
-	
-	public Item getSlot(int index) {
-		return null;
-	}
-	
-	public void addItem(Item item, int index) {
+	@Deprecated
+	public default void onLClick() {
 		
 	}
 
-	public void render() {
-		
-	}
+	public void dropAllItems();
 	
-	public void setCurrentSlotInt(int i) {
-		
-	}
-	
-	public int getCurrentSlotInt() {
-		return 0;
-	}
-
-	public void onRClick() {
-		
-	}
-
-	public void onLClick() {
-		
-	}
+	public Entity getOwner();
 }

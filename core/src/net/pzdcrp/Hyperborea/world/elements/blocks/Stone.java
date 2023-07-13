@@ -53,4 +53,9 @@ public class Stone extends Block {
 	    mbim.curoffset = offset.ny;
 	    if (!ny) ModelUtils.buildBottomX(a);//NY
 	}
+	
+	@Override
+	public float getResistance() {
+		return 5f;
+	}
 }

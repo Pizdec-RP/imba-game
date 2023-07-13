@@ -13,10 +13,12 @@ import net.pzdcrp.Hyperborea.data.EntityType;
 import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.player.Player;
+import net.pzdcrp.Hyperborea.utils.ThreadU;
 import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
+import net.pzdcrp.Hyperborea.world.elements.entities.ItemEntity;
 import net.pzdcrp.Hyperborea.world.elements.generators.ColumnGenerator;
 import net.pzdcrp.Hyperborea.world.elements.generators.DefaultWorldGenerator;
 import net.pzdcrp.Hyperborea.world.elements.generators.Noise;
@@ -123,7 +125,7 @@ public class Column {
 		}
 	}
 	
-	public void tick() throws Exception {
+	public void tick() {
 		for (Entity entity : this.entites) {
 			entity.tick();
 		}
@@ -144,7 +146,7 @@ public class Column {
 		return Hpb.world.player.cam.cam.frustum.boundsInFrustum(center, dimensions);
 	}
 	
-	public void renderNormal() throws Exception {
+	public void renderNormal() {
 		if (!isInFrustum()) return;
 		for (Chunk chunk : chunks) {
 			if (chunk.allModels != null && chunk.boundsInFrustum()) {
@@ -188,19 +190,9 @@ public class Column {
 		jcol.add("entities", new JsonArray());
 		for (Entity entity : entites) {
 			JsonObject jen = new JsonObject();
-			
-			jen.addProperty("pos", entity.pos.toString());
-			jen.addProperty("hitbox", entity.hitbox.toString());
-			jen.addProperty("vel", entity.vel.toString());
-			jen.addProperty("coldata", entity.colx+" "+entity.coly+" "+entity.colz);
-			jen.addProperty("onGround", entity.onGround);
-			jen.addProperty("yawpitch", entity.yaw+" "+entity.pitch);
-			jen.addProperty("beforeechc", entity.beforeechc.toString());
-			jen.addProperty("type", entity.type.toString());
-			
-			//addtolist
+			entity.getJson(jen);
+			//System.out.println(jen.toString());
 			jcol.get("entities").getAsJsonArray().add(jen);
-			jen.add("custom", entity.getCustomProp());
 		}
 		
 		return jcol;
@@ -209,8 +201,7 @@ public class Column {
 	public void fromJson(JsonObject jcol) {
 		Vector2I cc = Vector2I.fromString(jcol.get("pos").getAsString());
 		if (!this.pos.equals(cc)) {
-			System.out.println("корды не сходятся удаляй регион");
-			System.exit(0);
+			ThreadU.end("корды не сходятся удаляй регион");
 		}
 		
 		//blocks
@@ -219,18 +210,13 @@ public class Column {
 		for (int px = 0; px < 16; px++) {
 			for (int py = 0; py < World.maxheight; py++) {
 				for (int pz = 0; pz < 16; pz++) {
-	            	try {
-		            	JsonElement rawblock = blocks.get(i);
-		            	if (rawblock.isJsonPrimitive()) {
-		            		fastSetBlock(px, py, pz, blocks.get(i).getAsInt());
-		            	} else if (rawblock.isJsonObject()) {
-		            		JsonObject data = blocks.get(i).getAsJsonObject();
-		            		fastSetBlock(px, py, pz, data.get("id").getAsInt());
-		            		getBlock(px, py, pz).fromJson(data);
-		            	}
-	            	} catch (Exception e) {
-	            		e.printStackTrace();
-	            		System.exit(0);
+	            	JsonElement rawblock = blocks.get(i);
+	            	if (rawblock.isJsonPrimitive()) {
+	            		fastSetBlock(px, py, pz, blocks.get(i).getAsInt());
+	            	} else if (rawblock.isJsonObject()) {
+	            		JsonObject data = blocks.get(i).getAsJsonObject();
+	            		fastSetBlock(px, py, pz, data.get("id").getAsInt());
+	            		getBlock(px, py, pz).fromJson(data);
 	            	}
 	            	i++;
 	            }
@@ -239,32 +225,27 @@ public class Column {
 		//entities
 		JsonArray entities = jcol.get("entities").getAsJsonArray();
 		for (JsonElement jene : entities) {
-			JsonObject jen = jene.getAsJsonObject();
-			
-			Vector3D pos = Vector3D.fromString(jen.get("pos").getAsString());
-			EntityType type = EntityType.valueOf(jen.get("type").getAsString());
-			Entity entity;
-			if (type == EntityType.player) {
-				Hpb.world.player = new Player(pos.x,pos.y,pos.z);
-				entity = Hpb.world.player;
-				System.out.println("loading player");
-			} else {
-				AABB hb = AABB.fromString(jen.get("hitbox").getAsString());
-				entity = new Entity(pos, hb, type);
+			try {
+				JsonObject jen = jene.getAsJsonObject();
+				//System.out.println(jen.toString());
+				Entity entity = null;
+				int type = jen.get("type").getAsInt();
+				Vector3D pos = Vector3D.fromString(jen.get("pos").getAsString());
+				if (type == 1) {
+					Hpb.world.player = new Player(pos.x,pos.y,pos.z);
+					entity = Hpb.world.player;
+					System.out.println("loading player");
+				} else if (type == 2) {
+					entity = new ItemEntity(pos);
+				} else {
+					throw new Exception("unknown entity id");
+				}
+				entity.fromJson(jen);
+				entites.add(entity);
+			} catch (Exception e) {
+				e.printStackTrace();
+				System.out.println("ignore entity error");
 			}
-			String jvel = jen.get("vel").getAsString();
-			entity.vel = Vector3D.fromString(jvel);
-			String[] jcoll = jen.get("coldata").getAsString().split(" ");
-			entity.colx = Boolean.parseBoolean(jcoll[0]);
-			entity.coly = Boolean.parseBoolean(jcoll[1]);
-			entity.colz = Boolean.parseBoolean(jcoll[2]);
-			entity.onGround = jen.get("onGround").getAsBoolean();
-			String[] rot = jen.get("yawpitch").getAsString().split(" ");
-			entity.setYaw(Float.parseFloat(rot[0]));
-			entity.setPitch(Float.parseFloat(rot[1]));
-			entity.beforeechc = Vector2I.fromString(jen.get("beforeechc").getAsString());
-			entity.readCustomProp(jen.get("custom").getAsJsonObject());
-			entites.add(entity);
 		}
 		updateSLMDForAll();
 		

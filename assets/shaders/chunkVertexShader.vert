@@ -177,12 +177,6 @@ uniform PointLight u_pointLights[numPointLights];
 #define ambientFlag
 #endif //ambientFlag
 
-#ifdef shadowMapFlag
-uniform mat4 u_shadowMapProjViewTrans;
-varying vec3 v_shadowMapUv;
-#define separateAmbientFlag
-#endif //shadowMapFlag
-
 #if defined(ambientFlag) && defined(separateAmbientFlag)
 varying vec3 v_ambientLight;
 #endif //separateAmbientFlag
@@ -191,6 +185,8 @@ varying vec3 v_ambientLight;
 
 varying float vertexlight;
 attribute float lightdata;
+attribute vec3 campos;
+varying float distanceToCamera;
 
 void main() {
 	vertexlight = lightdata / 14.0;
@@ -222,6 +218,8 @@ void main() {
 	#endif
 		
 	gl_Position = u_projViewTrans * pos;
+	
+	//distanceToCamera = distance(gl_Position.xyz, campos);
 	
 	#if defined(normalFlag)
 		#if defined(skinningFlag)

@@ -34,6 +34,7 @@ import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.extended.SexyMeshBuilder;
 import net.pzdcrp.Hyperborea.extended.SexyModelBuilder;
 import net.pzdcrp.Hyperborea.utils.ModelUtils;
+import net.pzdcrp.Hyperborea.utils.ThreadU;
 import net.pzdcrp.Hyperborea.world.elements.Chunk;
 
 public class MBIM {
@@ -48,31 +49,36 @@ public class MBIM {
 	public Pair t;
 	private VertexAttribute lightdata;
 	public ModelInstance transparentmodel;
+	private long mask;
 	
 	public enum offset {
 		py,ny,px,nx,pz,nz,no;
 	}
 	
-	@SuppressWarnings("serial")
 	public MBIM(Chunk chunk) {
-		lightdata = new VertexAttribute(512, 1, "lightdata");
+		this.chunk = chunk;
+		ArrayList<VertexAttribute> atr = new ArrayList<VertexAttribute>();
+		if (chunk != null) {
+			lightdata = new VertexAttribute(512, 1, "lightdata");
+			atr.add(lightdata);
+		}
 		VertexAttributes atrs = createMixedVertexAttribute(
 		VertexAttributes.Usage.Position
 		| VertexAttributes.Usage.Normal
 		| VertexAttributes.Usage.TextureCoordinates,
-		new ArrayList<VertexAttribute>() {{add(lightdata);}});
+		atr);
+		this.mask = atrs.getMask();
 		
-		this.chunk = chunk;
 		SexyModelBuilder mb = new SexyModelBuilder(this, false);
 		mb.begin();
 		p = new Pair(
-			(SexyMeshBuilder) mb.part(
+			mb.part(
 				"cube",
 				GL20.GL_TRIANGLES, 
-				atrs.getMask(),
+				mask,
 				new Material(
 		    		TextureAttribute.createDiffuse(Hpb.mutex.getComplex()),
-	    			IntAttribute.createCullFace(GL20.GL_FRONT)
+	    			IntAttribute.createCullFace(chunk==null?GL20.GL_NONE:GL20.GL_FRONT)
 			    )
 			),
 			mb
@@ -80,10 +86,10 @@ public class MBIM {
 		mb = new SexyModelBuilder(this, true);
 		mb.begin();
 		t  = new Pair(
-			(SexyMeshBuilder) mb.part(
+			mb.part(
 					"cube",
 					GL20.GL_TRIANGLES, 
-					atrs.getMask(),
+					mask,
 					new Material(
 			    		TextureAttribute.createDiffuse(Hpb.mutex.getComplex()),
 		    			IntAttribute.createCullFace(GL20.GL_NONE),
@@ -92,6 +98,38 @@ public class MBIM {
 				),
 				mb
 			);
+	}
+	
+	public void rebuildBuilders() {
+		if (p.mb.model != null) {
+			p.mb.end();
+		}
+		p.mb.begin();
+		p.mpb = p.mb.part(
+				"cube",
+				GL20.GL_TRIANGLES, 
+				mask,
+				new Material(
+		    		TextureAttribute.createDiffuse(Hpb.mutex.getComplex()),
+	    			IntAttribute.createCullFace(chunk==null?GL20.GL_NONE:GL20.GL_FRONT)
+			    )
+			);
+		p.calls = 1;
+		if (t.mb.model != null) {
+			t.mb.end();
+		}
+		t.mb.begin();
+		t.mpb = t.mb.part(
+				"cube",
+				GL20.GL_TRIANGLES, 
+				mask,
+				new Material(
+		    		TextureAttribute.createDiffuse(Hpb.mutex.getComplex()),
+	    			IntAttribute.createCullFace(GL20.GL_NONE),
+	    			new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+			    )
+			);
+		t.calls = 1;
 	}
 	
 	private VertexAttributes createMixedVertexAttribute(long defaultAtributes, List<VertexAttribute> customAttributes){
@@ -113,6 +151,14 @@ public class MBIM {
 		if (transparent) return this.t.mpb;
 		else return p.mpb;
 	}
+	
+	public void clear() {
+		i = 0;
+		Slightarray.clear();
+		Tlightarray.clear();
+		rebuildBuilders();
+		transparentmodel = null;
+	}
 
 	public int[] getSLightArray() {
 		return this.Slightarray.stream().mapToInt(Integer::intValue).toArray();
@@ -122,30 +168,24 @@ public class MBIM {
 	}
 
 	public int getCurLight() {
-		try {
-			//return chunk.rawGetLight(x, y, z);
-			switch (curoffset) {
-			case px:
-				return chunk.rawGetLight(x+1, y, z);
-			case nx:
-				return chunk.rawGetLight(x-1, y, z);
-			case py:
-				return chunk.rawGetLight(x, y+1, z);
-			case ny:
-				return chunk.rawGetLight(x, y-1, z);
-			case pz:
-				return chunk.rawGetLight(x, y, z+1);
-			case nz:
-				return chunk.rawGetLight(x, y, z-1);
-			case no:
-				return chunk.rawGetLight(x, y, z);
-			}
-			throw new Exception("если ты видишь эту ошибку то ты гей");
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.exit(0);
-			return 0;
+		switch (curoffset) {
+		case px:
+			return chunk.rawGetLight(x+1, y, z);
+		case nx:
+			return chunk.rawGetLight(x-1, y, z);
+		case py:
+			return chunk.rawGetLight(x, y+1, z);
+		case ny:
+			return chunk.rawGetLight(x, y-1, z);
+		case pz:
+			return chunk.rawGetLight(x, y, z+1);
+		case nz:
+			return chunk.rawGetLight(x, y, z-1);
+		case no:
+			return chunk.rawGetLight(x, y, z);
 		}
+		ThreadU.end("unknown face "+curoffset.toString());
+		return 0;
 	}
 	
 	public ModelInstance endSolid() {
@@ -159,8 +199,7 @@ public class MBIM {
 			    int[] nums = getSLightArray();
 			    
 			    if (numVertices != nums.length) {
-			        System.err.println("S Mismatch between numVertices and nums length");
-			        System.exit(0);
+			    	ThreadU.end("S Mismatch between numVertices and nums length");
 			    }
 			    
 			    getVertices(mesh, 0, vertices.length, vertices, 0);
@@ -190,8 +229,7 @@ public class MBIM {
 			    int[] nums = getTLightArray();
 			    
 			    if (numVertices != nums.length) {
-			        System.err.println("T Mismatch between numVertices and nums length");
-			        System.exit(0);
+			    	ThreadU.end("T Mismatch between numVertices and nums length");
 			    }
 			    
 			    getVertices(mesh, 0, vertices.length, vertices, 0);

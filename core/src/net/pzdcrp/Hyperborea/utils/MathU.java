@@ -2,8 +2,10 @@ package net.pzdcrp.Hyperborea.utils;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.function.Consumer;
 
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
 import net.pzdcrp.Hyperborea.data.Vector2I;
@@ -19,6 +21,7 @@ public class MathU {
             arrf[i] = (float)Math.sin((double)i * 3.141592653589793 * 2.0 / 65536.0);
         }
     });
+	private static Random rnd = new Random();
 	
 	public static int floorDouble(double n) {
         int i = (int) n;
@@ -151,17 +154,22 @@ public class MathU {
         consumer.accept(t);
         return t;
     }
-	public static float rndf(float min, float max) {
-	    return (float) (Math.random() * (max - min) + min);
+	
+	public static int rndi(int min, int max) {
+	    return (int) (rndnrm() * (max - min) + min);
 	}
 	
-	public static int rnd(double min, double max) {
+	public static float rndf(float min, float max) {
+	    return (float) (rndnrm() * (max - min) + min);
+	}
+	
+	public static double rndd(double min, double max) {
 		max -= min;
-		return (int) ((Math.random() * ++max) + min);
+		return (rndnrm() * ++max) + min;
 	}
 	
 	public static <M> M random(List<M> list) {
-		return list.get(rnd(0,list.size()-1));
+		return list.get(rndi(0,list.size()-1));
 	}
 	
 	public static float sin(float f) {
@@ -266,11 +274,43 @@ public class MathU {
 	public static double lerp(double minValue, double maxValue, double t) {
 	    return minValue + (maxValue - minValue) * t;
 	}
+	public static float lerp(float minValue, float maxValue, float t) {
+	    return minValue + (maxValue - minValue) * t;
+	}
 	
 	public static double norm(double minValue, double maxValue, double value) {
         if (minValue == maxValue) {
-            return .0d; // Защита от деления на ноль
+            return .0d;
         }
         return (value - minValue) / (maxValue - minValue);
     }
+	
+	public static float norm(float minValue, float maxValue, float value) {
+        if (minValue == maxValue) {
+            return .0f;
+        }
+        return (value - minValue) / (maxValue - minValue);
+    }
+
+	
+	public static float rndnrm() {
+		return rnd.nextFloat();
+	}
+	
+	public static int alignPower(int input) {
+	    if (isPowerOfTwoSquare(input)) {
+	        return input;
+	    }
+
+	    int power = 1;
+	    while (power <= input) {
+	        power *= 2;
+	    }
+	    return power;
+	}
+
+	public static boolean isPowerOfTwoSquare(int n) {
+	    int sqrt = (int) Math.sqrt(n);
+	    return sqrt * sqrt == n;
+	}
 }

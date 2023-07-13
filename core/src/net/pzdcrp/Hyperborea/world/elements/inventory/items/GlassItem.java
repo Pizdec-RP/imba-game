@@ -10,16 +10,17 @@ import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Dirt;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Glass;
+import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
 import net.pzdcrp.Hyperborea.world.elements.inventory.IInventory;
 
 public class GlassItem extends Item {
-	public GlassItem(IInventory inventory, int count) {
-		super(inventory, 3, count);
+	public GlassItem(int count) {
+		super(3, count);
 	}
 
 	@Override
-	public void onRClick(Vector3D cp) {
-		this.inventory.owner.placeBlock(
+	public void placeBlockAction(Vector3D cp, Entity actor) {
+		actor.placeBlock(
 			new Glass(cp)
 		);
 	}

@@ -38,9 +38,9 @@ public class ModelUtils extends BaseShapeBuilder {
 	    // bottom
 	    if (!bottom) {
 	    	builder.rect(
-	    			pos.x, pos.y, pos.z+1, 
-	    			pos.x+1, pos.y, pos.z+1, 
-	    			pos.x+1, pos.y, pos.z,
+	    			pos.x, pos.y, pos.z+blockScale, 
+	    			pos.x+blockScale, pos.y, pos.z+blockScale, 
+	    			pos.x+blockScale, pos.y, pos.z,
 	    			pos.x, pos.y, pos.z,
 	    			0, -1, 0);
 	    }
@@ -48,30 +48,30 @@ public class ModelUtils extends BaseShapeBuilder {
 	    // top
 	    if (!top) {
 	        builder.rect(
-	        		pos.x, pos.y+1, pos.z,// , 0.5f, ,
-	        		pos.x+1, pos.y+1, pos.z,//  0.5f, 0.5f, ,
-	        		pos.x+1, pos.y+1, pos.z+1,//  0.5f, 0.5f,  0.5f,
-	        		pos.x, pos.y+1, pos.z+1,// , 0.5f,  0.5f,
+	        		pos.x, pos.y+blockScale, pos.z,// , 0.5f, ,
+	        		pos.x+blockScale, pos.y+blockScale, pos.z,//  0.5f, 0.5f, ,
+	        		pos.x+blockScale, pos.y+blockScale, pos.z+blockScale,//  0.5f, 0.5f,  0.5f,
+	        		pos.x, pos.y+blockScale, pos.z+blockScale,// , 0.5f,  0.5f,
 	                0, 1, 0);
 	    }
 
 	    // left
 	    if (!left) {
 	        builder.rect(
-	        		pos.x, pos.y, pos.z+1,// , ,  0.5f,
+	        		pos.x, pos.y, pos.z+blockScale,// , ,  0.5f,
 	        		pos.x, pos.y, pos.z,// , , ,
-	        		pos.x, pos.y+1, pos.z,// ,  0.5f, ,
-	        		pos.x, pos.y+1, pos.z+1,// ,  0.5f,  0.5f,
+	        		pos.x, pos.y+blockScale, pos.z,// ,  0.5f, ,
+	        		pos.x, pos.y+blockScale, pos.z+blockScale,// ,  0.5f,  0.5f,
 	                -1, 0, 0);
 	    }
 
 	    // right
 	    if (!right) {
 	        builder.rect(
-	        		pos.x+1, pos.y, pos.z,// 0.5f, , ,
-	        		pos.x+1, pos.y, pos.z+1,// 0.5f, ,  0.5f,
-	        		pos.x+1, pos.y+1, pos.z+1,// 0.5f,  0.5f,  0.5f,
-	        		pos.x+1, pos.y+1, pos.z,// 0.5f,  0.5f, ,
+	        		pos.x+blockScale, pos.y, pos.z,// 0.5f, , ,
+	        		pos.x+blockScale, pos.y, pos.z+blockScale,// 0.5f, ,  0.5f,
+	        		pos.x+blockScale, pos.y+blockScale, pos.z+blockScale,// 0.5f,  0.5f,  0.5f,
+	        		pos.x+blockScale, pos.y+blockScale, pos.z,// 0.5f,  0.5f, ,
 	                 1, 0, 0);
 	    }
 
@@ -79,19 +79,19 @@ public class ModelUtils extends BaseShapeBuilder {
 	    if (!front) {
 	        builder.rect(
 	        		pos.x, pos.y, pos.z,// , , ,
-	        		pos.x+1, pos.y, pos.z,//  0.5f, , ,
-	        		pos.x+1, pos.y+1, pos.z,//  0.5f,  0.5f, ,
-	        		pos.x, pos.y+1, pos.z,// ,  0.5f, ,
+	        		pos.x+blockScale, pos.y, pos.z,//  0.5f, , ,
+	        		pos.x+blockScale, pos.y+blockScale, pos.z,//  0.5f,  0.5f, ,
+	        		pos.x, pos.y+blockScale, pos.z,// ,  0.5f, ,
 	                0, 0, -1);
 	    }
 
 	    // back
 	    if (!back) {
 	        builder.rect(
-	        		pos.x+1, pos.y, pos.z+1,// 0.5f, ,  0.5f,
-	        		pos.x, pos.y, pos.z+1,// , ,  0.5f,
-	        		pos.x, pos.y+1, pos.z+1,// ,  0.5f,  0.5f,
-	        		pos.x+1, pos.y+1, pos.z+1,//  0.5f,  0.5f,  0.5f,
+	        		pos.x+blockScale, pos.y, pos.z+blockScale,// 0.5f, ,  0.5f,
+	        		pos.x, pos.y, pos.z+blockScale,// , ,  0.5f,
+	        		pos.x, pos.y+blockScale, pos.z+blockScale,// ,  0.5f,  0.5f,
+	        		pos.x+blockScale, pos.y+blockScale, pos.z+blockScale,//  0.5f,  0.5f,  0.5f,
 	                 0, 0, 1);
 	    }
 	}
@@ -114,6 +114,11 @@ public class ModelUtils extends BaseShapeBuilder {
 	
 	
 	public static Vector3 sp = new Vector3();
+	private static float blockScale = 1f;
+	
+	public static void setScale(float scl) {
+		blockScale = scl;
+	}
 	
 	public static void setTransform(Vector3D pos) {
 		sp.x = (float)pos.x;
@@ -123,27 +128,27 @@ public class ModelUtils extends BaseShapeBuilder {
 	
 	public static void buildTopZ(SexyMeshBuilder mpb) {
 		mpb.rect(
-		sp.x, sp.y+1, sp.z,
-		sp.x+1, sp.y+1, sp.z,
-		sp.x+1, sp.y+1, sp.z+1,
-		sp.x, sp.y+1, sp.z+1,
+		sp.x, sp.y+blockScale, sp.z,
+		sp.x+blockScale, sp.y+blockScale, sp.z,
+		sp.x+blockScale, sp.y+blockScale, sp.z+blockScale,
+		sp.x, sp.y+blockScale, sp.z+blockScale,
         0, 1, 0);
 	}
 	
 	public static void buildTopX(SexyMeshBuilder mpb) {
 		mpb.rect(
-		sp.x, sp.y+1, sp.z+1,
-		sp.x, sp.y+1, sp.z,
-		sp.x+1, sp.y+1, sp.z,
-		sp.x+1, sp.y+1, sp.z+1,
+		sp.x, sp.y+blockScale, sp.z+blockScale,
+		sp.x, sp.y+blockScale, sp.z,
+		sp.x+blockScale, sp.y+blockScale, sp.z,
+		sp.x+blockScale, sp.y+blockScale, sp.z+blockScale,
         0, 1, 0);
 	}
 	
 	public static void buildBottomZ(SexyMeshBuilder mpb) {
 		mpb.rect(
-		sp.x, sp.y, sp.z+1, 
-		sp.x+1, sp.y, sp.z+1, 
-		sp.x+1, sp.y, sp.z,
+		sp.x, sp.y, sp.z+blockScale, 
+		sp.x+blockScale, sp.y, sp.z+blockScale, 
+		sp.x+blockScale, sp.y, sp.z,
 		sp.x, sp.y, sp.z,
 		0, -1, 0);
 	}
@@ -151,117 +156,117 @@ public class ModelUtils extends BaseShapeBuilder {
 	public static void buildBottomX(SexyMeshBuilder mpb) {
 		mpb.rect(
 		sp.x, sp.y, sp.z,
-		sp.x, sp.y, sp.z+1, 
-		sp.x+1, sp.y, sp.z+1, 
-		sp.x+1, sp.y, sp.z,
+		sp.x, sp.y, sp.z+blockScale, 
+		sp.x+blockScale, sp.y, sp.z+blockScale, 
+		sp.x+blockScale, sp.y, sp.z,
 		0, -1, 0);
 	}
 	
 	public static void buildLeftY(SexyMeshBuilder mpb) {
 		mpb.rect(
-				sp.x, sp.y+1, sp.z,
-		sp.x, sp.y+1, sp.z+1,
-		sp.x, sp.y, sp.z+1,
+				sp.x, sp.y+blockScale, sp.z,
+		sp.x, sp.y+blockScale, sp.z+blockScale,
+		sp.x, sp.y, sp.z+blockScale,
 		sp.x, sp.y, sp.z,
         -1, 0, 0);
 	}
 	
 	public static void buildLeftZ(SexyMeshBuilder mpb) {
 		mpb.rect(
-		sp.x, sp.y+1, sp.z+1,
-		sp.x, sp.y, sp.z+1,
+		sp.x, sp.y+blockScale, sp.z+blockScale,
+		sp.x, sp.y, sp.z+blockScale,
 		sp.x, sp.y, sp.z,
-		sp.x, sp.y+1, sp.z,
+		sp.x, sp.y+blockScale, sp.z,
         -1, 0, 0);
 	}
 	
 	public static void buildLeftNY(SexyMeshBuilder mpb) {
 		mpb.rect(
-		sp.x, sp.y+1, sp.z,
-		sp.x, sp.y+1, sp.z+1,
-		sp.x, sp.y, sp.z+1,
+		sp.x, sp.y+blockScale, sp.z,
+		sp.x, sp.y+blockScale, sp.z+blockScale,
+		sp.x, sp.y, sp.z+blockScale,
 		sp.x, sp.y, sp.z,
         -1, 0, 0);
 	}
 	
 	public static void buildLeftPY(SexyMeshBuilder mpb) {
 		mpb.rect(
-		sp.x, sp.y, sp.z+1,
+		sp.x, sp.y, sp.z+blockScale,
 		sp.x, sp.y, sp.z,
-		sp.x, sp.y+1, sp.z,
-		sp.x, sp.y+1, sp.z+1,
+		sp.x, sp.y+blockScale, sp.z,
+		sp.x, sp.y+blockScale, sp.z+blockScale,
         -1, 0, 0);
 	}
 	
 	public static void buildRightY(SexyMeshBuilder mpb) {
 		mpb.rect(
-				sp.x+1, sp.y+1, sp.z+1,
-		sp.x+1, sp.y+1, sp.z,
-		sp.x+1, sp.y, sp.z,
-		sp.x+1, sp.y, sp.z+1,
+				sp.x+blockScale, sp.y+blockScale, sp.z+blockScale,
+		sp.x+blockScale, sp.y+blockScale, sp.z,
+		sp.x+blockScale, sp.y, sp.z,
+		sp.x+blockScale, sp.y, sp.z+blockScale,
          1, 0, 0);
 	}
 	
 	public static void buildRightPZ(SexyMeshBuilder mpb) {
 		mpb.rect(
-		sp.x+1, sp.y+1, sp.z,
-		sp.x+1, sp.y, sp.z,
-		sp.x+1, sp.y, sp.z+1,
-		sp.x+1, sp.y+1, sp.z+1,
+		sp.x+blockScale, sp.y+blockScale, sp.z,
+		sp.x+blockScale, sp.y, sp.z,
+		sp.x+blockScale, sp.y, sp.z+blockScale,
+		sp.x+blockScale, sp.y+blockScale, sp.z+blockScale,
          1, 0, 0);
 	}
 	
 	public static void buildRightNY(SexyMeshBuilder mpb) {
 		mpb.rect(
-		sp.x+1, sp.y+1, sp.z+1,
-		sp.x+1, sp.y+1, sp.z,
-		sp.x+1, sp.y, sp.z,
-		sp.x+1, sp.y, sp.z+1,
+		sp.x+blockScale, sp.y+blockScale, sp.z+blockScale,
+		sp.x+blockScale, sp.y+blockScale, sp.z,
+		sp.x+blockScale, sp.y, sp.z,
+		sp.x+blockScale, sp.y, sp.z+blockScale,
          1, 0, 0);
 	}
 	
 	public static void buildRightPY(SexyMeshBuilder mpb) {
 		mpb.rect(
-		sp.x+1, sp.y, sp.z,
-		sp.x+1, sp.y, sp.z+1,
-		sp.x+1, sp.y+1, sp.z+1,
-		sp.x+1, sp.y+1, sp.z,
+		sp.x+blockScale, sp.y, sp.z,
+		sp.x+blockScale, sp.y, sp.z+blockScale,
+		sp.x+blockScale, sp.y+blockScale, sp.z+blockScale,
+		sp.x+blockScale, sp.y+blockScale, sp.z,
          1, 0, 0);
 	}
 	
 	public static void buildFrontY(SexyMeshBuilder mpb) {
 		mpb.rect(
 		sp.x, sp.y, sp.z,
-		sp.x+1, sp.y, sp.z,
-		sp.x+1, sp.y+1, sp.z,
-		sp.x, sp.y+1, sp.z,
+		sp.x+blockScale, sp.y, sp.z,
+		sp.x+blockScale, sp.y+blockScale, sp.z,
+		sp.x, sp.y+blockScale, sp.z,
         0, 0, -1);
 	}
 	
 	public static void buildFrontX(SexyMeshBuilder mpb) {
 		mpb.rect(
-				sp.x, sp.y+1, sp.z,
+				sp.x, sp.y+blockScale, sp.z,
 		sp.x, sp.y, sp.z,
-		sp.x+1, sp.y, sp.z,
-		sp.x+1, sp.y+1, sp.z,
+		sp.x+blockScale, sp.y, sp.z,
+		sp.x+blockScale, sp.y+blockScale, sp.z,
         0, 0, -1);
 	}
 	
 	public static void buildBackY(SexyMeshBuilder mpb) {
 		mpb.rect(
-		sp.x+1, sp.y, sp.z+1,
-		sp.x, sp.y, sp.z+1,
-		sp.x, sp.y+1, sp.z+1,
-		sp.x+1, sp.y+1, sp.z+1,
+		sp.x+blockScale, sp.y, sp.z+blockScale,
+		sp.x, sp.y, sp.z+blockScale,
+		sp.x, sp.y+blockScale, sp.z+blockScale,
+		sp.x+blockScale, sp.y+blockScale, sp.z+blockScale,
          0, 0, 1);
 	}
 	
 	public static void buildBackX(SexyMeshBuilder mpb) {
 		mpb.rect(
-				sp.x+1, sp.y+1, sp.z+1,
-		sp.x+1, sp.y, sp.z+1,
-		sp.x, sp.y, sp.z+1,
-		sp.x, sp.y+1, sp.z+1,
+				sp.x+blockScale, sp.y+blockScale, sp.z+blockScale,
+		sp.x+blockScale, sp.y, sp.z+blockScale,
+		sp.x, sp.y, sp.z+blockScale,
+		sp.x, sp.y+blockScale, sp.z+blockScale,
          0, 0, 1);
 	}
 }

@@ -26,47 +26,42 @@ public class DefaultWorldGenerator extends ColumnGenerator {
 	public static Map<Vector2I, Set<Block>> toadd = new ConcurrentHashMap<>();
 	@Override
 	public void gen(Column c) {
-		try {
-			for (int px = 0; px < 16; px++) {
-		        for (int pz = 0; pz < 16; pz++) {
-		        	int x = c.pos.x*16+px;
-		        	int z = c.pos.z*16+pz;
-	        		Biome biome = Biome.field;//calculate biome by xz pos
-	        		if (biome == Biome.field) {
-	        			int fieldMaxHeight = (int) (World.maxheight*0.4f);
-	        			int fieldMinHeight = (int) (World.maxheight*0.25f);
-	        			float sharpness = 0.02f;
-	        			double noise = Noise.get(x*sharpness, z*sharpness);
-	        			int maxy = MathU.diap(fieldMinHeight, fieldMaxHeight, noise);
-	        			for (int y = 0; y < World.maxheight; y++) {
-	        				if (y < maxy) {
-	        					c.fastSetBlock(px,y,pz, 6);
-	        				} else if (y == maxy && Double.toString(noise).contains("34")) {
-	        					c.fastSetBlock(px,y,pz, 23);
-	        				} else {
-	        					c.fastSetBlock(px,y,pz, 0);
-	        				}
-	        			}
-	        			c.recalculateSLMD(px,pz);
-	        			if (Double.toString(noise).contains("145")) {
-	        				Vector3D treepos = new Vector3D(c.normx(px), c.getSLMD(px, pz), c.normz(pz));
-	        				generateTree(treepos);
-	        			}
-	        		}
-		        }
-		    }
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.exit(0);
-		}
+		for (int px = 0; px < 16; px++) {
+	        for (int pz = 0; pz < 16; pz++) {
+	        	int x = c.pos.x*16+px;
+	        	int z = c.pos.z*16+pz;
+        		Biome biome = Biome.field;//calculate biome by xz pos
+        		if (biome == Biome.field) {
+        			int fieldMaxHeight = (int) (World.maxheight*0.4f);
+        			int fieldMinHeight = (int) (World.maxheight*0.25f);
+        			float sharpness = 0.02f;
+        			double noise = Noise.get(x*sharpness, z*sharpness);
+        			int maxy = MathU.diap(fieldMinHeight, fieldMaxHeight, noise);
+        			for (int y = 0; y < World.maxheight; y++) {
+        				if (y < maxy) {
+        					c.fastSetBlock(px,y,pz, 6);
+        				} else if (y == maxy && Double.toString(noise).contains("34")) {
+        					c.fastSetBlock(px,y,pz, 23);
+        				} else {
+        					c.fastSetBlock(px,y,pz, 0);
+        				}
+        			}
+        			c.recalculateSLMD(px,pz);
+        			if (Double.toString(noise).contains("145")) {
+        				Vector3D treepos = new Vector3D(c.normx(px), c.getSLMD(px, pz), c.normz(pz));
+        				generateTree(treepos);
+        			}
+        		}
+	        }
+	    }
 	}
 	
 	public static void generateTree(Vector3D pos) {
 		Set<Block> blocks = new HashSet<>();
 		pos.y -= 2;
-		int trunk = MathU.rnd(7, 10);
+		int trunk = MathU.rndi(9, 12);
 		int maxcrona = trunk+1;
-		int mincrona = MathU.rnd(4, 5);
+		int mincrona = 6;
 		
 		for (int i = 0; i < trunk; i++) {
             blocks.add(new OakLog(pos.add(0, i, 0), BlockFace.PY));
@@ -76,7 +71,7 @@ public class DefaultWorldGenerator extends ColumnGenerator {
 			int rad = 3;
 			if (i == mincrona) rad = 1;
 			if (i >= maxcrona - 1) rad = 2;
-			if (i+1 >= mid && i-1 <= mid) pos = pos.add(MathU.rnd(-1, 1), 0, MathU.rnd(-1, 1)); 
+			if (i+1 >= mid && i-1 <= mid) pos = pos.add(MathU.rndi(-1, 1), 0, MathU.rndi(-1, 1)); 
 			blocks.addAll(getBlocksInRadius(pos.add(0, i, 0), rad, new OakLeaves(new Vector3D())));
 		}
 		

@@ -168,4 +168,9 @@ public class TntCrate extends Block {
         	e.vel.add(t);
         }*/
 	}
+	
+	@Override
+	public float getResistance() {
+		return 0.1f;
+	}
 }

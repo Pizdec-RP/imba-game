@@ -45,8 +45,8 @@ uniform sampler2D u_diffuseTexture;//текстура модели
 #endif
 
 varying float vertexlight;
-
 uniform vec2 screensize;
+//varying float distanceToCamera;
 
 //gl_FragCoord
 
@@ -79,4 +79,19 @@ void main() {
 	//--------block vertex light------
 	gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0), 1.0-vertexlight);
 	//--------block vertex light------
+	
+	/*float mid = 30.0;
+	float st = mid - 2.5;
+	float en = mid + 2.5;
+	if (distanceToCamera < st) {
+	    // Прозрачность остается без изменений
+	} else if (distanceToCamera > en) {
+	    gl_FragColor.a = 0.0;
+	} else {
+	    float s = 1.0 - ((distanceToCamera - st) / (en - st));
+	    if (gl_FragColor.a < s) {
+	    	gl_FragColor.a = s;
+	    }
+	}*/
+
 }

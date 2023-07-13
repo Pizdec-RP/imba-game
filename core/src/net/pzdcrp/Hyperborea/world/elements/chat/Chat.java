@@ -23,6 +23,7 @@ public class Chat {
     private final Queue<Label> messages;  // Очередь сообщений чата
     TextField inputField;
 	private TypeListener lst;
+	private BitmapFont font;
 
 	public Chat() {
 		this.lst = new TypeListener(this);
@@ -31,9 +32,10 @@ public class Chat {
         this.table.bottom().left();
         this.table.setFillParent(true);
         this.messages = new LinkedList<>();
+        this.font = Hpb.mutex.getFont(15);
         
         TextField.TextFieldStyle style = new TextField.TextFieldStyle();
-        style.font = new BitmapFont();
+        style.font = this.font;
         style.fontColor = Color.WHITE;
         this.inputField = new TextField("", style);
         
@@ -51,7 +53,7 @@ public class Chat {
 
     public void addMessage(String messageText) {
         Label.LabelStyle style = new Label.LabelStyle();
-        style.font = new BitmapFont();
+        style.font = this.font;
         Label message = new Label(messageText, style);
 
         if (this.messages.size() >= MAX_MESSAGES) {

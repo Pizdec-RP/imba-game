@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map.Entry;
 
 import com.badlogic.gdx.Gdx;
@@ -18,8 +19,11 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.TextureData;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
@@ -33,9 +37,13 @@ import com.badlogic.gdx.utils.ScreenUtils;
 
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.extended.SexyMeshBuilder;
+import net.pzdcrp.Hyperborea.utils.MathU;
+import net.pzdcrp.Hyperborea.utils.ModelUtils;
 import net.pzdcrp.Hyperborea.utils.RenderaU;
+import net.pzdcrp.Hyperborea.utils.ThreadU;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.Item;
+import net.pzdcrp.Hyperborea.world.elements.inventory.items.NoItem;
 
 import com.badlogic.gdx.graphics.Texture;
 
@@ -45,9 +53,11 @@ public class Mutex {
 	private Map<String, float[]> razmetka;
 	private Map<String, Texture> itemtextures = new HashMap<>();
 	private Map<String, Texture> otherTextures = new HashMap<>();
+	private FreeTypeFontGenerator generator;
+	private Map<Integer, BitmapFont> fonts = new ConcurrentHashMap<>();
 	
 	public Mutex() {
-		
+		this.generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/Underdog.ttf"));
 	}
 	
 	public Texture getComplex() {
@@ -66,16 +76,20 @@ public class Mutex {
 			if (tex.getHeight() > height) height = tex.getHeight();
 			width += tex.getWidth();
 		}
-		comp = new Texture(new PixmapTextureData(new Pixmap(width, height, Format.RGBA8888), null, true, true));
-		comp.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
-		comp.setAnisotropicFilter(GL20.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT);
+		int max = Math.max(height, width);
+		int aligned = MathU.alignPower(max);
+		width = aligned;
+		height = aligned;
+		Pixmap pixmap = new Pixmap(width, height, Format.RGBA8888);
+		System.out.println("generated texture image: "+width+"x"+height);
 		int twidth = 0;
 		TextureData dt;
 		for (Entry<String, Texture> tex : ar.entrySet()) {
 			//tex.getValue().setFilter(TextureFilter.MipMap,TextureFilter.Nearest);
 			dt = tex.getValue().getTextureData();
 			dt.prepare();
-			comp.draw(dt.consumePixmap(), twidth, 0);
+			//comp.draw(dt.consumePixmap(), twidth, 0);
+			pixmap.drawPixmap(dt.consumePixmap(), twidth, 0);
 			float[] razm = new float[4];
 			razm[1] = 0;
 			float hep = (float)tex.getValue().getHeight() / (float)height;
@@ -85,6 +99,9 @@ public class Mutex {
 			razm[2] = (float)twidth / (float)width;
 			razmetka.put(tex.getKey(), razm);
 		}
+		comp = new Texture(new PixmapTextureData(pixmap, Format.RGBA8888, true, false));
+		comp.setAnisotropicFilter(GL30.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT);
+		comp.setFilter(TextureFilter.Nearest, TextureFilter.MipMapNearestLinear);
 	}
 	
 	public void addOtherTexture(Texture t, String name) {
@@ -105,6 +122,9 @@ public class Mutex {
 	
 	public void hookuvr(SexyMeshBuilder mpb, String name, float u1, float v1, float u2, float v2) {
 		float[] r = razmetka.get(name);
+		if (r == null) {
+			ThreadU.end("unregistered texture: "+name);
+		}
 		float width = r[2] - r[0];
 		float height = r[3] - r[1];
 		
@@ -160,7 +180,7 @@ public class Mutex {
 	public void prepare() {
     	batch = new ModelBatch();
     	
-    	camera = new OrthographicCamera(2, 2.3f);
+    	camera = new OrthographicCamera(2*0.75f, 2.3f*0.75f);
 		camera.far = 500;
 		camera.near = 0.1f;
 	    camera.position.set(-4.28f, 6.18f, 0.96f);
@@ -174,9 +194,10 @@ public class Mutex {
     }
 
     public void render() {
+    	MBIM m = new MBIM(null);
     	for (Item item : Item.items) {
+    		System.out.println("jopa "+item.getClass().getName());
 	    	if (item.isModel()) {
-	    		MBIM m = new MBIM(null);
 	    		Block block = Block.blockByItem(item).clone(new Vector3D(0,0,5));
 	    		if (block == null) continue;
 	    		block.addModel(false, false, false, false, false, false, m);
@@ -208,19 +229,33 @@ public class Mutex {
 	            sbatch.begin();
 	            sbatch.draw(texture, 0, 0);
 	            sbatch.end();
-	            //pixmap.dispose(); already disposed in flip texture
-	            
-	            
+	            m.clear();
 	    	}
 	    }
     	System.out.println("rendered items: "+itemtextures.size());
+    	Vector3D pos = new Vector3D(0, 0, 0);
+    	ModelUtils.setScale(0.2f);
+    	for (Entry<Integer, Block> b : Block.blocks.entrySet()) {
+    		Item blockItem = Block.itemByBlockId(b.getKey());
+    		if (blockItem == null || blockItem instanceof NoItem) continue;
+    		Block b1 = b.getValue().clone(pos);
+    		b1.addModel(false, false, false, false, false, false, m);
+    		ModelInstance model;
+    		if (b1.isTransparent()) {
+    			Block.blockModels.put(b.getKey(), model = m.endTransparent().copy());
+    		} else {
+    			Block.blockModels.put(b.getKey(), model = m.endSolid().copy());
+    		}
+    		model.userData = new Object[] {"item"};
+    		m.clear();
+    	}
+    	ModelUtils.setScale(1f);
     }
     
     public Texture getItemTexture(String key) {
     	Texture tex = this.itemtextures.get(key);
     	if (tex == null) {
-    		System.out.println("нема текстуры! "+this.getClass().getName());
-    		System.exit(0);
+    		ThreadU.end("нема текстуры! "+this.getClass().getName());
     	}
     	return tex;
     }
@@ -235,4 +270,20 @@ public class Mutex {
     	fbo.dispose();
     	sbatch.dispose();
     }
+    
+	public BitmapFont getFont(int i) {
+		if (fonts.containsKey(i)) {
+			return fonts.get(i);
+		} else {
+			FreeTypeFontParameter parameter = new FreeTypeFontParameter();
+			parameter.size = i;
+			parameter.minFilter = TextureFilter.Linear;
+			parameter.magFilter = TextureFilter.Linear;
+			parameter.genMipMaps = true;
+			parameter.characters = FreeTypeFontGenerator.DEFAULT_CHARS + "йцукенгшщзфывапролджэячсмитьбюъё";
+			BitmapFont font = generator.generateFont(parameter);
+			fonts.put(i, font);
+			return font;
+		}
+	}
 }

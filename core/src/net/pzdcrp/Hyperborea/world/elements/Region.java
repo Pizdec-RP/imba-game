@@ -18,7 +18,7 @@ public class Region {
 		this.pos = pos;
 	}
 	
-	public Column getColumn(Vector2I cpos) throws Exception {
+	public Column getColumn(Vector2I cpos) {
 		if (columns.containsKey(cpos)) {
 			return columns.get(cpos);
 		} else {

@@ -16,6 +16,7 @@ import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.data.Vector3I;
 import net.pzdcrp.Hyperborea.utils.MathU;
+import net.pzdcrp.Hyperborea.utils.ThreadU;
 import net.pzdcrp.Hyperborea.utils.VectorU;
 import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
@@ -53,6 +54,7 @@ public class Chunk {
 		}
 		this.pos = new Vector3D(column.pos.x, height/16, column.pos.z);
 		this.center = new Vector3(column.pos.x*16+8, height+8, column.pos.z*16+8);
+		m = new MBIM(this);
 	}
 	
 	public void updateModel() {
@@ -149,8 +151,7 @@ public class Chunk {
 	        }
 	        
 	        if (b == null) {
-	        	System.out.println("nullblock: "+l.toString());
-	        	System.exit(0);
+	        	ThreadU.end("nullblock: "+l.toString());
 	        }
 	        if (b.isTransparent()) {
 	            int cur = rawGetLight(l.x,l.y,l.z);
@@ -191,8 +192,7 @@ public class Chunk {
 	
 	public void setBlock(int x, int y, int z, Block i) {
 		if (i == null) {
-			System.out.println("pizdec null v setbloke");
-			System.exit(0);
+			ThreadU.end("null block exception");
 		}
 		blocks[x][y][z] = i;
 		if (i.tickable()) {
@@ -210,38 +210,36 @@ public class Chunk {
 		}
 	}
 	
-	public void lUpdateModel() throws Exception {
+	public void lUpdateModel() {
 		if (!Thread.currentThread().getName().equals("main thd")) {
-			throw new Exception("Wrong thread exception");
+			ThreadU.end("Wrong thread exception");
 		}
-		System.out.println("upd model");
+		m.clear();
+		//System.out.println("upd model");
 		//Map<String, Pair> modelsById = new HashMap<>();
-		m = new MBIM(this);
 		for(int xx = 0; xx < 16; xx++) {
 			for(int yy = 0; yy < 16; yy++) {
 				for(int zz = 0; zz < 16; zz++) {
-					try {
-						Block clas = blocks[xx][yy][zz];
-						if (clas == null) {
-							System.out.println("pizdec: "+normx(xx)+" "+normy(yy)+" "+normz(zz));
-						}
-						if (clas.tickable()) this.tickable = true;
-						if (clas.isRenderable()) {
-							boolean n1,n2,n3,n4,n5,n6;
-							n1 = wr(xx,yy+1,zz, clas);
-							n2 = wr(xx,yy-1,zz, clas);
-							n3 = wr(xx-1,yy,zz, clas);//left -x
-							n4 = wr(xx+1,yy,zz, clas);
-							n5 = wr(xx,yy,zz-1, clas);
-							n6 = wr(xx,yy,zz+1, clas);
-							clas.addModel(n1,n2,n3,n4,n5,n6,m);
-						}
-					} catch (Exception e) {
-						e.printStackTrace();
-						System.exit(0);
+					Block clas = blocks[xx][yy][zz];
+					if (clas == null) {
+						System.out.println("pizdec: "+normx(xx)+" "+normy(yy)+" "+normz(zz));
+					}
+					if (clas.tickable()) this.tickable = true;
+					if (clas.isRenderable()) {
+						boolean n1,n2,n3,n4,n5,n6;
+						n1 = wr(xx,yy+1,zz, clas);
+						n2 = wr(xx,yy-1,zz, clas);
+						n3 = wr(xx-1,yy,zz, clas);//left -x
+						n4 = wr(xx+1,yy,zz, clas);
+						n5 = wr(xx,yy,zz-1, clas);
+						n6 = wr(xx,yy,zz+1, clas);
+						clas.addModel(n1,n2,n3,n4,n5,n6,m);
 					}
 				}
 			}
+		}
+		if (bbpos != null) {
+			Block.bbmodel(m, bbpos, bbstage);
 		}
 		allModels = m.endSolid();
 		transparent = m.endTransparent();
@@ -249,8 +247,22 @@ public class Chunk {
 		transparent.userData = new Object[] {"chunk", column.pos.toString()+" y:"+height, "ithaslight", "transparent"};
 	}
 	
+	public int bbstage = -1;
+	private Vector3D bbpos = null;
+	public void addBlockBreakStage(Vector3D pos, int stage) {
+		this.bbpos = pos;
+		this.bbstage = stage;
+		this.reqmodelupd = true;
+	}
+	
+	public void endBlockBreakStage() {
+		this.bbpos = null;
+		this.bbstage = -1;
+		this.reqmodelupd = true;
+	}
+	
 	public void rebuildTransparent() {
-		if (this.m != null) {
+		if (this.m.transparentmodel != null) {
 			m.sortTransparent(Hpb.world.player.cam.cam.position);
 		}
 	}

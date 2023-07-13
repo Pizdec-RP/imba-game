@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g3d.Material;
+import com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
@@ -71,7 +72,7 @@ public class Particle {
 
 		Node node = new Node();
 		node.id = "ptcl" + id();
-		node.parts.add(new NodePart(meshPart, new Material(TextureAttribute.createDiffuse(texture), IntAttribute.createCullFace(GL20.GL_NONE))));
+		node.parts.add(new NodePart(meshPart, new Material(TextureAttribute.createDiffuse(texture), IntAttribute.createCullFace(GL20.GL_NONE), new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA))));
 		
 		Hpb.world.particlesModel.nodes.add(node);
 		

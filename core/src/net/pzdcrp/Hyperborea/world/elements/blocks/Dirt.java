@@ -63,4 +63,9 @@ public class Dirt extends Block {
 	    mbim.curoffset = offset.ny;
 	    if (!ny) ModelUtils.buildBottomX(a);//NY
 	}
+	
+	@Override
+	public float getResistance() {
+		return 1f;
+	}
 }	

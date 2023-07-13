@@ -12,19 +12,20 @@ import net.pzdcrp.Hyperborea.world.elements.blocks.Dirt;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Glass;
 import net.pzdcrp.Hyperborea.world.elements.blocks.OakLog;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Stone;
+import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
 import net.pzdcrp.Hyperborea.world.elements.inventory.IInventory;
 
 public class OakLogItem extends Item {
-	public OakLogItem(IInventory inventory, int count) {
-		super(inventory, 6, count);
+	public OakLogItem(int count) {
+		super(6, count);
 	}
 
 	@Override
-	public void onRClick(Vector3D cp) {
-		this.inventory.owner.placeBlock(
+	public void placeBlockAction(Vector3D cp, Entity actor) {
+		actor.placeBlock(
 			new OakLog(
 				cp,
-				inventory.owner.currentAimFace
+				actor.currentAimFace
 			)
 		);
 	}

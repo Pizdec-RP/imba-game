@@ -6,16 +6,17 @@ import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Grass;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Weed;
+import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
 import net.pzdcrp.Hyperborea.world.elements.inventory.IInventory;
 
 public class WeedItem extends Item {
-	public WeedItem(IInventory inventory, int count) {
-		super(inventory, 9, count);
+	public WeedItem(int count) {
+		super(9, count);
 	}
 
 	@Override
-	public void onRClick(Vector3D cp) {
-		this.inventory.owner.placeBlock(
+	public void placeBlockAction(Vector3D cp, Entity actor) {
+		actor.placeBlock(
 			new Weed(cp)
 		);
 	}

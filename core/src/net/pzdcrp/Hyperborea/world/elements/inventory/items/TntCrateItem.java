@@ -10,16 +10,17 @@ import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
 import net.pzdcrp.Hyperborea.world.elements.blocks.OakLog;
 import net.pzdcrp.Hyperborea.world.elements.blocks.TntCrate;
+import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
 import net.pzdcrp.Hyperborea.world.elements.inventory.IInventory;
 
 public class TntCrateItem extends Item {
-	public TntCrateItem(IInventory inventory, int count) {
-		super(inventory, 8, count);
+	public TntCrateItem(int count) {
+		super(8, count);
 	}
 
 	@Override
-	public void onRClick(Vector3D cp) {
-		this.inventory.owner.placeBlock(
+	public void placeBlockAction(Vector3D cp, Entity actor) {
+		actor.placeBlock(
 			new TntCrate(
 				cp
 			)

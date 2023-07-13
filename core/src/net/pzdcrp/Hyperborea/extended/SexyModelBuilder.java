@@ -25,13 +25,11 @@ import net.pzdcrp.Hyperborea.data.MBIM;
 
 public class SexyModelBuilder {
 	/** The model currently being build */
-	private Model model;
+	public Model model;
 	/** The node currently being build */
 	private Node node;
 	/** The mesh builders created between begin and end */
-	private Array<MeshBuilder> builders = new Array<MeshBuilder>();
-
-	private Matrix4 tmpTransform = new Matrix4();
+	private Array<SexyMeshBuilder> builders = new Array<SexyMeshBuilder>();
 	
 	public MBIM mbim;
 	private boolean tr;
@@ -41,10 +39,10 @@ public class SexyModelBuilder {
 		this.tr = tr;
 	}
 
-	private MeshBuilder getBuilder (final VertexAttributes attributes) {//INFO here it is
-		for (final MeshBuilder mb : builders)
+	private SexyMeshBuilder getBuilder (final VertexAttributes attributes) {//INFO here it is
+		for (final SexyMeshBuilder mb : builders)
 			if (mb.getAttributes().equals(attributes) && mb.lastIndex() < Short.MAX_VALUE / 2) return mb;
-		final MeshBuilder result = new SexyMeshBuilder(mbim, tr);
+		final SexyMeshBuilder result = new SexyMeshBuilder(mbim, tr);
 		result.begin(attributes);
 		builders.add(result);
 		return result;
@@ -156,8 +154,8 @@ public class SexyModelBuilder {
 	 * Therefore you can only build one part at a time. The resources the Material might contain are not managed, use
 	 * {@link #manage(Disposable)} to add those to the model.
 	 * @return The {@link MeshPartBuilder} you can use to build the MeshPart. */
-	public MeshPartBuilder part (final String id, int primitiveType, final VertexAttributes attributes, final Material material) {
-		final MeshBuilder builder = getBuilder(attributes);
+	public SexyMeshBuilder part (final String id, int primitiveType, final VertexAttributes attributes, final Material material) {
+		final SexyMeshBuilder builder = getBuilder(attributes);
 		part(builder.part(id, primitiveType), material);
 		return builder;
 	}
@@ -169,7 +167,7 @@ public class SexyModelBuilder {
 	 * @param attributes bitwise mask of the {@link com.badlogic.gdx.graphics.VertexAttributes.Usage}, only Position, Color, Normal
 	 *           and TextureCoordinates is supported.
 	 * @return The {@link MeshPartBuilder} you can use to build the MeshPart. */
-	public MeshPartBuilder part (final String id, int primitiveType, final long attributes, final Material material) {
+	public SexyMeshBuilder part (final String id, int primitiveType, final long attributes, final Material material) {
 		return part(id, primitiveType, createAttributes(attributes), material);
 	}
 	

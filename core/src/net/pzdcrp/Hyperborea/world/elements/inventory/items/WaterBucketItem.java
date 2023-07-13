@@ -9,17 +9,18 @@ import net.pzdcrp.Hyperborea.utils.VectorU;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Grass;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Water;
+import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
 import net.pzdcrp.Hyperborea.world.elements.inventory.IInventory;
 
 public class WaterBucketItem extends Item {
 
-	public WaterBucketItem(IInventory inventory, int id) {
-		super(inventory, id);
+	public WaterBucketItem(int id) {
+		super(id);
 	}
 	
 	@Override
-	public void onRClick(Vector3D cp) {
-		this.inventory.owner.placeBlock(
+	public void placeBlockAction(Vector3D cp, Entity actor) {
+		actor.placeBlock(
 			new Water(
 				cp,
 				7

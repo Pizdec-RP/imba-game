@@ -49,4 +49,9 @@ public class Glass extends Block {
 	public boolean isTransparent() {
 		return true;
 	}
+	
+	@Override
+	public float getResistance() {
+		return 0.5f;
+	}
 }

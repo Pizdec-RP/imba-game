@@ -37,6 +37,7 @@ public class SuperPizdatiyShader extends BaseShaderProvider {
     public List<DefaultShader> local = new CopyOnWriteArrayList<>();
     public int stage = 0;
     public float skylightlevel = 1;
+    public Vector3 pos = Vector3.Zero;
     
     public void newstage() {
     	stage++;
@@ -87,7 +88,9 @@ public class SuperPizdatiyShader extends BaseShaderProvider {
 
 class ChunkModelShader extends DefaultShader {
 	private SuperPizdatiyShader s;
-	private final int screensize = register(new Uniform("screensize"));
+	private final int 
+	screensize = register(new Uniform("screensize")),
+	campos = register(new Uniform("campos"));
 
 	public ChunkModelShader(Renderable renderable, Config config, SuperPizdatiyShader s) {
 		super(renderable, config);
@@ -97,6 +100,7 @@ class ChunkModelShader extends DefaultShader {
 	@Override
 	public void render (Renderable renderable, Attributes combinedAttributes) {
 		set(screensize, new Vector2((float) Gdx.graphics.getWidth(), (float) Gdx.graphics.getHeight()));
+		set(campos, s.pos);
 		super.render(renderable, combinedAttributes);
 	}
 }

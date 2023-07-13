@@ -130,5 +130,10 @@ public class OakLog extends FacingBlock {
 	public Block clone(Vector3D poss) {
 		return new OakLog(poss,this.blockface);
 	}
+	
+	@Override
+	public float getResistance() {
+		return 2.5f;
+	}
 }	
 
