@@ -16,25 +16,27 @@ public class Vector3D {
 	public double y;
 	public double z;
 	public int hasheddata = 0;
+	public static int test = 0;
 	
 	public Vector3D() {
 		this.x = 0;
 		this.y = 0;
 		this.z = 0;
+		test++;
 	}
 
 	public Vector3D(double x, double y, double z) {
 		this.x = x;
 		this.y = y;
 		this.z = z;
-		//Main.allVec++;
-		//BotU.log(Main.allVec+" vectors created lol");
+		test++;
 	}
 	
 	public Vector3D(Vector3 p) {
 		this.x = p.x;
 		this.y = p.y;
 		this.z = p.z;
+		test++;
 	}
 
 	@Override
@@ -154,6 +156,10 @@ public class Vector3D {
 		this.y = Math.floor(y);
 		this.z = Math.floor(z);
 		return this;
+	}
+	
+	public Vector3D getDirection(Vector3D to) {
+		return to.subtract(this).normalize();
 	}
 	
 	public Vector3D floor() {

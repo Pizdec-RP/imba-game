@@ -40,7 +40,7 @@ import net.pzdcrp.Hyperborea.extended.SexyMeshBuilder;
 import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.utils.ModelUtils;
 import net.pzdcrp.Hyperborea.utils.RenderaU;
-import net.pzdcrp.Hyperborea.utils.ThreadU;
+import net.pzdcrp.Hyperborea.utils.GameU;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.Item;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.NoItem;
@@ -101,7 +101,7 @@ public class Mutex {
 		}
 		comp = new Texture(new PixmapTextureData(pixmap, Format.RGBA8888, true, false));
 		comp.setAnisotropicFilter(GL30.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT);
-		comp.setFilter(TextureFilter.Nearest, TextureFilter.MipMapNearestLinear);
+		//comp.setFilter(TextureFilter.Nearest, TextureFilter.MipMapNearestLinear);
 	}
 	
 	public void addOtherTexture(Texture t, String name) {
@@ -123,7 +123,7 @@ public class Mutex {
 	public void hookuvr(SexyMeshBuilder mpb, String name, float u1, float v1, float u2, float v2) {
 		float[] r = razmetka.get(name);
 		if (r == null) {
-			ThreadU.end("unregistered texture: "+name);
+			GameU.end("unregistered texture: "+name);
 		}
 		float width = r[2] - r[0];
 		float height = r[3] - r[1];
@@ -195,7 +195,7 @@ public class Mutex {
 
     public void render() {
     	MBIM m = new MBIM(null);
-    	for (Item item : Item.items) {
+    	for (Item item : Item.items.values()) {
     		System.out.println("jopa "+item.getClass().getName());
 	    	if (item.isModel()) {
 	    		Block block = Block.blockByItem(item).clone(new Vector3D(0,0,5));
@@ -234,20 +234,17 @@ public class Mutex {
 	    }
     	System.out.println("rendered items: "+itemtextures.size());
     	Vector3D pos = new Vector3D(0, 0, 0);
-    	ModelUtils.setScale(0.2f);
+    	ModelUtils.setScale(0.3f);
+    	NotMBIM mm = new NotMBIM();
     	for (Entry<Integer, Block> b : Block.blocks.entrySet()) {
     		Item blockItem = Block.itemByBlockId(b.getKey());
     		if (blockItem == null || blockItem instanceof NoItem) continue;
     		Block b1 = b.getValue().clone(pos);
-    		b1.addModel(false, false, false, false, false, false, m);
-    		ModelInstance model;
-    		if (b1.isTransparent()) {
-    			Block.blockModels.put(b.getKey(), model = m.endTransparent().copy());
-    		} else {
-    			Block.blockModels.put(b.getKey(), model = m.endSolid().copy());
-    		}
-    		model.userData = new Object[] {"item"};
-    		m.clear();
+    		b1.addModel(false, false, false, false, false, false, mm);
+    		ModelInstance model = mm.end();
+    		model.userData = new Object[] {"item", 0f};
+    		Block.blockModels.put(b.getKey(), model);
+    		mm.clear();
     	}
     	ModelUtils.setScale(1f);
     }
@@ -255,7 +252,7 @@ public class Mutex {
     public Texture getItemTexture(String key) {
     	Texture tex = this.itemtextures.get(key);
     	if (tex == null) {
-    		ThreadU.end("нема текстуры! "+this.getClass().getName());
+    		GameU.end("нема текстуры! "+this.getClass().getName());
     	}
     	return tex;
     }
@@ -280,7 +277,7 @@ public class Mutex {
 			parameter.minFilter = TextureFilter.Linear;
 			parameter.magFilter = TextureFilter.Linear;
 			parameter.genMipMaps = true;
-			parameter.characters = FreeTypeFontGenerator.DEFAULT_CHARS + "йцукенгшщзфывапролджэячсмитьбюъё";
+			parameter.characters = FreeTypeFontGenerator.DEFAULT_CHARS + "йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ";
 			BitmapFont font = generator.generateFont(parameter);
 			fonts.put(i, font);
 			return font;

@@ -12,7 +12,7 @@ import com.badlogic.gdx.math.Matrix4;
 
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.BlockFace;
-import net.pzdcrp.Hyperborea.data.MBIM;
+import net.pzdcrp.Hyperborea.data.BlockModelBuilder;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.data.MBIM.offset;
 import net.pzdcrp.Hyperborea.extended.SexyMeshBuilder;
@@ -36,21 +36,21 @@ public class Stone extends Block {
 	}
 	
 	@Override
-	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, MBIM mbim) {
+	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, BlockModelBuilder mbim) {
 		SexyMeshBuilder a = mbim.obtain(pos, this.isTransparent());
 		ModelUtils.setTransform(pos);
 		Hpb.mutex.hookuvr(a, tname, 0, 0, 1, 1);
-		mbim.curoffset = offset.py;
+		mbim.setCuroffset(offset.py);
     	if (!py) ModelUtils.buildTopX(a);//PY
-    	mbim.curoffset = offset.nx;
+    	mbim.setCuroffset(offset.nx);
 	    if (!nx) ModelUtils.buildLeftPY(a);//NX
-	    mbim.curoffset = offset.px;
+	    mbim.setCuroffset(offset.px);
 	    if (!px) ModelUtils.buildRightPY(a);//PX
-	    mbim.curoffset = offset.nz;
+	    mbim.setCuroffset(offset.nz);
 	    if (!nz) ModelUtils.buildFrontY(a);//NZ
-	    mbim.curoffset = offset.pz;
+	    mbim.setCuroffset(offset.pz);
 	    if (!pz) ModelUtils.buildBackY(a);//PZ
-	    mbim.curoffset = offset.ny;
+	    mbim.setCuroffset(offset.ny);
 	    if (!ny) ModelUtils.buildBottomX(a);//NY
 	}
 	

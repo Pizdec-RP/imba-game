@@ -81,7 +81,7 @@ public class BitStorage {
         }
 
         if(value < 0 || value > this.maxValue) {
-            throw new IllegalArgumentException("Value cannot be outside of accepted range.");
+            throw new IllegalArgumentException("Value "+value+" cannot be outside of accepted range "+maxValue+". change bits per entry value");
         }
 
         int cellIndex = cellIndex(index);

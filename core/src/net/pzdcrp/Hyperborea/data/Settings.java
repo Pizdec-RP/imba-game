@@ -5,4 +5,5 @@ public class Settings {
 	public static int updatingDistance = 4;
 	public static int renderDistance = 2;
 	public static double maxItemRenderDistance = 30;
+	public static boolean showHitbox = false;
 }

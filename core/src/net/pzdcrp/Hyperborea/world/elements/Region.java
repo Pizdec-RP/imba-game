@@ -22,7 +22,7 @@ public class Region {
 		if (columns.containsKey(cpos)) {
 			return columns.get(cpos);
 		} else {
-			Column c = new Column(cpos, Hpb.world.generator);
+			Column c = new Column(cpos, true);
 			columns.put(cpos, c);
 			return c;
 		}
@@ -48,7 +48,7 @@ public class Region {
 		for (JsonElement jcole : jcolumns) {
 			JsonObject jcol = jcole.getAsJsonObject();
 			Vector2I cpos = Vector2I.fromString(jcol.get("pos").getAsString());
-			Column col = new Column(cpos, Hpb.world.generator);
+			Column col = new Column(cpos, false);
 			col.fromJson(jcol);
 			columns.put(cpos, col);
 		}

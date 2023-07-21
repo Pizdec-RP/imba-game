@@ -31,13 +31,14 @@ import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector3;
 
 import net.pzdcrp.Hyperborea.Hpb;
+import net.pzdcrp.Hyperborea.data.MBIM.offset;
 import net.pzdcrp.Hyperborea.extended.SexyMeshBuilder;
 import net.pzdcrp.Hyperborea.extended.SexyModelBuilder;
 import net.pzdcrp.Hyperborea.utils.ModelUtils;
-import net.pzdcrp.Hyperborea.utils.ThreadU;
+import net.pzdcrp.Hyperborea.utils.GameU;
 import net.pzdcrp.Hyperborea.world.elements.Chunk;
 
-public class MBIM {
+public class MBIM extends BlockModelBuilder {
 	//private List<Pair> models;
 	int i = 0;
 	private int x,y,z;//kорды блока в чанке т.е. 0-15(1-16)
@@ -100,6 +101,7 @@ public class MBIM {
 			);
 	}
 	
+	@Override
 	public void rebuildBuilders() {
 		if (p.mb.model != null) {
 			p.mb.end();
@@ -132,7 +134,7 @@ public class MBIM {
 		t.calls = 1;
 	}
 	
-	private VertexAttributes createMixedVertexAttribute(long defaultAtributes, List<VertexAttribute> customAttributes){
+	private static VertexAttributes createMixedVertexAttribute(long defaultAtributes, List<VertexAttribute> customAttributes){
 	    VertexAttributes defaultAttributes = MeshBuilder.createAttributes(defaultAtributes);
 	    List<VertexAttribute> attributeList = new ArrayList<VertexAttribute>();
 	    for(VertexAttribute attribute: defaultAttributes){
@@ -143,7 +145,7 @@ public class MBIM {
 	    VertexAttributes mixedVertexAttributes = new VertexAttributes(attributeList.toArray(typeArray));
 	    return mixedVertexAttributes;
 	}
-	
+	@Override
 	public SexyMeshBuilder obtain(Vector3D blockpos, boolean transparent) {
 		this.x = (int)blockpos.x&15;
 		this.y = (int)blockpos.y&15;
@@ -151,7 +153,7 @@ public class MBIM {
 		if (transparent) return this.t.mpb;
 		else return p.mpb;
 	}
-	
+	@Override
 	public void clear() {
 		i = 0;
 		Slightarray.clear();
@@ -159,14 +161,28 @@ public class MBIM {
 		rebuildBuilders();
 		transparentmodel = null;
 	}
-
+	@Override
+	public List<Integer> getTlightarray() {
+		return Tlightarray;
+	}
+	@Override
+	public List<Integer> getSlightarray() {
+		return Slightarray;
+	}
+	
+	@Override
 	public int[] getSLightArray() {
 		return this.Slightarray.stream().mapToInt(Integer::intValue).toArray();
 	}
+	@Override
 	public int[] getTLightArray() {
 		return this.Tlightarray.stream().mapToInt(Integer::intValue).toArray();
 	}
-
+	@Override
+	public Chunk getChunk() {
+		return this.chunk;
+	}
+	@Override
 	public int getCurLight() {
 		switch (curoffset) {
 		case px:
@@ -184,8 +200,12 @@ public class MBIM {
 		case no:
 			return chunk.rawGetLight(x, y, z);
 		}
-		ThreadU.end("unknown face "+curoffset.toString());
+		GameU.end("unknown face "+curoffset.toString());
 		return 0;
+	}
+	@Override
+	public void setCuroffset(offset ofs) {
+		curoffset = ofs;
 	}
 	
 	public ModelInstance endSolid() {
@@ -199,7 +219,7 @@ public class MBIM {
 			    int[] nums = getSLightArray();
 			    
 			    if (numVertices != nums.length) {
-			    	ThreadU.end("S Mismatch between numVertices and nums length");
+			    	GameU.end("S Mismatch between numVertices and nums length");
 			    }
 			    
 			    getVertices(mesh, 0, vertices.length, vertices, 0);
@@ -229,7 +249,7 @@ public class MBIM {
 			    int[] nums = getTLightArray();
 			    
 			    if (numVertices != nums.length) {
-			    	ThreadU.end("T Mismatch between numVertices and nums length");
+			    	GameU.end("T Mismatch between numVertices and nums length");
 			    }
 			    
 			    getVertices(mesh, 0, vertices.length, vertices, 0);

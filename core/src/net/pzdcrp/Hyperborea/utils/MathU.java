@@ -160,12 +160,11 @@ public class MathU {
 	}
 	
 	public static float rndf(float min, float max) {
-	    return (float) (rndnrm() * (max - min) + min);
+		return min + rndnrm() * (max - min);
 	}
 	
 	public static double rndd(double min, double max) {
-		max -= min;
-		return (rndnrm() * ++max) + min;
+		return min + rndnrm() * (max - min);
 	}
 	
 	public static <M> M random(List<M> list) {

@@ -5,7 +5,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.VertexAttributes.Usage;
+import com.badlogic.gdx.graphics.g3d.Material;
+import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
+import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
+import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
+import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
+import com.badlogic.gdx.graphics.g3d.utils.shapebuilders.BoxShapeBuilder;
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.BoundingBox;
 import com.google.gson.JsonObject;
 
 import net.pzdcrp.Hyperborea.Hpb;
@@ -14,14 +26,15 @@ import net.pzdcrp.Hyperborea.data.ActionAuthor;
 import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.EntityType;
 import net.pzdcrp.Hyperborea.data.OTripple;
+import net.pzdcrp.Hyperborea.data.Settings;
 import net.pzdcrp.Hyperborea.data.DM;
 import net.pzdcrp.Hyperborea.data.DamageSource;
 import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.player.Player;
-import net.pzdcrp.Hyperborea.utils.ThreadU;
+import net.pzdcrp.Hyperborea.utils.GameU;
 import net.pzdcrp.Hyperborea.utils.VectorU;
-import net.pzdcrp.Hyperborea.world.World;
+import net.pzdcrp.Hyperborea.world.PlayerWorld;
 import net.pzdcrp.Hyperborea.world.elements.Chunk;
 import net.pzdcrp.Hyperborea.world.elements.Column;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
@@ -44,7 +57,6 @@ public class Entity {
 	//FIXME не сохраняется
 	public IInventory inventory;
 	
-	
 	//не должно сохраняться
 	public Vector2I echc;
 	public boolean firsttick = true;
@@ -52,7 +64,7 @@ public class Entity {
 	public EntityType type;
 	public Vector3D beforepos;
 	public AABB hitbox;
-	public int justspawn = 100;
+	public int justspawn = 50;
 	
 	//классы ссылки
 	public Column curCol;
@@ -60,18 +72,11 @@ public class Entity {
 	public BlockFace currentAimFace = BlockFace.PX;
 	public Entity currentAimEntity = null;
 	public Vector3D currentaimpoint;
-	//public Chunk curChnk;
-	
-	public Map<EntityType, Class<? extends Entity>> entities = new HashMap<EntityType, Class<? extends Entity>>() {
-	private static final long serialVersionUID = 5611014785520178934L;
-	{
-		put(EntityType.player, Player.class);
-	}};
 	
 	public Entity(Vector3D pos, AABB hitbox, EntityType type) {
 		this.type = type;
 		this.pos=pos;
-		this.beforepos=pos;
+		this.beforepos=pos.clone();
 		this.hitbox=hitbox;
 		this.beforeechc = new Vector2I(pos.x,pos.z);
 		if (type == EntityType.player) {
@@ -84,6 +89,7 @@ public class Entity {
 	}
 	
 	public void tick() {
+		beforepos.set(pos);
 		if (justspawn > 0) justspawn--;
 		if (curCol == null) {
 			Column col = Hpb.world.getColumn(pos.x,pos.z);
@@ -108,7 +114,6 @@ public class Entity {
 			col.entites.add(this);
 			beforeechc = echc;
 		}
-		beforepos.set(pos);
 	}
 	
 	public void updateFacing() {
@@ -278,11 +283,11 @@ public class Entity {
 		Hpb.world.loadedColumns.get(echc).entites.remove(this);
 	}
 
-	public void placeBlock(Block block) {
+	public boolean placeBlock(Block block) {
 		if (!this.isPlayer) {
-			ThreadU.end("mob "+this.getClass().getName()+" cannot place blocks");
+			GameU.end("mob "+this.getClass().getName()+" cannot place blocks");
 		}
-		Hpb.world.setBlock(block, ActionAuthor.player);
+		return Hpb.world.setBlock(block, ActionAuthor.player);
 	}
 
 	public Vector3D getEyeLocation() {
@@ -298,7 +303,9 @@ public class Entity {
 	}
 
 	public void render() {
-		
+		if (Settings.showHitbox) {
+			Hpb.render(getFrame());
+		}
 	}
 	
 	public int getType() {
@@ -311,5 +318,17 @@ public class Entity {
 		if (hp < 0) {
 			this.despawn();
 		}
+	}
+	
+	public ModelInstance getFrame() {
+		ModelBuilder modelBuilder = new ModelBuilder();
+        modelBuilder.begin();
+        Material material = new Material(ColorAttribute.createDiffuse(Color.WHITE));
+        long attributes = Usage.Position | Usage.Normal;
+        MeshPartBuilder mpb = modelBuilder.part("cube", GL20.GL_LINES, attributes, material);
+        BoxShapeBuilder.build(mpb, getHitbox().translate());
+        //System.out.println(toString()+" "+cx+" "+cy+" "+cz+" "+w+" "+h+" "+d);
+        Model cubeModel = modelBuilder.end();
+        return new ModelInstance(cubeModel);
 	}
 }

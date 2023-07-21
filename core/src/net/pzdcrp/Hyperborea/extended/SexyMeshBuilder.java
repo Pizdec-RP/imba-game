@@ -5,14 +5,15 @@ import com.badlogic.gdx.graphics.g3d.utils.MeshBuilder;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
+import net.pzdcrp.Hyperborea.data.BlockModelBuilder;
 import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 
 public class SexyMeshBuilder extends MeshBuilder {
-	private MBIM mbim;
+	private BlockModelBuilder mbim;
 	private boolean transparent = true;
-	public SexyMeshBuilder(MBIM mbim, boolean transparent) {
-		this.mbim = mbim;
+	public SexyMeshBuilder(BlockModelBuilder mbim2, boolean transparent) {
+		this.mbim = mbim2;
 		this.transparent = transparent;
 	}
 
@@ -26,20 +27,20 @@ public class SexyMeshBuilder extends MeshBuilder {
 		float y01, float z01, float normalX, float normalY, float normalZ) {
 		super.rect(x00, y00, z00, x10, y10, z10, x11, y11, z11, x01, y01, z01, normalX, normalY, normalZ);
 		int light;
-		if (mbim.chunk == null)
-			light = 13;
+		if (mbim.getChunk() == null)
+			return;
 		else
 			light = mbim.getCurLight();
 		if (transparent) {
-			mbim.Tlightarray.add(light);
-			mbim.Tlightarray.add(light);
-			mbim.Tlightarray.add(light);
-			mbim.Tlightarray.add(light);
+			mbim.getTlightarray().add(light);
+			mbim.getTlightarray().add(light);
+			mbim.getTlightarray().add(light);
+			mbim.getTlightarray().add(light);
 		} else {
-			mbim.Slightarray.add(light);
-			mbim.Slightarray.add(light);
-			mbim.Slightarray.add(light);
-			mbim.Slightarray.add(light);
+			mbim.getSlightarray().add(light);
+			mbim.getSlightarray().add(light);
+			mbim.getSlightarray().add(light);
+			mbim.getSlightarray().add(light);
 		}
 	}
 }

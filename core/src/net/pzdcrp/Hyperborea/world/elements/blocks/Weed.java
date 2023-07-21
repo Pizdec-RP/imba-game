@@ -4,7 +4,7 @@ import com.badlogic.gdx.math.Vector3;
 
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.AABB;
-import net.pzdcrp.Hyperborea.data.MBIM;
+import net.pzdcrp.Hyperborea.data.BlockModelBuilder;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.data.MBIM.offset;
 import net.pzdcrp.Hyperborea.extended.SexyMeshBuilder;
@@ -18,12 +18,12 @@ public class Weed extends Block {
 	}
 	
 	@Override
-	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, MBIM mbim) {
+	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, BlockModelBuilder mbim) {
 		SexyMeshBuilder a = mbim.obtain(pos, this.isTransparent());
 		ModelUtils.setTransform(pos);
 		Hpb.mutex.hookuvr(a, tname, 0, 0, 1, 1);
 		
-		mbim.curoffset = offset.no;
+		mbim.setCuroffset(offset.no);
 		Vector3 sp = ModelUtils.sp;
 	    a.rect(
 	    		sp.x+0.1f, sp.y, sp.z+1f,

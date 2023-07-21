@@ -2,10 +2,10 @@ package net.pzdcrp.Hyperborea.world.elements.generators;
 
 import kenperlin.PerlinNoise;
 import net.pzdcrp.Hyperborea.Hpb;
-import net.pzdcrp.Hyperborea.world.World;
+import net.pzdcrp.Hyperborea.world.PlayerWorld;
 
 public class Noise { // Classic Perlin noise in 3D, for comparison
-	public static PerlinNoise p = new PerlinNoise(World.seed);
+	public static PerlinNoise p = new PerlinNoise(PlayerWorld.seed);
 	
 	/**
 	 * @return double (0 - 1)

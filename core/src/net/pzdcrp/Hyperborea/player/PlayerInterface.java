@@ -8,12 +8,11 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.utils.MathU;
-import net.pzdcrp.Hyperborea.world.World;
+import net.pzdcrp.Hyperborea.world.PlayerWorld;
 import net.pzdcrp.Hyperborea.world.elements.inventory.PlayerInventory;
 
 public class PlayerInterface {
 	private Player p;
-	private World w;
 	private float hpw = 0, hph = 20f, hpx = 0, hpy = 0;
 	private Pixmap hppix;
 	private byte beforehp = 0;
@@ -22,9 +21,8 @@ public class PlayerInterface {
 	private final int crosshairsize = 30;
 	private int fullinvslideanimlvl = (int) -PlayerInventory.frameWidth;
 	
-	public PlayerInterface(Player p, World w) {
+	public PlayerInterface(Player p) {
 		this.p = p;
-		this.w = w;
 		hppix = new Pixmap(130, 30, Pixmap.Format.RGBA8888);
 		hptex = new Texture(hppix);
 		crosshair = Hpb.mutex.getOTexture("crosshair");

@@ -21,6 +21,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 
+import net.pzdcrp.Hyperborea.data.BlockModelBuilder;
 import net.pzdcrp.Hyperborea.data.MBIM;
 
 public class SexyModelBuilder {
@@ -31,10 +32,10 @@ public class SexyModelBuilder {
 	/** The mesh builders created between begin and end */
 	private Array<SexyMeshBuilder> builders = new Array<SexyMeshBuilder>();
 	
-	public MBIM mbim;
+	public BlockModelBuilder mbim;
 	private boolean tr;
 
-	public SexyModelBuilder(MBIM mbim, boolean tr) {
+	public SexyModelBuilder(BlockModelBuilder mbim, boolean tr) {
 		this.mbim = mbim;
 		this.tr = tr;
 	}

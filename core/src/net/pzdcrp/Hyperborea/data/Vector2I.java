@@ -1,7 +1,7 @@
 package net.pzdcrp.Hyperborea.data;
 
 import net.pzdcrp.Hyperborea.Hpb;
-import net.pzdcrp.Hyperborea.world.World;
+import net.pzdcrp.Hyperborea.world.PlayerWorld;
 
 public class Vector2I {
 	public final int x;

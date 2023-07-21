@@ -56,7 +56,7 @@ project(":desktop") {
         api "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
         implementation "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
         implementation 'com.google.code.gson:gson:2.10.1'
-        compile "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
+        api "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
     }
 }
 
@@ -68,6 +68,13 @@ project(":core") {
         api "com.badlogicgames.gdx:gdx:$gdxVersion"
         implementation 'com.google.code.gson:gson:2.10.1'
         implementation "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
-        compile "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+        api "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+        //implementation 'javax.websocket:javax.websocket-api:1.1'
+        implementation 'io.netty:netty-all:4.1.77.Final'
+        //implementation 'co.datadome:fastutil:8.5.11.1'
+        //implementation 'io.netty:netty-buffer:4.1.65.Final'
+        //implementation 'io.netty:netty-transport:4.1.65.Final'
+        //implementation 'io.netty:netty-codec:4.1.68.Final'
+        //implementation 'com.marcluque:hydra-all:1.6.5'
     }
 }

@@ -7,9 +7,9 @@ import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block.BlockType;
 
-public class Air extends Liquifyable {
+public class Air extends Block {
 	public Air(Vector3D pos) {
-		super(pos);
+		super(pos, null);
 	}
 
 	@Override

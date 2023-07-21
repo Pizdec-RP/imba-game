@@ -118,7 +118,7 @@ public class VectorU {
 		} else if (face == BlockFace.PZ) {
 			return target.add(0,0,1);
 		} else {
-			ThreadU.end("unknown face");
+			GameU.end("unknown face");
 			return null;
 		}
 	}

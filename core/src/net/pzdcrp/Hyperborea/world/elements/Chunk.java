@@ -1,30 +1,24 @@
 package net.pzdcrp.Hyperborea.world.elements;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
-
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.math.collision.BoundingBox;
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.BitStorage;
 import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.data.Vector3I;
-import net.pzdcrp.Hyperborea.utils.MathU;
-import net.pzdcrp.Hyperborea.utils.ThreadU;
-import net.pzdcrp.Hyperborea.utils.VectorU;
-import net.pzdcrp.Hyperborea.world.World;
-import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
+import net.pzdcrp.Hyperborea.utils.GameU;
+import net.pzdcrp.Hyperborea.world.PlayerWorld;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block.BlockType;
 
 public class Chunk {
-	private Block[][][] blocks = new Block[16][16][16];
+	//private Block[][][] blocks = new Block[16][16][16];
+	//private int[][][] blocks = new int[16][16][16];
+	private BitStorage blocks;
 	
 	//не хранимые данные
 	public ModelInstance allModels, transparent;
@@ -39,16 +33,18 @@ public class Chunk {
 	
 	//не хранятся, но должны
 	private BitStorage light;
-	private boolean tickable = false;
 	
 	public Chunk(Column motherCol, int height) {
 		this.height = height;
 		this.column = motherCol;
 		this.light = new BitStorage(4, 4096);
+		this.blocks = new BitStorage(8, 4096);
 		for(int xx = 0; xx < 16; xx++) {
 			for(int yy = 0; yy < 16; yy++) {
 				for(int zz = 0; zz < 16; zz++) {
-					blocks[xx][yy][zz] = new Air(new Vector3D(normx(xx),normy(yy),normz(zz)));
+					int index = index(xx,yy,zz);
+					blocks.set(index, 0);
+					light.set(index, 14);
 				}
 			}
 		}
@@ -95,6 +91,8 @@ public class Chunk {
 		return column.pos.z*16+ref;
 	}
 	public void updateLightFromOutbounds() {
+		if (Thread.currentThread().getName().equals("server chunk update thread"))
+	    	GameU.end("метод не должен вызываться из локального мира");
 		//System.out.println("OBlightupd: "+getPos().toString());
 	    List<Vector3I> stack = new ArrayList<>();
 	    for(int x = -1; x <= 16; x++) {
@@ -113,7 +111,8 @@ public class Chunk {
 	}
 	
 	public void updateLightMain() {
-	    //System.out.println("lightupd: "+getPos().toString());
+	    if (Thread.currentThread().getName().equals("server chunk update thread"))
+	    	GameU.end("метод не должен вызываться из локального мира");
 	    List<Vector3I> stack = new ArrayList<>();
 	    for(int x = 0; x < 16; x++) {
 	        for(int z = 0; z < 16; z++) {
@@ -126,10 +125,10 @@ public class Chunk {
 	        for(int z = 0; z < 16; z++) {
 	            int slmd = column.skylightlenght[x][z];
 	            for(int y = 0; y < 16; y++) {
-	            	if (normy(y) >= slmd || blocks[x][y][z].emitLight()) {
+	            	if (normy(y) >= slmd /* || blocks[x][y][z].emitLight()*/) {
 	                    Vector3I vector = new Vector3I(x,y,z);
 	                    stack.add(vector);
-	                    rawSetLight(x,y,z, Hpb.world.skylight);
+	                    rawSetLight(x,y,z, Hpb.internalserver.world.skylight);
 	                }
 	            }
 	        }
@@ -147,11 +146,11 @@ public class Chunk {
 	        if (b0) {
 	        	b = Hpb.world.getBlock(normx(l.x),normy(l.y),normz(l.z));
 	        } else {
-	        	b = blocks[l.x][l.y][l.z];
+	        	b = this.getBlock(l.x,l.y,l.z);
 	        }
 	        
 	        if (b == null) {
-	        	ThreadU.end("nullblock: "+l.toString());
+	        	GameU.end("nullblock: "+l.toString());
 	        }
 	        if (b.isTransparent()) {
 	            int cur = rawGetLight(l.x,l.y,l.z);
@@ -190,19 +189,20 @@ public class Chunk {
 	    }
 	}
 	
+	public void setBlock(int x, int y, int z, int id) {
+		blocks.set(index(x,y,z), id);
+	}
+	@Deprecated
 	public void setBlock(int x, int y, int z, Block i) {
 		if (i == null) {
-			ThreadU.end("null block exception");
+			GameU.end("null block exception");
 		}
-		blocks[x][y][z] = i;
-		if (i.tickable()) {
-			this.tickable = true;
-		}
+		blocks.set(index(x,y,z), i.getId());
 		
 		//updateModel();
 		inlightupd = true;
 		//System.out.println("placed in: "+this.getPos());
-		if (World.ready) {//TODO этот код полная хуйня
+		if (PlayerWorld.ready) {//TODO этот код полная хуйня
 			for (Chunk c : sides()) {
 				//System.out.println("side: "+c.getPos());
 				c.inlightupd = true;
@@ -212,7 +212,7 @@ public class Chunk {
 	
 	public void lUpdateModel() {
 		if (!Thread.currentThread().getName().equals("main thd")) {
-			ThreadU.end("Wrong thread exception");
+			GameU.end("метод должен вызываться только со стороны клиента");
 		}
 		m.clear();
 		//System.out.println("upd model");
@@ -220,12 +220,9 @@ public class Chunk {
 		for(int xx = 0; xx < 16; xx++) {
 			for(int yy = 0; yy < 16; yy++) {
 				for(int zz = 0; zz < 16; zz++) {
-					Block clas = blocks[xx][yy][zz];
-					if (clas == null) {
-						System.out.println("pizdec: "+normx(xx)+" "+normy(yy)+" "+normz(zz));
-					}
-					if (clas.tickable()) this.tickable = true;
+					Block clas = Block.getRaw(getBlocki(xx,yy,zz));
 					if (clas.isRenderable()) {
+						clas.pos.setComponents(normx(xx), normy(yy), normz(zz));
 						boolean n1,n2,n3,n4,n5,n6;
 						n1 = wr(xx,yy+1,zz, clas);
 						n2 = wr(xx,yy-1,zz, clas);
@@ -234,6 +231,7 @@ public class Chunk {
 						n5 = wr(xx,yy,zz-1, clas);
 						n6 = wr(xx,yy,zz+1, clas);
 						clas.addModel(n1,n2,n3,n4,n5,n6,m);
+						clas.pos.setComponents(0,0,0);
 					}
 				}
 			}
@@ -324,16 +322,21 @@ public class Chunk {
 		}
 		return l.toArray(new Chunk[0]);
 	}
-
+	
+	@Deprecated
 	public Block getBlock(int x, int y, int z) {
-		return blocks[x][y][z];
+		return Block.blockById(blocks.get(index(x,y,z)), new Vector3D(normx(x),normy(y),normz(z)));
+	}
+	
+	public int getBlocki(int x, int y, int z) {
+		return blocks.get(index(x,y,z));
 	}
 
-	public Block setBlock(int x, int y, int z, int i) {//xyz = 0-15
+	/*public Block setBlock(int x, int y, int z, int i) {//xyz = 0-15
 		Block block = Block.blockById(i, new Vector3D(column.pos.x*16+x,height+y,column.pos.z*16+z));
 		blocks[x][y][z] = block;
 		return block;
-	}
+	}*/
 	
 	/*public boolean checkCamFrustum() {
 		return GameInstance.world.player.cam.cam.frustum.boundsInFrustum(center, dimensions);
@@ -348,33 +351,9 @@ public class Chunk {
     }
 
 	public void tick() {//TODO оптимизировать до хешсета хранящего векторы блоков для тика
-		if (!this.tickable) return;
-		for (Block[][] blocka : blocks) {
-			for (Block[] blockaa : blocka) {
-				for (Block block : blockaa) {
-					try {
-						block.tick();
-					} catch (Exception e) {
-						e.printStackTrace();
-						System.out.println("pizdec at: "+block.pos.x+" "+block.pos.y+" "+block.pos.z);
-						//System.exit(0);
-					}
-				}
-			}
-		}
 	}
 
 	public boolean boundsInFrustum() {
 		return Hpb.world.player.cam.cam.frustum.boundsInFrustum(center, dimensions);
 	}
-	
-	/*private boolean updateTransp = false;
-	public boolean needUpdateTransp() {
-		if (updateTransp) {
-			updateTransp = false;
-			return true;
-		} else {
-			return updateTransp;
-		}
-	}*/
 }

@@ -28,8 +28,9 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.utils.GdxRuntimeException; 
+import com.badlogic.gdx.utils.GdxRuntimeException;
 
+import net.pzdcrp.Hyperborea.utils.GameU;
 import net.pzdcrp.Hyperborea.utils.MathU;
 
 public class SuperPizdatiyShader extends BaseShaderProvider {
@@ -79,9 +80,17 @@ public class SuperPizdatiyShader extends BaseShaderProvider {
 		        DefaultShader shader = new SkyModelShader(renderable, new DefaultShader.Config(vert, frag),this);
 		        local.add(shader);
 		        return shader;
+	    	} else if (type.equals("item")) {
+	    		String vert = Gdx.files.internal("shaders/itemV.glsl").readString();
+		        String frag = Gdx.files.internal("shaders/itemF.glsl").readString();
+		        DefaultShader shader = new ItemEntityShader(renderable, new DefaultShader.Config(vert, frag),this);
+		        local.add(shader);
+		        return shader;
 	    	}
+    		GameU.arrayPrint("creating default shader for: ", (Object[])renderable.userData);
+    	} else {
+    		System.out.println("no data, creating default shader");
     	}
-    	System.out.println("creating default shader for");
     	return new DefaultShader(renderable);
     }
 }
@@ -117,6 +126,23 @@ class SkyModelShader extends DefaultShader {
 	@Override
 	public void render (Renderable renderable, Attributes combinedAttributes) {
 		set(lightlevel, s.skylightlevel);
+		super.render(renderable, combinedAttributes);
+	}
+}
+
+class ItemEntityShader extends DefaultShader {
+	private SuperPizdatiyShader s;
+	private final int lightlevel = register(new Uniform("light"));
+
+	public ItemEntityShader(Renderable renderable, Config config, SuperPizdatiyShader s) {
+		super(renderable, config);
+		this.s = s;
+	}
+	
+	@Override
+	public void render (Renderable renderable, Attributes combinedAttributes) {
+		float f = (float) ((Object[])renderable.userData)[1];
+		set(lightlevel, f);
 		super.render(renderable, combinedAttributes);
 	}
 }

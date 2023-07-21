@@ -1,5 +1,7 @@
 package net.pzdcrp.Hyperborea;
 
+import java.util.UUID;
+
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
@@ -24,13 +26,29 @@ import com.badlogic.gdx.utils.Timer;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import de.datasecs.hydra.client.Client;
+import de.datasecs.hydra.client.HydraClient;
+import de.datasecs.hydra.shared.handler.Session;
+import de.datasecs.hydra.shared.protocol.HydraProtocol;
+import de.datasecs.hydra.shared.protocol.packets.Packet;
+import de.datasecs.hydra.shared.protocol.packets.listener.HydraPacketListener;
+import io.netty.channel.ChannelOption;
 import net.pzdcrp.Hyperborea.data.ActionAuthor;
 import net.pzdcrp.Hyperborea.data.Mutex;
+import net.pzdcrp.Hyperborea.data.Settings;
+import net.pzdcrp.Hyperborea.data.Vector3D;
+import net.pzdcrp.Hyperborea.multiplayer.HpbProtocol;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlayerConnectionPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerChatPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSpawnPlayerPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSuccessConnectPacket;
 import net.pzdcrp.Hyperborea.player.ControlListener;
+import net.pzdcrp.Hyperborea.player.Player;
+import net.pzdcrp.Hyperborea.server.InternalServer;
 import net.pzdcrp.Hyperborea.utils.MathU;
-import net.pzdcrp.Hyperborea.utils.ThreadU;
+import net.pzdcrp.Hyperborea.utils.GameU;
 import net.pzdcrp.Hyperborea.utils.VectorU;
-import net.pzdcrp.Hyperborea.world.World;
+import net.pzdcrp.Hyperborea.world.PlayerWorld;
 import net.pzdcrp.Hyperborea.world.elements.Column;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Stone;
@@ -49,7 +67,7 @@ public class Hpb extends ApplicationAdapter {
 	public static Mutex mutex;
 	
 	public static final Vector3 forAnyReason = new Vector3();
-	public static World world;
+	public static PlayerWorld world;
 	//public static SpriteBatch gui = new SpriteBatch();
 	
 	public static Label infoLabel;
@@ -58,36 +76,62 @@ public class Hpb extends ApplicationAdapter {
 	//public static FrameBuffer buffer;
 	//public static TextureRegion textureRegion;
 	
-	public static State state = State.PREPARE;
+	public static State state = State.CREATINGINTERNALSERVER;
 	private ShaderProgram stage2shader;
-	
+	public static InternalServer internalserver;
 	public static boolean deadplayer = false;
 	private static GlyphLayout respawn;
 	
 	public enum State {
-		PREPARE, INGAME
+		CREATINGINTERNALSERVER, SENDCONNECTION, WAITFORSERVER, PREPARE, INGAME
 	}
 	
+	private HydraProtocol protocol = new HpbProtocol(new HpbPacketListener(this));
+	private boolean spawned = false;
+	public static Session session;
+	private static HydraClient client;
+	public static UUID playerId;
+	
+	public Hpb() {
+	}
+	
+	public void packetReceived(Session s, Packet p) {
+		GameU.log("client got packet "+p.getClass().getName());
+		if (p instanceof ServerSuccessConnectPacket) {
+			playerId = ((ServerSuccessConnectPacket)p).getid();
+			world = new PlayerWorld();
+			world.load();
+			tickLoop();
+		} else if (p instanceof ServerSpawnPlayerPacket) {
+			if (spawned) GameU.end("спавн не должен вызываться более 1 раза");
+			spawned = true;
+			ServerSpawnPlayerPacket packet = (ServerSpawnPlayerPacket)p;
+			world.player = new Player(packet.x,packet.y,packet.z, "Player1488");
+			//TODO transfer other data like inventory, rotation, hp
+			multiplexer.addProcessor(controls = new ControlListener(world.player));
+		} else {
+			world.player.onPacket(p);
+		}
+	}
+
 	@Override
 	public void create() {
 		mutex = new Mutex();
 		System.out.println("loading textures");
 		loadTextures();
 		
+		
 		System.out.println("lessgo");
 		modelBatch = new ModelBatch(shaderprovider = new SuperPizdatiyShader());
-		
 		spriteBatch = new SpriteBatch();
 		
-		font = mutex.getFont(30);
-		//font.getRegion().getTexture().setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+		font = mutex.getFont(20);
 		label = new Label(" ", new Label.LabelStyle(font, Color.WHITE));
 		label.setVisible(true);
-		//chat = new Label("", new Label.LabelStyle(font, Color.WHITE));
 		
 		stage = new Stage();
 		respawn = new GlyphLayout();
-		respawn.setText(mutex.getFont(40), "Respawning...");//TODO переделать на свой класс
+		respawn.setText(mutex.getFont(40), "Ты сдох. Возвращаемся через 0.00!");//TODO переделать на свой класс
 		infoLabel = new Label(" ", new Label.LabelStyle(font, Color.WHITE));
 		infoLabel.setPosition(Gdx.graphics.getWidth() / 2, 100);
 		
@@ -98,7 +142,6 @@ public class Hpb extends ApplicationAdapter {
 		Gdx.input.setInputProcessor(multiplexer);
 		
 		Gdx.input.setCursorCatched(true);
-		Gdx.gl.glTexParameterf(GL20.GL_TEXTURE_2D, GL20.GL_TEXTURE_MIN_FILTER, GL20.GL_LINEAR_MIPMAP_LINEAR);
 		buffer = new FrameBuffer(Pixmap.Format.RGBA8888, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
 		textureRegion = new TextureRegion();
 		stage2shader = new ShaderProgram(Gdx.files.internal("shaders/2stageV.vert"), Gdx.files.internal("shaders/2stageF.frag"));
@@ -127,6 +170,12 @@ public class Hpb extends ApplicationAdapter {
 	//public static ModelInstance modelInstance;
 	private static long /*delta, */now;
 	private static int en;
+	
+	public static double tlerp(double a, double b, int ticks) {
+	    float t = (float)(System.nanoTime() - timeone) / (tickrate * ticks * 1000000);
+	    if (t > 1f) t = 1f;
+	    return a * (1.0 - t) + b * t;
+	}
 	
 	public static float lerp(float a, float b) {
 	    float t = (float)(System.nanoTime() - timeone) / (tickrate * 1000000);
@@ -216,21 +265,35 @@ public class Hpb extends ApplicationAdapter {
 		stage2shader.setUniformf(randomatr, MathU.rndnrm());
 		
 		Texture buftex = textureRegion.getTexture();
-		//Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0 + beforeframeatr);
 		
 		spriteBatch.draw(buftex, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, buftex.getWidth(), buftex.getHeight(), false, true);
 		spriteBatch.setShader(null);
 		
 		if (deadplayer) { 
 			if (hurtlvl == 0) {
-				deadtimer++;
 				BitmapFont f = mutex.getFont(40);
-				f.draw(spriteBatch, "Respawning...", halfwidth - respawn.width / 2, halfheight);
-				if (deadtimer > 100) {
+				deadtimer++;
+				if (deadtimer >= 400) {
 					world.player.respawn();
 					deadplayer = false;
 					deadtimer = 0f;
+				} else if (deadtimer >= 300) {
+					float a = 1-MathU.norm(300, 400, deadtimer);
+					float b = MathU.norm(300, 400, deadtimer);
+					f.getColor().set(0, 1, b, a);
+				} else if (deadtimer >= 0 && deadtimer <= 100) {
+					f.getColor().r = 1-MathU.norm(0, 100, deadtimer);
+				} else if (deadtimer >= 100 && deadtimer <= 200) {
+					f.getColor().g = 1-MathU.norm(100, 200, deadtimer);
+					f.getColor().r = MathU.norm(100, 200, deadtimer);
+				} else if (deadtimer >= 200 && deadtimer <= 300) {
+					f.getColor().b = 1-MathU.norm(200, 300, deadtimer);
+					f.getColor().g = MathU.norm(200, 300, deadtimer);
 				}
+				f.draw(spriteBatch,
+						"Ты сдох. Возвращаемся через "+String.format("%.2f",((1-MathU.norm(0, 400, deadtimer))*5))+"!",
+						halfwidth - respawn.width / 2, halfheight);
+				f.getColor().set(1,1,1,1);
 			}
 		} else {
 			//displayinfo
@@ -257,7 +320,37 @@ public class Hpb extends ApplicationAdapter {
 			return;
 		}
 		try {
-			if (state == State.PREPARE) {
+			if (state == State.CREATINGINTERNALSERVER) {
+				if (internalserver == null) {
+					GameU.log("opening server");
+					internalserver = new InternalServer();
+				} else {
+					if (internalserver.server.isActive()) {
+						if (client == null) {
+							client = new Client.Builder("127.0.0.1", 7777, protocol)
+					            .workerThreads(4)
+					            .option(ChannelOption.TCP_NODELAY, true)
+					            .build();
+							GameU.log("client created");
+							session = client.getSession();
+						} else if (client.isConnected()) {
+							GameU.log("sending");
+							state = State.SENDCONNECTION;
+						}
+					}
+				}
+			} else if (state == State.SENDCONNECTION) {
+				if (client.isConnected()) {
+					state = State.WAITFORSERVER;
+					GameU.log("sending...");
+					session.send(new ClientPlayerConnectionPacket("smartass", Settings.renderDistance));
+				}
+			} else if (state == State.WAITFORSERVER) {
+				if (playerId != null) {
+					GameU.log("server responded");
+					state = State.PREPARE;
+				}
+			} else if (state == State.PREPARE) {
 				int bw = Gdx.graphics.getWidth(), bh = Gdx.graphics.getHeight();
 				Gdx.graphics.setWindowedMode(500, 500);
 				mutex.prepare();
@@ -265,15 +358,6 @@ public class Hpb extends ApplicationAdapter {
 				mutex.endrender();
 				state = State.INGAME;
 				Gdx.graphics.setWindowedMode(bw, bh);
-				world = new World();
-				try {
-					world.load();
-					multiplexer.addProcessor(controls = new ControlListener(world.player));
-				} catch (Exception e) {
-					e.printStackTrace();
-					ThreadU.end("мир не подгружается");
-				}
-				tickLoop();
 			} else if (state == State.INGAME) {
 				now = System.currentTimeMillis();
 				last = now;
@@ -281,8 +365,7 @@ public class Hpb extends ApplicationAdapter {
 				renderWorld();
 				
 				StringBuilder builder = new StringBuilder();
-				//builder.append("onGround: ").append(world.player.onGround);
-				//builder.append(" time: ").append(world.time);
+				builder.append(" time: ").append(world.time);
 				builder.append(" col: ").append(world.loadedColumns.size());
 				builder.append(" | pos: ").append("x:"+String.format("%.2f",world.player.pos.x)+" y:"+String.format("%.2f",world.player.pos.y)+" z:"+String.format("%.2f",world.player.pos.z));
 				en = 0;
@@ -292,6 +375,8 @@ public class Hpb extends ApplicationAdapter {
 				builder.append(" | ent: ").append(en);
 				builder.append(" | fps: ").append(Gdx.app.getGraphics().getFramesPerSecond());
 				builder.append(" | youInCol: ").append(world.player.beforeechc.toString());
+				builder.append(" | vecs: ").append(Vector3D.test);
+				builder.append(" | blocks: ").append(Block.count);
 				label.setText(builder);
 				stage.act(Gdx.graphics.getDeltaTime());
 				stage.draw();
@@ -300,12 +385,9 @@ public class Hpb extends ApplicationAdapter {
 			e.printStackTrace();
 			System.out.println("render error");
 			exit = true;
-			world.save();
 			System.exit(0);
 		}
 	}
-	
-	
 	
 	@Override
 	public void dispose() {
@@ -342,27 +424,10 @@ public class Hpb extends ApplicationAdapter {
 		mutex.end();
 	}
 	
-	public static void runChunkUpdate() {
-		new Thread(() -> {
-	        while (true) {
-            	if (exit) Thread.currentThread().stop();
-            	if (Hpb.world != null) {
-	                if (world.needToUpdateLoadedColumns) {
-	                	world.updateLoadedColumns(VectorU.posToColumn(Hpb.world.player.pos));
-	                	world.needToUpdateLoadedColumns = false;
-	                }
-	                world.fromChunkUpdateThread();
-            	}
-	        }
-	    }, "chunk updates").start();
-	}
-	
 	static long timeone = System.nanoTime();
 	static int curcomp = 0;
 	
 	public void tickLoop() {
-		runChunkUpdate();
-		
 		new Thread(() -> {
 			while (true) {
 				if (exit) return;
@@ -375,10 +440,10 @@ public class Hpb extends ApplicationAdapter {
 	    	    int itog = normaled + (additional >= 5 ? 1 : 0);
 	    	    int tosleep = tickrate - itog;
 	    	    if (tosleep > 0) {
-	    	    	ThreadU.sleep(tosleep);
+	    	    	GameU.sleep(tosleep);
 	    	    }
 	        }
-	    }, "tick thread").start();
+	    }, "client tick thread").start();
 	}
 	
 	public static void onCommand(String rawcommand) {
@@ -386,8 +451,10 @@ public class Hpb extends ApplicationAdapter {
 		String command = rawcommand.split(" ")[0].replace("/", "");
 		String[] args = rawcommand.split(" ");
 		
+		//TODO ClientPlayerCommandPacket
+		
 		//System.out.println(command);
-		if (command.equals("stop")) {
+		/*if (command.equals("stop")) {
 			if (Hpb.world.save()) {
 				System.out.println("всё");
 				System.exit(0);
@@ -417,6 +484,6 @@ public class Hpb extends ApplicationAdapter {
 			case "rain":
 				return;//TODO
 			}
-		}
+		}*/
 	}
 }

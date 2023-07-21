@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.google.gson.JsonObject;
 
+import de.datasecs.hydra.shared.protocol.packets.Packet;
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.Hpb.State;
 import net.pzdcrp.Hyperborea.data.AABB;
@@ -14,6 +15,7 @@ import net.pzdcrp.Hyperborea.data.DamageSource;
 import net.pzdcrp.Hyperborea.data.EntityType;
 import net.pzdcrp.Hyperborea.data.Settings;
 import net.pzdcrp.Hyperborea.data.Vector3D;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerChatPacket;
 import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.world.elements.Chunk;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
@@ -28,8 +30,6 @@ import net.pzdcrp.Hyperborea.world.elements.inventory.items.GrassItem;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.OakLogItem;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.PlanksItem;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.StoneItem;
-import net.pzdcrp.Hyperborea.world.elements.inventory.items.TntCrateItem;
-import net.pzdcrp.Hyperborea.world.elements.inventory.items.WaterBucketItem;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.WeedItem;
 
 public class Player extends Entity {
@@ -52,19 +52,21 @@ public class Player extends Entity {
 	private boolean isMining = false;
 	public PlayerInventory castedInv;
 	public int curentNumPressed = -1;
+	public String nickname;
 	
 	//сохраняется
 	public Vector3D spawnpoint;
 	
 	
-	public Player(double tx, double ty, double tz) {
+	public Player(double tx, double ty, double tz, String name) {
 		super(new Vector3D(tx,ty,tz),new AABB(-0.3, 0, -0.3, 0.3, 1.7, 0.3), EntityType.player);
+		this.nickname = name;
 		cam = new Camera();
 		cam.setpos(this.pos.x,this.pos.y,this.pos.z);
 		cam.cam.update();
-		pinterface = new PlayerInterface(this, Hpb.world);
+		pinterface = new PlayerInterface(this);
 		this.castedInv = (PlayerInventory) inventory;
-		this.inventory.addItem(new TntCrateItem(99), 0);
+		/*this.inventory.addItem(new TntCrateItem(99), 0);
 		this.inventory.addItem(new GlassItem(99), 1);
 		this.inventory.addItem(new GrassItem(99), 2);
 		this.inventory.addItem(new StoneItem(99), 3);
@@ -72,7 +74,7 @@ public class Player extends Entity {
 		this.inventory.addItem(new PlanksItem(99), 5);
 		this.inventory.addItem(new DirtItem(99), 6);
 		this.inventory.addItem(new WaterBucketItem(1), 7);
-		this.inventory.addItem(new WeedItem(99), 8);
+		this.inventory.addItem(new WeedItem(99), 8);*/
 	}
 	
 	public void tick() {
@@ -99,6 +101,7 @@ public class Player extends Entity {
 			}
 		}
 	}
+	
 	private static final float bs = 0.1f;
 	public void updateBlockBreaking() {
 		if (chat.isOpened() || castedInv.isOpened) {
@@ -237,7 +240,7 @@ public class Player extends Entity {
 	
 	public void respawn() {
 		this.hp = maxhp();
-		this.justspawn = 100;
+		this.justspawn = 50;
 		this.teleport(spawnpoint);
 	}
 	
@@ -245,12 +248,16 @@ public class Player extends Entity {
 	public void getJson(JsonObject jen) {
 		super.getJson(jen);
 		jen.addProperty("spawnpoint", spawnpoint.toString());
+		jen.add("inventory", castedInv.toJson());
+		jen.addProperty("name", nickname);
 	}
 	
 	@Override
 	public void fromJson(JsonObject jen) {
 		super.fromJson(jen);
 		this.spawnpoint = Vector3D.fromString(jen.get("spawnpoint").getAsString());
+		this.castedInv.fromJson(jen.get("inventory").getAsJsonObject());
+		this.nickname = jen.get("name").getAsString();
 	}
 	
 	@Override
@@ -306,6 +313,7 @@ public class Player extends Entity {
 	
 	
 	public void render() {
+		super.render();
 		if (run && cam.getFov() < Settings.fov+5) {
 			cam.setFov(cam.getFov() + 0.4f);
 		} else {
@@ -383,5 +391,11 @@ public class Player extends Entity {
 	@Override
 	public int getType() {
 		return 1;
+	}
+
+	public void onPacket(Packet p) {
+		if (p instanceof ServerChatPacket) {
+			chat.send(((ServerChatPacket)p).getmsg());
+		}
 	}
 }

@@ -15,29 +15,30 @@ import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.utils.VectorU;
-import net.pzdcrp.Hyperborea.world.World;
+import net.pzdcrp.Hyperborea.world.PlayerWorld;
 import net.pzdcrp.Hyperborea.world.elements.Column;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
 import net.pzdcrp.Hyperborea.world.elements.blocks.OakLog;
 import net.pzdcrp.Hyperborea.world.elements.blocks.OakLeaves;
-import net.pzdcrp.Hyperborea.world.elements.blocks.Water;
 
-public class DefaultWorldGenerator extends ColumnGenerator {
+public class DefaultWorldGenerator {
 	public static Map<Vector2I, Set<Block>> toadd = new ConcurrentHashMap<>();
-	@Override
-	public void gen(Column c) {
+	public enum Biome {
+		field, forest, ocean;
+	}
+	public static void gen(Column c) {
 		for (int px = 0; px < 16; px++) {
 	        for (int pz = 0; pz < 16; pz++) {
 	        	int x = c.pos.x*16+px;
 	        	int z = c.pos.z*16+pz;
         		Biome biome = Biome.field;//calculate biome by xz pos
         		if (biome == Biome.field) {
-        			int fieldMaxHeight = (int) (World.maxheight*0.4f);
-        			int fieldMinHeight = (int) (World.maxheight*0.25f);
+        			int fieldMaxHeight = (int) (PlayerWorld.maxheight*0.4f);
+        			int fieldMinHeight = (int) (PlayerWorld.maxheight*0.25f);
         			float sharpness = 0.02f;
         			double noise = Noise.get(x*sharpness, z*sharpness);
         			int maxy = MathU.diap(fieldMinHeight, fieldMaxHeight, noise);
-        			for (int y = 0; y < World.maxheight; y++) {
+        			for (int y = 0; y < PlayerWorld.maxheight; y++) {
         				if (y < maxy) {
         					c.fastSetBlock(px,y,pz, 6);
         				} else if (y == maxy && Double.toString(noise).contains("34")) {

@@ -8,16 +8,18 @@ import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.math.Vector3;
 
 import net.pzdcrp.Hyperborea.Hpb;
+import net.pzdcrp.Hyperborea.data.AABB;
 import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.DamageSource;
 import net.pzdcrp.Hyperborea.data.Settings;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.utils.MathU;
-import net.pzdcrp.Hyperborea.world.World;
+import net.pzdcrp.Hyperborea.world.PlayerWorld;
 import net.pzdcrp.Hyperborea.world.elements.Particle;
 import net.pzdcrp.Hyperborea.world.elements.blocks.OakLog;
 import net.pzdcrp.Hyperborea.world.elements.blocks.OakLeaves;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
+import net.pzdcrp.Hyperborea.world.elements.entities.ItemEntity;
 import net.pzdcrp.Hyperborea.world.elements.generators.DefaultWorldGenerator;
 
 public class ControlListener implements InputProcessor {
@@ -28,7 +30,9 @@ public class ControlListener implements InputProcessor {
 	@Override
 	public boolean keyDown(int keycode) {
 		if (p.chat.isOpened()) return false;
-		
+		if (keycode == Input.Keys.F3) {
+			Settings.showHitbox = !Settings.showHitbox;
+		}
 		if (keycode == Input.Keys.M) {
 			Gdx.input.setCursorCatched(!Gdx.input.isCursorCatched());
 			return true;
@@ -47,7 +51,13 @@ public class ControlListener implements InputProcessor {
 		}
 		if (keycode == Input.Keys.H) {
 			//Hpb.displayInfo("i like sex!");
-			p.teleport(new Vector3D(p.pos.x+12550820/300, 100, 0));
+			//p.teleport(new Vector3D(p.pos.x+12550820/300, 100, 0));
+			for (Entity en : Hpb.world.getEntities(p.pos, 99)) {
+				if (en instanceof ItemEntity) {
+					ItemEntity i = (ItemEntity) en;
+					i.vel = i.pos.getDirection(p.pos);
+				}
+			}
 		}
 		if (keycode == Input.Keys.V) {
 			Hpb.world.particles.add(new Particle(Hpb.mutex.getBlockTexture("dirt"), p.pos.translate().add(0, 2f, 0), new Vector3(), 1200));
@@ -106,12 +116,8 @@ public class ControlListener implements InputProcessor {
 			if (p.castedInv.isOpened) {
 				p.castedInv.close();
 			} else {
-				if (Hpb.world.save()) {
-					System.out.println("всё");
-					System.exit(0);
-				} else {
-					System.out.println("откат, сохранение высрало ошибку");
-				}
+				System.out.println("выходим без сохранения потмоучто оно не предусмотерно!!!!");
+				System.exit(0);
 			}
 		}
 		return true;
@@ -162,7 +168,7 @@ public class ControlListener implements InputProcessor {
 	@Override
 	public boolean scrolled(float ax, float ay) {
 		if (p.chat.isOpened() || p.castedInv.isOpened) return true;
-		System.out.println(ax+" "+ay);
+		//System.out.println(ax+" "+ay);
 		p.curentNumPressed+=ay;
 		if (p.curentNumPressed > 10) {
 			p.curentNumPressed = 1;

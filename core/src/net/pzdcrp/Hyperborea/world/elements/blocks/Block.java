@@ -15,15 +15,17 @@ import com.google.gson.JsonObject;
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.AABB;
 import net.pzdcrp.Hyperborea.data.BlockFace;
+import net.pzdcrp.Hyperborea.data.BlockModelBuilder;
 import net.pzdcrp.Hyperborea.data.DM;
 import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.data.MBIM.offset;
 import net.pzdcrp.Hyperborea.extended.SexyMeshBuilder;
+import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.utils.ModelUtils;
-import net.pzdcrp.Hyperborea.utils.ThreadU;
+import net.pzdcrp.Hyperborea.utils.GameU;
 import net.pzdcrp.Hyperborea.utils.VectorU;
-import net.pzdcrp.Hyperborea.world.World;
+import net.pzdcrp.Hyperborea.world.PlayerWorld;
 import net.pzdcrp.Hyperborea.world.elements.Chunk;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
 import net.pzdcrp.Hyperborea.world.elements.entities.ItemEntity;
@@ -31,7 +33,7 @@ import net.pzdcrp.Hyperborea.world.elements.inventory.items.Item;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.NoItem;
 
 public class Block {
-	public static World world;// = GameInstance.world;
+	public static PlayerWorld world;// = GameInstance.world;
 	public Vector3D pos;
 	public static final Map<Integer, Block> blocks = new HashMap<Integer, Block>() {
 		private static final long serialVersionUID = 3707568282902670945L;
@@ -49,14 +51,14 @@ public class Block {
 			put(11, new OakLog(new Vector3D(),BlockFace.NY));
 			put(12, new OakLog(new Vector3D(),BlockFace.NZ));
 			put(13, new Planks(new Vector3D()));
-			put(14, new TntCrate(new Vector3D()));
+			/*put(14, new TntCrate(new Vector3D()));
 			put(15, new Water(new Vector3D(), 1));
 			put(16, new Water(new Vector3D(), 2));
 			put(17, new Water(new Vector3D(), 3));
 			put(18, new Water(new Vector3D(), 4));
 			put(19, new Water(new Vector3D(), 5));
 			put(20, new Water(new Vector3D(), 6));
-			put(21, new Water(new Vector3D(), 7));
+			put(21, new Water(new Vector3D(), 7));*/
 			put(22, new OakLeaves(new Vector3D()));
 			put(23, new Weed(new Vector3D()));
 		}};;
@@ -87,20 +89,28 @@ public class Block {
 	protected AABB hitbox;
 	private int id = -1;
 	
+	public static int count = 0;
+	
 	public Block(Vector3D pos, String texture, AABB hitbox) {
-		this.pos = pos.VecToInt();
+		this.pos = pos;//.VecToInt();
 		this.texture = texture;
 		this.hitbox = hitbox;
+		count++;
 	}
 	public Block(Vector3D pos, String texture) {
 		this(pos, texture, new AABB(pos.x,pos.y,pos.z,pos.x+1,pos.y+1,pos.z+1));
+		count++;
+	}
+	
+	public static Block getRaw(int id) {
+		return blocks.get(id);
 	}
 	
 	public static int idByBlock(Block block) {
 		for (Entry<Integer, Block> entry : blocks.entrySet()) {
 			if (entry.getValue().equals(block)) return entry.getKey();
 		}
-		ThreadU.end("unregistered block: "+block.toString());
+		GameU.end("unregistered block: "+block.toString());
 		return 0;
 	}
 	
@@ -178,7 +188,7 @@ public class Block {
 		return BlockType.solid;
 	}
 	
-	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, MBIM mbim) {
+	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, BlockModelBuilder mbim) {
 		
 	}
 	
@@ -194,7 +204,7 @@ public class Block {
 	@Deprecated
 	@Override
 	public Block clone() {
-		ThreadU.end("не юзай этот мтеод");
+		GameU.end("не юзай этот мтеод");
 		return new Block(pos, texture, hitbox);
 	}
 	
@@ -225,7 +235,7 @@ public class Block {
 		for (Entry<Integer, Integer> entry : BlockidToItemid.entrySet()) {
 			if (entry.getValue() == itemid) return entry.getKey();
 		}
-		ThreadU.end("unknown id: "+itemid);
+		GameU.end("unknown id: "+itemid);
 		return 0;
 	}
 
@@ -236,10 +246,7 @@ public class Block {
 	public static Item itemByBlockId(int id) {
 		Integer itemid = BlockidToItemid.get(id);
 		if (itemid == null) return null;
-		for (Item i : Item.items) {
-			if (i.id == itemid) return i;
-		}
-		return null;
+		return Item.items.get(itemid);
 	}
 
 	public void tick() {
@@ -262,17 +269,17 @@ public class Block {
 		SexyMeshBuilder a = mbim.obtain(pos, true);
 		ModelUtils.setTransform(pos);
 		Hpb.mutex.hookuvr(a, "ds"+stage, 0, 0, 1, 1);
-		mbim.curoffset = offset.py;
+		mbim.setCuroffset(offset.py);
     	ModelUtils.buildTopX(a);//PY
-    	mbim.curoffset = offset.nx;
+    	mbim.setCuroffset(offset.nx);
 	    ModelUtils.buildLeftPY(a);//NX
-	    mbim.curoffset = offset.px;
+	    mbim.setCuroffset(offset.px);
 	    ModelUtils.buildRightPY(a);//PX
-	    mbim.curoffset = offset.nz;
+	    mbim.setCuroffset(offset.nz);
 	    ModelUtils.buildFrontY(a);//NZ
-	    mbim.curoffset = offset.pz;
+	    mbim.setCuroffset(offset.pz);
 	    ModelUtils.buildBackY(a);//PZ
-	    mbim.curoffset = offset.ny;
+	    mbim.setCuroffset(offset.ny);
 	    ModelUtils.buildBottomX(a);//NY
 	}
 	
@@ -286,7 +293,13 @@ public class Block {
 		Item blockItem = Block.itemByBlockId(getId());
 		System.out.println("onb "+isRenderable()+" "+blockItem != null+" "+!(blockItem instanceof NoItem));
 		if (isRenderable() && blockItem != null && !(blockItem instanceof NoItem)) {
-			world.spawnEntity(new ItemEntity(pos.add(0.5d), this));
+			ItemEntity e;
+			Item i = Block.itemByBlockId(this.getId());
+			i.count = 1;
+			world.spawnEntity(e = new ItemEntity(pos.add(0.5d), this, i));
+			e.vel.y = 0.01;
+			e.vel.x = MathU.rndd(-0.1, 0.1);
+			e.vel.z = MathU.rndd(-0.1, 0.1);
 		}
 	}
 }

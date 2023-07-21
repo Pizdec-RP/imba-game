@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 
 import net.pzdcrp.Hyperborea.Hpb;
+import net.pzdcrp.Hyperborea.utils.GameU;
 
 public class Chat2 {
 	private List<Message> messages = new CopyOnWriteArrayList<>();
@@ -40,6 +41,10 @@ public class Chat2 {
 			font.draw(Hpb.spriteBatch, msg.text, x, y);
 			i++;
 		}
+	}
+	
+	public void d(String text) {
+		if (GameU.debug) send(text);
 	}
 	
 	public void send(String text) {

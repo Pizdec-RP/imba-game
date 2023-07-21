@@ -13,43 +13,39 @@ import net.pzdcrp.Hyperborea.data.EntityType;
 import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.player.Player;
-import net.pzdcrp.Hyperborea.utils.ThreadU;
-import net.pzdcrp.Hyperborea.world.World;
+import net.pzdcrp.Hyperborea.utils.GameU;
+import net.pzdcrp.Hyperborea.world.PlayerWorld;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
 import net.pzdcrp.Hyperborea.world.elements.entities.ItemEntity;
-import net.pzdcrp.Hyperborea.world.elements.generators.ColumnGenerator;
 import net.pzdcrp.Hyperborea.world.elements.generators.DefaultWorldGenerator;
 import net.pzdcrp.Hyperborea.world.elements.generators.Noise;
-import net.pzdcrp.Hyperborea.world.elements.blocks.Water;
 
 public class Column {
 	public List<Entity> entites = new CopyOnWriteArrayList<>();
 	public Vector2I pos;
-	public Chunk[] chunks = new Chunk[World.chunks];
+	public Chunk[] chunks = new Chunk[PlayerWorld.chunks];
 	private Vector3 center;
 	private Vector3 dimensions;
 	protected int[][] skylightlenght;
 	
-	public Column(int x, int z, ColumnGenerator gen) {
+	public Column(int x, int z, boolean gen) {
 		this(new Vector2I(x,z), gen);
 	}
 	
-	public Column(Vector2I cords, ColumnGenerator gen) {
+	public Column(Vector2I cords, boolean gen) {
 		this.pos = cords;
-		System.out.println("new col: "+cords.toString());
+		//System.out.println("new col: "+cords.toString());
 		skylightlenght = new int[16][16];
 		
-		center = new Vector3(pos.x*16+8,World.maxheight/2,pos.z*16+8);
-		dimensions = new Vector3(16, World.maxheight, 16);
-		for (int y = 0; y < World.chunks; y++) {
+		center = new Vector3(pos.x*16+8,PlayerWorld.maxheight/2,pos.z*16+8);
+		dimensions = new Vector3(16, PlayerWorld.maxheight, 16);
+		for (int y = 0; y < PlayerWorld.chunks; y++) {
 			chunks[y] = new Chunk(this, y*16);
 		}
-		
-		if (gen != null) {
-			gen.gen(this);
-		}
+		if (gen)
+			DefaultWorldGenerator.gen(this);
 	}
 	
 	private void updateSLMDForAll() {
@@ -65,7 +61,7 @@ public class Column {
 	}
 	
 	public void recalculateSLMD(int x, int z) {
-		for (int y = World.buildheight; y >= 0; y--) {
+		for (int y = PlayerWorld.buildheight; y >= 0; y--) {
 			if (!(getBlock(x,y,z) instanceof Air)) {
 				skylightlenght[x][z] = y;
 				return;
@@ -78,12 +74,14 @@ public class Column {
 		return c.getBlock(x,y&15,z);
 	}
 	
-	public Block fastSetBlock(int x ,int y,int z, int id) {
-		/*if (y >= World.buildheight) {
-			System.out.println("build limit reached "+World.buildheight);
-		}*/
+	public int getBlocki(int x, int y, int z) {
 		Chunk c = chunks[y/16];
-		return c.setBlock(x,y&15,z, id);
+		return c.getBlocki(x,y&15,z);
+	}
+	
+	public void fastSetBlock(int x ,int y,int z, int id) {
+		Chunk c = chunks[y/16];
+		c.setBlock(x,y&15,z, id);
 	}
 	
 	public int normx(int ref) {
@@ -120,7 +118,7 @@ public class Column {
 	}
 	
 	private void updateModel() {
-		for (int i = 0; i < World.chunks; i++) {
+		for (int i = 0; i < PlayerWorld.chunks; i++) {
 			chunks[i].updateModel();
 		}
 	}
@@ -173,15 +171,9 @@ public class Column {
 		//blocks
 		JsonArray blocks = new JsonArray();
 		for (int px = 0; px < 16; px++) {
-	        for (int py = 0; py < World.maxheight; py++) {
+	        for (int py = 0; py < PlayerWorld.maxheight; py++) {
 	            for (int pz = 0; pz < 16; pz++) {
-	            	Block block = getBlock(px,py,pz);
-	            	JsonObject data = block.toJson();
-	            	if (data != null) {
-	            		blocks.add(data);
-	            	} else {
-	            		blocks.add(Block.idByBlock(block));
-	            	}
+	            	blocks.add(getBlocki(px,py,pz));
 	            }
 	        }
 	    }
@@ -191,7 +183,6 @@ public class Column {
 		for (Entity entity : entites) {
 			JsonObject jen = new JsonObject();
 			entity.getJson(jen);
-			//System.out.println(jen.toString());
 			jcol.get("entities").getAsJsonArray().add(jen);
 		}
 		
@@ -201,23 +192,16 @@ public class Column {
 	public void fromJson(JsonObject jcol) {
 		Vector2I cc = Vector2I.fromString(jcol.get("pos").getAsString());
 		if (!this.pos.equals(cc)) {
-			ThreadU.end("корды не сходятся удаляй регион");
+			GameU.end("корды не сходятся удаляй регион");
 		}
 		
 		//blocks
 		int i = 0;
 		JsonArray blocks = jcol.get("blocks").getAsJsonArray();
 		for (int px = 0; px < 16; px++) {
-			for (int py = 0; py < World.maxheight; py++) {
+			for (int py = 0; py < PlayerWorld.maxheight; py++) {
 				for (int pz = 0; pz < 16; pz++) {
-	            	JsonElement rawblock = blocks.get(i);
-	            	if (rawblock.isJsonPrimitive()) {
-	            		fastSetBlock(px, py, pz, blocks.get(i).getAsInt());
-	            	} else if (rawblock.isJsonObject()) {
-	            		JsonObject data = blocks.get(i).getAsJsonObject();
-	            		fastSetBlock(px, py, pz, data.get("id").getAsInt());
-	            		getBlock(px, py, pz).fromJson(data);
-	            	}
+	            	fastSetBlock(px, py, pz, blocks.get(i).getAsInt());
 	            	i++;
 	            }
 	        }
@@ -232,7 +216,7 @@ public class Column {
 				int type = jen.get("type").getAsInt();
 				Vector3D pos = Vector3D.fromString(jen.get("pos").getAsString());
 				if (type == 1) {
-					Hpb.world.player = new Player(pos.x,pos.y,pos.z);
+					Hpb.world.player = new Player(pos.x,pos.y,pos.z,jen.get("name").getAsString());
 					entity = Hpb.world.player;
 					System.out.println("loading player");
 				} else if (type == 2) {

@@ -10,11 +10,14 @@ import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
+import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
+import com.badlogic.gdx.graphics.g3d.utils.shapebuilders.BoxShapeBuilder;
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.BoundingBox;
 
 public class AABB {
 	public double minX,minY,minZ,maxX,maxY,maxZ;
-	public ModelInstance model;
 
 	public AABB(double x0, double y0, double z0, double x1, double y1, double z1) {
 	    this.minX = x0;
@@ -23,17 +26,6 @@ public class AABB {
 	    this.maxX = x1;
 	    this.maxY = y1;
 	    this.maxZ = z1;
-	}
-	
-	public void formmodel() {
-		ModelBuilder modelBuilder = new ModelBuilder();
-        modelBuilder.begin();
-        Material material = new Material(ColorAttribute.createDiffuse(Color.WHITE));
-        long attributes = Usage.Position | Usage.Normal;
-        modelBuilder.part("cube", GL20.GL_LINES, attributes, material)
-                .box((float)minX, (float)minY, (float)minZ, (float)(maxX-minX), (float)(maxY-minY), (float)(maxZ-minZ));
-        Model cubeModel = modelBuilder.end();
-        model = new ModelInstance(cubeModel);
 	}
 	
 	public AABB clone() {
@@ -366,6 +358,10 @@ public class AABB {
         this.setMaxZ(maxZ);
         return this;
     }
+
+	public BoundingBox translate() {
+		return new BoundingBox(new Vector3((float)minX, (float)minY, (float)minZ),new Vector3((float)maxX, (float)maxY, (float)maxZ));
+	}
 	
 	
 }

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.pzdcrp.Hyperborea.Hpb;
-import net.pzdcrp.Hyperborea.world.World;
+import net.pzdcrp.Hyperborea.world.PlayerWorld;
 import net.pzdcrp.Hyperborea.world.elements.Chunk;
 import net.pzdcrp.Hyperborea.world.elements.Column;
 
@@ -48,7 +48,7 @@ public class Vector3I {
 		List<Chunk> chunks = new ArrayList<>();
 		Chunk thiss = Hpb.world.getColumn(x, z).chunks[y/16];
 		for (Vector3I side : sides()) {
-			if (side.y >= World.maxheight) continue;
+			if (side.y >= PlayerWorld.maxheight) continue;
 			Column col = Hpb.world.loadedColumns.get(new Vector2I(x >> 4, z >> 4));
 			if (col == null) continue;
 			Chunk c = Hpb.world.getColumn(side.x, side.z).chunks[side.y/16];

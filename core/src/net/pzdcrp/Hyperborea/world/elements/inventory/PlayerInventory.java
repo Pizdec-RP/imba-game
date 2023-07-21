@@ -4,14 +4,20 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.math.Vector3;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.DamageSource;
@@ -19,6 +25,7 @@ import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Pair;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.player.Player;
+import net.pzdcrp.Hyperborea.utils.GameU;
 import net.pzdcrp.Hyperborea.utils.VectorU;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
@@ -31,19 +38,26 @@ public class PlayerInventory implements IInventory {
 	private int chs = 0;//0-9
 	private Entity owner;
 	public boolean isOpened = false;
-	private static final Item EMPTY = new NoItem();
+	public static final Item EMPTY = new NoItem();
+	private Player castedplayer;
 	
 	public PlayerInventory(Entity owner) {
-		this.owner = owner;
 		for (int i = 0; i < 40; i++) {
 			addItem(EMPTY, i);
 		}
+		this.owner = owner;
+		this.castedplayer = (Player) owner;
+		font = Hpb.mutex.getFont(20);
+		GlyphLayout g = new GlyphLayout();
+		g.setText(font, "1234567890");
+		fontheight = g.height;
 		onResize();
 	}
 	
 	//private MBIM m;
 	@Override
     public void addItem(Item item, int index) {
+		if (item == null) GameU.end("nullitem");
         if (items.containsKey(index)) {
         	items.replace(index, item);
         } else {
@@ -54,7 +68,7 @@ public class PlayerInventory implements IInventory {
     @Override
 	public void onRClick() {
     	if (owner.currentAimEntity != null) {
-    		owner.currentAimEntity.onPlayerClick(Hpb.world.player);//TODO для мультиплеера поменять на обьект игрока
+    		owner.currentAimEntity.onPlayerClick(castedplayer);
     		return;
     	}
 		if (owner.currentAimBlock == null) return;
@@ -63,10 +77,24 @@ public class PlayerInventory implements IInventory {
 				owner.currentAimFace
 			);
 		if (owner.currentAimBlock.onClick(owner)) return;
-		getSlot(getCurrentSlotInt()).placeBlockAction(clickedPos, owner);
+		getSlot(getCurrentSlotInt()).placeBlockAction(clickedPos, castedplayer);
 	}
+    
+    public void wasteHandItem() {
+    	Item handitem = items.get(chs);
+    	if (handitem.count == 1) {
+    		items.replace(chs, EMPTY);
+    	} else {
+    		handitem.count--;
+    	}
+    }
+    
+    public void setHandItem(Item item) {
+    	items.replace(chs, item);
+    }
 	
 	@Override
+	@Deprecated
 	public void onLClick() {
 		if (owner.currentAimEntity != null) {
 			owner.currentAimEntity.hit(DamageSource.Hit, getSlot(getCurrentSlotInt()).getDamage());
@@ -81,12 +109,14 @@ public class PlayerInventory implements IInventory {
     	return items.get(index);
     }
 	
+	private BitmapFont font;
+	private float fontheight;
 	private void displaySlot(int id, float x, float y, float width, float height) {
 		Item item = items.get(id);
 		if (item instanceof NoItem) return;
 		Texture t = item.getTexture();
-        if (t != null)
-        	Hpb.spriteBatch.draw(t, x, y, width, height);
+        Hpb.spriteBatch.draw(t, x, y, width, height);
+        font.draw(Hpb.spriteBatch, Integer.toString(item.count), x, y+fontheight);
 	}
     
     public static final Texture slot = Hpb.mutex.getOTexture("slot");
@@ -128,7 +158,7 @@ public class PlayerInventory implements IInventory {
 			}
 			slot++;
 		}
-		System.out.println(x+" "+y+" "+down+" "+button+" "+slot+" "+finded);
+		//System.out.println(x+" "+y+" "+down+" "+button+" "+slot+" "+finded);
 		if (!finded) return;
     	if (down) {
     		if (button == Input.Buttons.LEFT) {
@@ -141,6 +171,52 @@ public class PlayerInventory implements IInventory {
 					pickedSlot = -1;
 				}
 				return;
+    		}
+    	}
+    }
+    
+    public boolean canMerge(Item ifrom) {
+    	Item avableitem = null;
+    	int nearestempty = -1;
+    	for (Entry<Integer, Item> i : items.entrySet()) {
+    		if (nearestempty == -1 && i.getValue() instanceof NoItem) {
+    			nearestempty = i.getKey();
+    		}
+    		if (i.getValue().id == ifrom.id && i.getValue().count < i.getValue().stackSize()) {
+    			avableitem = i.getValue();
+    		}
+    	}
+    	if (avableitem == null) {
+    		if (nearestempty == -1) return false;
+    		return true;
+    	} else {
+    		return true;
+    	}
+    }
+    
+    public void mergeFromItemEntity(Item ifrom) {
+    	Item avableitem = null;
+    	int nearestempty = -1;
+    	for (Entry<Integer, Item> i : items.entrySet()) {
+    		if (nearestempty == -1 && i.getValue() instanceof NoItem) {
+    			nearestempty = i.getKey();
+    		}
+    		if (i.getValue().id == ifrom.id && i.getValue().count < i.getValue().stackSize()) {
+    			avableitem = i.getValue();
+    		}
+    	}
+    	if (avableitem == null) {
+    		if (nearestempty == -1) return;
+    		items.replace(nearestempty, avableitem = ifrom.clone(0));
+    	}
+    	if (avableitem != null) {
+    		int canmerge = avableitem.stackSize()-avableitem.count;
+    		if (ifrom.count <= canmerge) {
+    			avableitem.count += ifrom.count;
+    			ifrom.count = 0;
+    		} else {
+    			avableitem.count += canmerge;
+    			ifrom.count -= canmerge;
     		}
     	}
     }
@@ -224,14 +300,34 @@ public class PlayerInventory implements IInventory {
 	}
 	
 	public void open() {
-		System.out.println("open");
 		this.isOpened = true;
 		Gdx.input.setCursorCatched(false);
 	}
 	
 	public void close() {
-		System.out.println("close");
 		this.isOpened = false;
 		Gdx.input.setCursorCatched(true);
+	}
+
+	public JsonElement toJson() {
+		JsonObject jinv = new JsonObject();
+		JsonArray items = new JsonArray(40);
+		for (Entry<Integer, Item> item : this.items.entrySet()) {
+			if (item.getValue() instanceof NoItem) continue;
+			items.add(item.getValue().toString());
+		}
+		jinv.add("items", items);
+		return jinv;
+	}
+
+	public void fromJson(JsonObject jinv) {
+		int i = 0;
+		for (JsonElement element : jinv.get("items").getAsJsonArray()) {
+			Item item = Item.fromString(element.getAsString());
+			System.out.println("added item "+item.toString());
+			//if (item instanceof NoItem) continue;//debug only
+			addItem(item, i);
+			i++;
+		}
 	}
 }

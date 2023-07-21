@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.Texture;
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.Vector3D;
+import net.pzdcrp.Hyperborea.player.Player;
 import net.pzdcrp.Hyperborea.utils.VectorU;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
@@ -19,10 +20,8 @@ public class GrassItem extends Item {
 	}
 
 	@Override
-	public void placeBlockAction(Vector3D cp, Entity actor) {
-		actor.placeBlock(
-			new Grass(cp)
-		);
+	public void placeBlockAction(Vector3D cp, Player actor) {
+		if (actor.placeBlock(new Grass(cp))) actor.castedInv.wasteHandItem();
 	}
 
 	@Override
@@ -33,5 +32,9 @@ public class GrassItem extends Item {
 	@Override
 	public boolean isModel() {
 		return true;
+	}
+	@Override
+	public Item clone(int count) {
+		return new GrassItem(count);
 	}
 }
