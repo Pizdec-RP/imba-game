@@ -64,9 +64,6 @@ public class Chat {
         this.messages.add(message);
         this.table.row();
         this.table.add(message);
-        if (messageText.startsWith("/")) {
-        	Hpb.onCommand(messageText);
-        }
     }
     
 	public void closeAndSend() {

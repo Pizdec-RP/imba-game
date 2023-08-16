@@ -7,7 +7,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 
+import io.netty.util.internal.ConcurrentSet;
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.ActionAuthor;
 import net.pzdcrp.Hyperborea.data.BlockFace;
@@ -22,7 +25,7 @@ import net.pzdcrp.Hyperborea.world.elements.blocks.OakLog;
 import net.pzdcrp.Hyperborea.world.elements.blocks.OakLeaves;
 
 public class DefaultWorldGenerator {
-	public static Map<Vector2I, Set<Block>> toadd = new ConcurrentHashMap<>();
+	public static Map<Vector2I, CopyOnWriteArrayList<Block>> toadd = new ConcurrentHashMap<>();
 	public enum Biome {
 		field, forest, ocean;
 	}
@@ -58,7 +61,7 @@ public class DefaultWorldGenerator {
 	}
 	
 	public static void generateTree(Vector3D pos) {
-		Set<Block> blocks = new HashSet<>();
+		CopyOnWriteArrayList<Block> blocks = new CopyOnWriteArrayList<>();
 		pos.y -= 2;
 		int trunk = MathU.rndi(9, 12);
 		int maxcrona = trunk+1;
@@ -81,7 +84,7 @@ public class DefaultWorldGenerator {
         	if (Hpb.world.loadedColumns.containsKey(bp2)) {
         		Hpb.world.setBlock(b, ActionAuthor.world);
         	} else {
-        		if (!toadd.containsKey(bp2)) toadd.put(bp2, new HashSet<Block>());
+        		if (!toadd.containsKey(bp2)) toadd.put(bp2, new CopyOnWriteArrayList<Block>());
         		toadd.get(bp2).add(b);
         	}
         }

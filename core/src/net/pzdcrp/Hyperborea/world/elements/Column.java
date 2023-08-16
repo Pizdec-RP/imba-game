@@ -15,6 +15,7 @@ import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.player.Player;
 import net.pzdcrp.Hyperborea.utils.GameU;
 import net.pzdcrp.Hyperborea.world.PlayerWorld;
+import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
@@ -24,25 +25,30 @@ import net.pzdcrp.Hyperborea.world.elements.generators.Noise;
 
 public class Column {
 	public List<Entity> entites = new CopyOnWriteArrayList<>();
+	public List<Player> unloadedPlayers = new CopyOnWriteArrayList<>();
 	public Vector2I pos;
 	public Chunk[] chunks = new Chunk[PlayerWorld.chunks];
 	private Vector3 center;
 	private Vector3 dimensions;
 	protected int[][] skylightlenght;
 	
-	public Column(int x, int z, boolean gen) {
-		this(new Vector2I(x,z), gen);
+	public World world;
+	
+	public Column(int x, int z, boolean gen, World world) {
+		this(new Vector2I(x,z), gen, world);
 	}
 	
-	public Column(Vector2I cords, boolean gen) {
+	public Column(Vector2I cords, boolean gen, World world) {
+		if (world == null) GameU.end("null world");
 		this.pos = cords;
+		this.world = world;
 		//System.out.println("new col: "+cords.toString());
 		skylightlenght = new int[16][16];
 		
 		center = new Vector3(pos.x*16+8,PlayerWorld.maxheight/2,pos.z*16+8);
 		dimensions = new Vector3(16, PlayerWorld.maxheight, 16);
 		for (int y = 0; y < PlayerWorld.chunks; y++) {
-			chunks[y] = new Chunk(this, y*16);
+			chunks[y] = new Chunk(this, y*16, world);
 		}
 		if (gen)
 			DefaultWorldGenerator.gen(this);
@@ -71,12 +77,23 @@ public class Column {
 	
 	public Block getBlock(int x, int y, int z) {
 		Chunk c = chunks[y/16];
+		//GameU.log(x+" "+y+" "+z);
 		return c.getBlock(x,y&15,z);
 	}
 	
 	public int getBlocki(int x, int y, int z) {
 		Chunk c = chunks[y/16];
 		return c.getBlocki(x,y&15,z);
+	}
+	
+	public int getInternalLight(int x, int y, int z) {
+		Chunk c = chunks[y/16];
+		return c.getInternalLight(x,y&15,z);
+	}
+	
+	public void setInternalLight(int x, int y, int z, int val) {
+		Chunk c = chunks[y/16];
+		c.setInternalLight(x,y&15,z,val);
 	}
 	
 	public void fastSetBlock(int x ,int y,int z, int id) {
@@ -92,43 +109,34 @@ public class Column {
 		return pos.z*16+ref;
 	}
 	
+	public void setBlock(int id, Vector3D pos) {
+		int x = (int)pos.x&15, z = (int)pos.z&15, y = (int)pos.y;
+		Chunk c = chunks[y/16];
+		c.setBlock(x,y&15,z, id);
+		int before = skylightlenght[x][z];
+		if (pos.y >= before) {
+			recalculateSLMD(x,z);
+		}
+	}
+	
 	public void setBlock(Block b) {
-		//System.out.println(y/16+" "+y);
 		int x = (int)b.pos.x&15, z = (int)b.pos.z&15, y = (int)b.pos.y;
 		Chunk c = chunks[y/16];
 		c.setBlock(x,y&15,z, b);
 		int before = skylightlenght[x][z];
-		//System.out.println("n: "+b.pos.y+"b: "+before);
 		if (b.pos.y >= before) {
-			//System.out.println("updating Multipile chunks");
 			recalculateSLMD(x,z);
-			/*int after = skylightlenght[x][z];
-			
-			int miny = Math.min(after, before);
-		    int maxy = Math.max(after, before);
-		    
-		    int cmin = miny / 16;
-		    int cmax = maxy / 16;
-		    
-		    for (int i = cmin; i <= cmax; i++) {
-		    	System.out.println("updating chunk: "+i*16+"-"+(i*16+16));
-				chunks[i].updateLight();
-		    }*/
-		}
-	}
-	
-	private void updateModel() {
-		for (int i = 0; i < PlayerWorld.chunks; i++) {
-			chunks[i].updateModel();
 		}
 	}
 	
 	public void tick() {
 		for (Entity entity : this.entites) {
-			entity.tick();
-		}
-		for (Chunk chunk : chunks) {
-			chunk.tick();
+			if (world.isLocal()) {
+				if (!entity.isPlayer)
+					entity.tick();
+			} else {
+				entity.tick();
+			}
 		}
 	}
 	
@@ -180,15 +188,53 @@ public class Column {
 		jcol.add("blocks", blocks);
 		//entities
 		jcol.add("entities", new JsonArray());
+		jcol.add("players", new JsonArray());
 		for (Entity entity : entites) {
-			JsonObject jen = new JsonObject();
-			entity.getJson(jen);
-			jcol.get("entities").getAsJsonArray().add(jen);
+			if (entity instanceof Player) {
+				Player newestPlayer = (Player)entity;
+				boolean y = false;
+				for (Player unloadedPlayer : unloadedPlayers) {
+					if (unloadedPlayer.nickname.equals(newestPlayer.nickname)) {
+						unloadedPlayers.remove(unloadedPlayer);
+						unloadedPlayers.add(newestPlayer);
+						y = true;
+						break;
+					}
+				}
+				if (y) continue;
+				else unloadedPlayers.add(newestPlayer);
+			} else {
+				JsonObject jen = new JsonObject();
+				entity.getJson(jen);
+				jcol.get("entities").getAsJsonArray().add(jen);
+			}
 		}
+		
+		for (Player player : unloadedPlayers) {
+			JsonObject jen = new JsonObject();
+			player.getJson(jen);
+			jcol.get("players").getAsJsonArray().add(jen);
+		}
+		
 		
 		return jcol;
 	}
 	
+	public Player getUnloadedPlayerByName(String name) {
+		for (Player p : unloadedPlayers) {
+			if (p.nickname.equals(name)) {
+				unloadedPlayers.remove(p);
+				return p;
+			}
+		}
+		GameU.end("cant found entity of player "+name+" in "+GameU.arrayString("players", unloadedPlayers));
+		return null;
+	}
+	
+	/**
+	 * Server side
+	 * @param jcol
+	 */
 	public void fromJson(JsonObject jcol) {
 		Vector2I cc = Vector2I.fromString(jcol.get("pos").getAsString());
 		if (!this.pos.equals(cc)) {
@@ -216,22 +262,49 @@ public class Column {
 				int type = jen.get("type").getAsInt();
 				Vector3D pos = Vector3D.fromString(jen.get("pos").getAsString());
 				if (type == 1) {
-					Hpb.world.player = new Player(pos.x,pos.y,pos.z,jen.get("name").getAsString());
-					entity = Hpb.world.player;
-					System.out.println("loading player");
-				} else if (type == 2) {
-					entity = new ItemEntity(pos);
+					GameU.end("player in entities!");
+					//GameU.tracer();
 				} else {
-					throw new Exception("unknown entity id");
+					entity = Entity.entities.get(type).cloneOnColumnLoad(pos, world, Entity.genLocalId());
+					entity.fromJson(jen);
 				}
-				entity.fromJson(jen);
-				entites.add(entity);
+				world.spawnEntity(entity);
+			} catch (Exception e) {
+				e.printStackTrace();
+				System.out.println("ignoring entity error");
+			}
+		}
+		
+		JsonArray players = jcol.get("players").getAsJsonArray();
+		//unloadedPlayers
+		for (JsonElement jene : players) {
+			try {
+				JsonObject jen = jene.getAsJsonObject();
+				Player player = null;
+				Vector3D pos = Vector3D.fromString(jen.get("pos").getAsString());
+				player = new Player(pos.x,pos.y,pos.z,jen.get("name").getAsString(), world, Entity.genLocalId());
+				player.fromJson(jen);
+				GameU.log("fetched player "+player.nickname);
+				unloadedPlayers.add(player);
 			} catch (Exception e) {
 				e.printStackTrace();
 				System.out.println("ignore entity error");
 			}
 		}
+		
 		updateSLMDForAll();
 		
+	}
+	
+	public void recheckcanrender() {
+		for (Chunk c : chunks) {
+			if (!c.canrender) return;
+		}
+		canrender = true;
+	}
+	
+	private boolean canrender = false;
+	public boolean canrender() {
+		return canrender;
 	}
 }

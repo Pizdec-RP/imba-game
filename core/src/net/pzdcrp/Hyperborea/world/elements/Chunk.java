@@ -10,8 +10,10 @@ import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.data.Vector3I;
+import net.pzdcrp.Hyperborea.server.InternalServer;
 import net.pzdcrp.Hyperborea.utils.GameU;
 import net.pzdcrp.Hyperborea.world.PlayerWorld;
+import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block.BlockType;
 
@@ -34,9 +36,13 @@ public class Chunk {
 	//не хранятся, но должны
 	private BitStorage light;
 	
-	public Chunk(Column motherCol, int height) {
+	//ссылки
+	public World world;
+	
+	public Chunk(Column motherCol, int height, World world) {
 		this.height = height;
 		this.column = motherCol;
+		this.world = world;
 		this.light = new BitStorage(4, 4096);
 		this.blocks = new BitStorage(8, 4096);
 		for(int xx = 0; xx < 16; xx++) {
@@ -60,19 +66,27 @@ public class Chunk {
 	//корды внутри чанка
 	public int rawGetLight(int x, int y, int z) {
 		if (x < 0 || x > 15 || y < 0 || y > 15 || z < 0 || z > 15) {
-			return Hpb.world.getLight(normx(x), normy(y), normz(z));
+			return world.getLight(normx(x), normy(y), normz(z));
 			//return 0;
 		}
 		return light.get(index(x,y,z));
 	}
 	public void rawSetLight(int x, int y, int z, int num) {
 		if (x < 0 || x > 15 || y < 0 || y > 15 || z < 0 || z > 15) {
-			Hpb.world.setLight(normx(x), normy(y), normz(z), num);
+			world.setLight(normx(x), normy(y), normz(z), num);
 			return;
 		}
 		if (light.get(index(x,y,z)) != num) {
 			light.set(index(x,y,z), num);
 		}
+	}
+	
+	public int getInternalLight(int x, int y, int z) {
+		return light.get(index(x,y,z));
+	}
+	
+	public void setInternalLight(int x, int y, int z, int val) {
+		light.set(index(x,y,z), val);
 	}
 	
 	public Vector3I norm(int x, int y, int z) {
@@ -91,8 +105,8 @@ public class Chunk {
 		return column.pos.z*16+ref;
 	}
 	public void updateLightFromOutbounds() {
-		if (Thread.currentThread().getName().equals("server chunk update thread"))
-	    	GameU.end("метод не должен вызываться из локального мира");
+		if (!Thread.currentThread().getName().equals("server chunk update thread"))
+	    	GameU.end("метод не должен вызываться из мира сервера");
 		//System.out.println("OBlightupd: "+getPos().toString());
 	    List<Vector3I> stack = new ArrayList<>();
 	    for(int x = -1; x <= 16; x++) {
@@ -111,8 +125,8 @@ public class Chunk {
 	}
 	
 	public void updateLightMain() {
-	    if (Thread.currentThread().getName().equals("server chunk update thread"))
-	    	GameU.end("метод не должен вызываться из локального мира");
+	    if (!Thread.currentThread().getName().equals("server chunk update thread"))
+	    	GameU.end("метод не должен вызываться из мира сервера");
 	    List<Vector3I> stack = new ArrayList<>();
 	    for(int x = 0; x < 16; x++) {
 	        for(int z = 0; z < 16; z++) {
@@ -128,7 +142,7 @@ public class Chunk {
 	            	if (normy(y) >= slmd /* || blocks[x][y][z].emitLight()*/) {
 	                    Vector3I vector = new Vector3I(x,y,z);
 	                    stack.add(vector);
-	                    rawSetLight(x,y,z, Hpb.internalserver.world.skylight);
+	                    rawSetLight(x,y,z, InternalServer.world.skylight);
 	                }
 	            }
 	        }
@@ -144,7 +158,7 @@ public class Chunk {
 	        
 	        Block b;
 	        if (b0) {
-	        	b = Hpb.world.getBlock(normx(l.x),normy(l.y),normz(l.z));
+	        	b = world.getBlock(normx(l.x),normy(l.y),normz(l.z));
 	        } else {
 	        	b = this.getBlock(l.x,l.y,l.z);
 	        }
@@ -258,26 +272,20 @@ public class Chunk {
 		this.bbstage = -1;
 		this.reqmodelupd = true;
 	}
-	
+	/**
+	 * Client side only
+	 */
 	public void rebuildTransparent() {
 		if (this.m.transparentmodel != null) {
 			m.sortTransparent(Hpb.world.player.cam.cam.position);
 		}
 	}
 	
-	/*public void callFromRenderThread() throws Exception {
-		if (reqmodelupd) {
-			lUpdateModel();
-			reqmodelupd = false;
-			Hpb.world.isCycleFree = false;
-		}
-	}*/
-	
 	private boolean wr(int x, int y, int z, Block current) {//false = рендерится
 		if (this.height+y < 0) {
 			return true;
 		}
-		Block b = Hpb.world.getBlock(column.pos.x*16+x,this.height+y,column.pos.z*16+z);
+		Block b = world.getBlock(column.pos.x*16+x,this.height+y,column.pos.z*16+z);
 		
 		if (b.getType() == BlockType.air) {
 			return false;
@@ -301,22 +309,22 @@ public class Chunk {
 		}
 		Column temp;
 		
-		temp = Hpb.world.loadedColumns.get(new Vector2I(column.pos.x+1, column.pos.z));
+		temp = world.getWithoutLoad(new Vector2I(column.pos.x+1, column.pos.z));
 		if (temp != null) {
 			l.add(temp.chunks[height/16]);
 		}
 		
-		temp = Hpb.world.loadedColumns.get(new Vector2I(column.pos.x-1, column.pos.z));
+		temp = world.getWithoutLoad(new Vector2I(column.pos.x-1, column.pos.z));
 		if (temp != null) {
 			l.add(temp.chunks[height/16]);
 		}
 		
-		temp = Hpb.world.loadedColumns.get(new Vector2I(column.pos.x, column.pos.z+1));
+		temp = world.getWithoutLoad(new Vector2I(column.pos.x, column.pos.z+1));
 		if (temp != null) {
 			l.add(temp.chunks[height/16]);
 		}
 		
-		temp = Hpb.world.loadedColumns.get(new Vector2I(column.pos.x, column.pos.z-1));
+		temp = world.getWithoutLoad(new Vector2I(column.pos.x, column.pos.z-1));
 		if (temp != null) {
 			l.add(temp.chunks[height/16]);
 		}
@@ -346,14 +354,35 @@ public class Chunk {
 		return new Vector3I(column.pos.x, height/16,column.pos.z);
 	}
 	
-	private static int index(int x, int y, int z) {
+	public static int index(int x, int y, int z) {
         return y << 8 | z << 4 | x;
     }
-
-	public void tick() {//TODO оптимизировать до хешсета хранящего векторы блоков для тика
+	
+	/**
+	 * Server side only
+	 */
+	public void tick() {//TODO оптимизировать до хешсета хранящего объекты блоков для тика
 	}
-
+	
+	/**
+	 * Client side only
+	 */
 	public boolean boundsInFrustum() {
 		return Hpb.world.player.cam.cam.frustum.boundsInFrustum(center, dimensions);
+	}
+
+	public BitStorage getLightStorage() {
+		return light;
+	}
+	
+	public boolean canrender = false;
+	/**
+	 * должно вызываться только при получении пакета со светом
+	 * @param light
+	 */
+	public void setLightStorage(BitStorage light) {
+		canrender = true;
+		column.recheckcanrender();
+		this.light = light;
 	}
 }

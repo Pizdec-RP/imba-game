@@ -26,6 +26,7 @@ import net.pzdcrp.Hyperborea.utils.ModelUtils;
 import net.pzdcrp.Hyperborea.utils.GameU;
 import net.pzdcrp.Hyperborea.utils.VectorU;
 import net.pzdcrp.Hyperborea.world.PlayerWorld;
+import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.Chunk;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
 import net.pzdcrp.Hyperborea.world.elements.entities.ItemEntity;
@@ -33,7 +34,7 @@ import net.pzdcrp.Hyperborea.world.elements.inventory.items.Item;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.NoItem;
 
 public class Block {
-	public static PlayerWorld world;// = GameInstance.world;
+	//public static PlayerWorld world;// = GameInstance.world;
 	public Vector3D pos;
 	public static final Map<Integer, Block> blocks = new HashMap<Integer, Block>() {
 		private static final long serialVersionUID = 3707568282902670945L;
@@ -119,7 +120,7 @@ public class Block {
 		return block;
 	}
 	
-	public Block[] getSides() {
+	public Block[] getSides(World world) {
 	    Set<Vector3D> set = new HashSet<>(Arrays.asList(
 	            pos.add(1, 0, 0),
 	            pos.add(-1, 0, 0),
@@ -129,7 +130,7 @@ public class Block {
 	            pos.add(0, 0, -1)
 	    ));
 
-	    set.removeIf(pos -> !world.loadedColumns.containsKey(VectorU.posToColumn(pos)));
+	    set.removeIf(pos -> !world.containColumn(VectorU.posToColumn(pos)));
 
 	    Set<Block> blockSet = new HashSet<>();
 	    for (Vector3D pos : set) {
@@ -144,7 +145,7 @@ public class Block {
 		return blocks.get(id);
 	}
 	
-	public void onNeighUpdate() {
+	public void onNeighUpdate(World world) {
 		
 	}
 	
@@ -152,16 +153,12 @@ public class Block {
 		return false;
 	}
 	
-	public void callChunkUpdate() {
+	public void callChunkUpdate(World world) {
 		world.getColumn(pos.x, pos.z).chunks[(int) (Math.floor(pos.y)/16)].updateModel();
 	}
 	
-	public Chunk getChunk() {
+	public Chunk getChunk(World world) {
 		return world.getColumn(pos.x, pos.z).chunks[(int) (Math.floor(pos.y)/16)];
-	}
-	
-	public Block under() {
-		return world.getBlock(new Vector3D(pos.x, pos.y-1, pos.z));
 	}
 	
 	public boolean isRenderable() {
@@ -266,6 +263,7 @@ public class Block {
 	}
 	
 	public static void bbmodel(MBIM mbim, Vector3D pos, int stage) {
+		if (stage > 9) stage = 9;
 		SexyMeshBuilder a = mbim.obtain(pos, true);
 		ModelUtils.setTransform(pos);
 		Hpb.mutex.hookuvr(a, "ds"+stage, 0, 0, 1, 1);
@@ -289,14 +287,21 @@ public class Block {
 		}
 		return id;
 	}
-	public void onBreak() {
+	
+	/**
+	 * Server side
+	 * @param world
+	 */
+	public void onBreak(World world) {
+		if (world.isLocal()) GameU.end("onBreak не должен вызываться в клиенте");
 		Item blockItem = Block.itemByBlockId(getId());
 		System.out.println("onb "+isRenderable()+" "+blockItem != null+" "+!(blockItem instanceof NoItem));
 		if (isRenderable() && blockItem != null && !(blockItem instanceof NoItem)) {
 			ItemEntity e;
 			Item i = Block.itemByBlockId(this.getId());
 			i.count = 1;
-			world.spawnEntity(e = new ItemEntity(pos.add(0.5d), this, i));
+			//if (getId() == 0) GameU.end("pizdec");
+			world.spawnEntity(e = new ItemEntity(pos.add(0.5d), this.getId(), i, world, Entity.genLocalId()));
 			e.vel.y = 0.01;
 			e.vel.x = MathU.rndd(-0.1, 0.1);
 			e.vel.z = MathU.rndd(-0.1, 0.1);

@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 
 import net.pzdcrp.Hyperborea.Hpb;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ClientChatPacket;
 import net.pzdcrp.Hyperborea.utils.GameU;
 
 public class Chat2 {
@@ -43,15 +44,16 @@ public class Chat2 {
 		}
 	}
 	
-	public void d(String text) {
-		if (GameU.debug) send(text);
+	public void debug(String text) {
+		send("[debug] "+text);
+	}
+	
+	public void fromServer(String text) {
+		messages.add(0, new Message(glyph, text, font));
 	}
 	
 	public void send(String text) {
-		if (text.startsWith("/")) {
-        	Hpb.onCommand(text);
-        }
-		messages.add(0, new Message(glyph, text, font));
+		Hpb.session.send(new ClientChatPacket(text.replaceFirst("t", "")));
 	}
 
 	public void closeAndSend() {

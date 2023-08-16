@@ -156,7 +156,9 @@ public class Particle {
 	Vector3 temp = new Vector3();
 	public void render() {
 	    if (node == null) initNode();
-	    if (!Hpb.world.player.cam.cam.frustum.pointInFrustum(pos)) return;
+	    
+	    //if (!Hpb.world.player.cam.cam.frustum.pointInFrustum(pos)) return;
+	    
 	    temp.set(Hpb.lerp(before.x, pos.x), Hpb.lerp(before.y, pos.y), Hpb.lerp(before.z, pos.z));
 	    node.translation.set(temp);
 	    
@@ -168,7 +170,6 @@ public class Particle {
 	    node.calculateTransforms(true);
 	    //node.localTransform.rotate(Vector3.Y, yAngle).rotate(Vector3.X, xAngle);
 	}
-
 	
 	public static int id() {
 		return id++;

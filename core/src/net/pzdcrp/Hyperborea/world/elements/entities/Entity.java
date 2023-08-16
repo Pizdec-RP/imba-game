@@ -31,10 +31,16 @@ import net.pzdcrp.Hyperborea.data.DM;
 import net.pzdcrp.Hyperborea.data.DamageSource;
 import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
+import net.pzdcrp.Hyperborea.data.objects.ObjectData;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlayerPositionPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerEntityDespawnPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerEntityPositionVelocityPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSpawnEntityPacket;
 import net.pzdcrp.Hyperborea.player.Player;
 import net.pzdcrp.Hyperborea.utils.GameU;
 import net.pzdcrp.Hyperborea.utils.VectorU;
 import net.pzdcrp.Hyperborea.world.PlayerWorld;
+import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.Chunk;
 import net.pzdcrp.Hyperborea.world.elements.Column;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
@@ -45,6 +51,13 @@ import net.pzdcrp.Hyperborea.world.elements.inventory.IInventory;
 import net.pzdcrp.Hyperborea.world.elements.inventory.PlayerInventory;
 
 public class Entity {
+	@SuppressWarnings({ "serial", "deprecation" })
+	public static final Map<Integer, Entity> entities = new HashMap<Integer, Entity>() {{
+		//put(1, new Player()); //не будет использоваться
+		put(2, new ItemEntity(Vector3D.ZERO, null, 0));
+	}};
+	
+	
 	//сохраняется
 	public Vector3D pos;
 	public Vector3D vel = new Vector3D();
@@ -58,13 +71,14 @@ public class Entity {
 	public IInventory inventory;
 	
 	//не должно сохраняться
-	public Vector2I echc;
+	public Vector2I echc; //столбец в котором находится игрок
 	public boolean firsttick = true;
-	private boolean isPlayer = false;
+	public boolean isPlayer = false;
 	public EntityType type;
 	public Vector3D beforepos;
 	public AABB hitbox;
 	public int justspawn = 50;
+	public int localId; //айди сущности для пакетов с данными об энтити. должно сбрасываться при рестарте сервера
 	
 	//классы ссылки
 	public Column curCol;
@@ -72,51 +86,113 @@ public class Entity {
 	public BlockFace currentAimFace = BlockFace.PX;
 	public Entity currentAimEntity = null;
 	public Vector3D currentaimpoint;
+	public World world;
 	
-	public Entity(Vector3D pos, AABB hitbox, EntityType type) {
+	public Entity(Vector3D pos, AABB hitbox, EntityType type, World world, int localid) {
+		this.localId = localid;
+		this.world = world;
 		this.type = type;
 		this.pos=pos;
 		this.beforepos=pos.clone();
 		this.hitbox=hitbox;
 		this.beforeechc = new Vector2I(pos.x,pos.z);
-		if (type == EntityType.player) {
-			inventory = new PlayerInventory(this);
+		if (type == EntityType.player) {//переместить в конкретных ентити
+			inventory = new PlayerInventory((Player) this);
 			this.isPlayer = true;
-		} else {
+		}/* else {
 			inventory = new EntityInventory(this);
-		}
+		}*/
 		this.hp = maxhp();
+		if (world == null) return;
+		if (!world.isLocal()) {
+			world.broadcastByColumn(beforeechc, new ServerSpawnEntityPacket(this));
+		}
 	}
-	
-	public void tick() {
+
+	private boolean sended = false;
+	public boolean tick() {
+		Vector3D justBeforePos = beforepos.clone();
 		beforepos.set(pos);
 		if (justspawn > 0) justspawn--;
+		//if (!world.isLocal()) GameU.log("2");
 		if (curCol == null) {
-			Column col = Hpb.world.getColumn(pos.x,pos.z);
+			Column col = world.getColumn(pos.x,pos.z);
+			if (col == null) return false;
 			this.curCol = col;
-		}
-		updateGravity();
-		if (isPlayer) updateFacing();
-		applyMovement();
-		if (firsttick) {
-			Column beforecol = Hpb.world.getColumn(beforeechc);
-			if (!beforecol.entites.contains(this)) beforecol.entites.add(this);
-			firsttick = false;
+		} else {
+			if ((!world.isLocal() && !isPlayer) || world.isLocal()) {
+				updateGravity();
+				applyMovement();
+			}
+			
+			if (!world.isLocal()) {
+				if (!invincible()) {
+					if (vel.y < 0) {
+				        if (fallstartblock == 0) {
+				        	fallstartblock = pos.y;
+				        }
+			        } else {
+			        	if (onGround) {
+				        	if (fallstartblock != 0) {
+					        	double falled = fallstartblock - pos.y;
+					        	if (falled > 3.5) {
+					        		int dmg = (int) (falled-3) * 2;
+					        		hit(DamageSource.Fall, dmg);
+					        	}
+					        	fallstartblock = 0;
+				        	}
+				        } else {
+			        		fallstartblock = 0;
+				        }
+			        }
+				}
+			}
 		}
 		echc = new Vector2I(pos.x,pos.z);
+		
+		
+		
+		//отсыл позиции каждый второй тик
+		if (sended) {
+			sended = false;
+		} else {
+			sended = true;
+			if (!world.isLocal() && !isPlayer) {
+				if (!justBeforePos.equals(pos))
+					world.broadcastByColumn(echc, new ServerEntityPositionVelocityPacket(pos, vel, localId));
+			} else if (world.isLocal() && isPlayer) {
+				Hpb.session.send(new ClientPlayerPositionPacket(pos, onGround));
+			}
+		}
+		
+		//if (!world.isLocal()) GameU.log("1");
+		if (firsttick) {
+			Column beforecol = world.getColumn(beforeechc);
+			if (beforecol == null) return false;
+			if (!beforecol.entites.contains(this)) beforecol.entites.add(this);
+			firsttick = false;
+			return false;
+		}
+		//if (!world.isLocal()) GameU.log("new echc: "+echc.toString());
 		if (!beforeechc.equals(echc)) {
-			if (isPlayer) Hpb.world.needToUpdateLoadedColumns = true;
-			Column beforecol = Hpb.world.getColumn(beforeechc);
-			Column col = Hpb.world.getColumn(pos.x,pos.z);
+			Column beforecol = world.getColumn(beforeechc);
+			Column col = world.getColumn(pos.x,pos.z);
+			if (col == null || beforecol == null) return false;
 			this.curCol = col;
-			if (col == null || beforecol == null) return;
 			beforecol.entites.remove(this);
 			col.entites.add(this);
 			beforeechc = echc;
 		}
+		//GameU.log("player in col "+curCol.pos.toString());
+		return true;
+	}
+	
+	public boolean invincible() {
+		return false;
 	}
 	
 	public void updateFacing() {
+		//должно вызываться только с клиента
 		Object[] oarr = VectorU.findFacingPair(this.getEyeLocation(), Hpb.world.player.cam.cam.direction, this);
 		this.currentAimBlock = (Block) oarr[0];
 		if (this.currentAimBlock != null) {
@@ -137,7 +213,7 @@ public class Entity {
 	}
 	
 	public void onPlayerClick(Player p) {
-		
+		GameU.err("unused method onPlayerClick");
 	}
 	
 	public List<AABB> getNearBlocks() {
@@ -148,7 +224,7 @@ public class Entity {
 		for (int tx = (int)Math.floor(Math.min(cube.maxX, cube.minX)); tx < Math.max(cube.maxX, cube.minX); tx++) {
 			for (int tz = (int)Math.floor(Math.min(cube.maxZ, cube.minZ)); tz < Math.max(cube.maxZ, cube.minZ); tz++) {
 				for (int ty = (int)Math.floor(Math.min(cube.maxY, cube.minY)); ty < Math.max(cube.maxY, cube.minY); ty++) {
-					Block bl = Hpb.world.getBlock(new Vector3D(tx, ty, tz));//FIXME оптимизировать
+					Block bl = world.getBlock(new Vector3D(tx, ty, tz));//FIXME оптимизировать
 					if (bl != null) {
 						if (bl.isCollide()) {
 							b.add(bl.getHitbox());
@@ -181,25 +257,6 @@ public class Entity {
 	            onGround = false;
 	        }
 	        
-	        if (vel.y < 0) {
-		        if (fallstartblock == 0) {
-		        	fallstartblock = pos.y;
-		        }
-	        } else {
-	        	if (onGround) {
-		        	if (fallstartblock != 0) {
-			        	double falled = fallstartblock - pos.y;
-			        	if (falled > 3.5) {
-			        		int dmg = (int) (falled-3) * 2;
-			        		//System.out.println("fall:"+falled+" fs:"+fallstartblock+" pv:"+pos.y+" dmg:"+dmg);
-			        		hit(DamageSource.Fall, dmg);
-			        	}
-			        	fallstartblock = 0;
-		        	}
-		        } else {
-	        		fallstartblock = 0;
-		        }
-	        }
 	        
 	        this.pos.y += vel.y;
 	        
@@ -279,15 +336,17 @@ public class Entity {
 	}
 	
 	public void despawn() {
-		Vector2I echc = new Vector2I(pos.x,pos.z);
-		Hpb.world.loadedColumns.get(echc).entites.remove(this);
+		curCol.entites.remove(this);
+		if (!world.isLocal()) {
+			world.broadcastByColumn(echc, new ServerEntityDespawnPacket(this.localId));
+		}
 	}
 
 	public boolean placeBlock(Block block) {
 		if (!this.isPlayer) {
 			GameU.end("mob "+this.getClass().getName()+" cannot place blocks");
 		}
-		return Hpb.world.setBlock(block, ActionAuthor.player);
+		return world.setBlock(block, ActionAuthor.player);
 	}
 
 	public Vector3D getEyeLocation() {
@@ -308,27 +367,62 @@ public class Entity {
 		}
 	}
 	
+	public void setHp(byte i) {
+		this.hp = i;
+	}
+	
 	public int getType() {
 		return 0;
 	}
 
 	public void hit(DamageSource src, int damage) {
 		if (hp == -Byte.MIN_VALUE) return;
-		this.hp -= damage;
+		this.setHp(hp -= damage);
 		if (hp < 0) {
 			this.despawn();
 		}
 	}
 	
+	ModelInstance bb = null;
 	public ModelInstance getFrame() {
-		ModelBuilder modelBuilder = new ModelBuilder();
-        modelBuilder.begin();
-        Material material = new Material(ColorAttribute.createDiffuse(Color.WHITE));
-        long attributes = Usage.Position | Usage.Normal;
-        MeshPartBuilder mpb = modelBuilder.part("cube", GL20.GL_LINES, attributes, material);
-        BoxShapeBuilder.build(mpb, getHitbox().translate());
-        //System.out.println(toString()+" "+cx+" "+cy+" "+cz+" "+w+" "+h+" "+d);
-        Model cubeModel = modelBuilder.end();
-        return new ModelInstance(cubeModel);
+		if (bb == null) {
+			ModelBuilder modelBuilder = new ModelBuilder();
+	        modelBuilder.begin();
+	        Material material = new Material(ColorAttribute.createDiffuse(Color.WHITE));
+	        long attributes = Usage.Position | Usage.Normal;
+	        MeshPartBuilder mpb = modelBuilder.part("cube", GL20.GL_LINES, attributes, material);
+	        BoxShapeBuilder.build(mpb, getHitbox().translate());
+	        //System.out.println(toString()+" "+cx+" "+cy+" "+cz+" "+w+" "+h+" "+d);
+	        Model cubeModel = modelBuilder.end();
+	        return new ModelInstance(cubeModel);
+		} else {
+			bb.transform.setTranslation(pos.translate());
+			return bb;
+		}
+	}
+	
+	private static int idCounter = Integer.MIN_VALUE;
+	public static int genLocalId() {
+		return idCounter++;
+	}
+	
+	public void setPos(Vector3D newpos) {
+		this.beforepos.set(pos);
+		this.pos = newpos;
+	}
+	
+	public Entity clone(Vector3D pos, World world, ObjectData data, int localId) {
+		GameU.end("не задан метод копирования");
+		return null;
+	}
+	
+	public ObjectData consumeData() {
+		GameU.end("не заданый метод");
+		return null;
+	}
+
+	public Entity cloneOnColumnLoad(Vector3D pos, World world, int localId) {
+		GameU.end("не задан метод");
+		return null;
 	}
 }

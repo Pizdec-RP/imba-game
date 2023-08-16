@@ -6,18 +6,39 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.google.gson.JsonObject;
 
+import de.datasecs.hydra.shared.handler.Session;
 import de.datasecs.hydra.shared.protocol.packets.Packet;
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.Hpb.State;
 import net.pzdcrp.Hyperborea.data.AABB;
+import net.pzdcrp.Hyperborea.data.ActionAuthor;
 import net.pzdcrp.Hyperborea.data.DM;
 import net.pzdcrp.Hyperborea.data.DamageSource;
 import net.pzdcrp.Hyperborea.data.EntityType;
 import net.pzdcrp.Hyperborea.data.Settings;
+import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlayerActionPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlayerActionPacket.PlayerAction;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlayerPositionPacket;
 import net.pzdcrp.Hyperborea.multiplayer.packets.ServerChatPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerChunkLightPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerEntityDespawnPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerEntityPositionVelocityPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerLoadColumnPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSetHealthPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSetSlotPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSetblockPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSetupInventoryPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSpawnEntityPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerUnloadColumnPacket;
+import net.pzdcrp.Hyperborea.server.InternalServer;
+import net.pzdcrp.Hyperborea.server.ServerWorld;
+import net.pzdcrp.Hyperborea.utils.GameU;
 import net.pzdcrp.Hyperborea.utils.MathU;
+import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.Chunk;
+import net.pzdcrp.Hyperborea.world.elements.Column;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
 import net.pzdcrp.Hyperborea.world.elements.chat.Chat;
@@ -54,18 +75,17 @@ public class Player extends Entity {
 	public int curentNumPressed = -1;
 	public String nickname;
 	
-	//сохраняется
-	public Vector3D spawnpoint;
 	
 	
-	public Player(double tx, double ty, double tz, String name) {
-		super(new Vector3D(tx,ty,tz),new AABB(-0.3, 0, -0.3, 0.3, 1.7, 0.3), EntityType.player);
+	public Player(double tx, double ty, double tz, String name, World world, int lid) {
+		super(new Vector3D(tx,ty,tz),new AABB(-0.3, 0, -0.3, 0.3, 1.7, 0.3), EntityType.player, world, lid);
 		this.nickname = name;
 		cam = new Camera();
 		cam.setpos(this.pos.x,this.pos.y,this.pos.z);
 		cam.cam.update();
 		pinterface = new PlayerInterface(this);
 		this.castedInv = (PlayerInventory) inventory;
+		
 		/*this.inventory.addItem(new TntCrateItem(99), 0);
 		this.inventory.addItem(new GlassItem(99), 1);
 		this.inventory.addItem(new GrassItem(99), 2);
@@ -77,9 +97,22 @@ public class Player extends Entity {
 		this.inventory.addItem(new WeedItem(99), 8);*/
 	}
 	
-	public void tick() {
-		super.tick();
+	public boolean tick() {
+		boolean continuee = super.tick();
+		if (!this.world.isLocal()) {
+			if (hp < maxhp()) {
+				if (healcd > 0) {
+					healcd--;
+				} else {
+					setHp((byte)(hp + 1));
+					healcd = 40;
+				}
+			}
+			return false;
+		}
+		if (!continuee) return false;
 		if (actcd > 0) actcd--;
+		updateFacing();
 		updateControls();
 		movement();
 		updateBlockBreaking();
@@ -92,16 +125,28 @@ public class Player extends Entity {
 			}
 		}
 		cam.setpos(getEyeLocation());
-		if (hp < maxhp()) {
-			if (healcd > 0) {
-				healcd--;
-			} else {
-				this.hp += 1;
-				healcd = 40;
+		
+		return true;
+	}
+	
+	@Override
+	public void setHp(byte i) {
+		if (this.hp != i) {
+			this.hp = i;
+			if (!world.isLocal()) {
+				sendSelfPacket(new ServerSetHealthPacket(hp));
 			}
 		}
 	}
 	
+	private Session session;
+	public void sendSelfPacket(Packet p) {
+		if (session == null) {
+			session = ((ServerWorld) world).getPlayerByName(nickname).session;
+		}
+		session.send(p);
+	}
+
 	private static final float bs = 0.1f;
 	public void updateBlockBreaking() {
 		if (chat.isOpened() || castedInv.isOpened) {
@@ -131,14 +176,11 @@ public class Player extends Entity {
 		if (isMining) {
 			int miningTicks = (int) (beforeAimBlock.getResistance() * 20);
 			if (miningTicks == 0) {
-				Hpb.world.breakBlock(beforeAimBlock.pos);
-				breakingticks = 0;
-				isMining = false;
-				return;
+				Hpb.session.send(new ClientPlayerActionPacket(PlayerAction.StartBreakingBlock, beforeAimBlock.pos));
 			}
 			float lerp = MathU.norm(0, miningTicks, breakingticks);
 			int stage = (int)Math.floor(lerp * 10);
-			bbchunk = beforeAimBlock.getChunk();
+			bbchunk = beforeAimBlock.getChunk(world);
 			if (bbchunk.bbstage != stage) {
 				bbchunk.addBlockBreakStage(beforeAimBlock.pos, stage);
 			}
@@ -152,12 +194,15 @@ public class Player extends Entity {
 					),
 					MathU.rndi(8, 16));
 			if (breakingticks >= miningTicks) {
-				Hpb.world.breakBlock(beforeAimBlock.pos);
+				//world.breakBlock(beforeAimBlock.pos);
+				Hpb.session.send(new ClientPlayerActionPacket(PlayerAction.EndBreakingBlock, beforeAimBlock.pos));
 				breakingticks = 0;
 				bbchunk.endBlockBreakStage();
+				isMining = false;
 			}
 		} else {
 			if (bbchunk != null && bbchunk.bbstage != -1) {
+				Hpb.session.send(new ClientPlayerActionPacket(PlayerAction.ResetBreakingBlock, beforeAimBlock.pos));
 				bbchunk.endBlockBreakStage();
 			}
 		}
@@ -241,13 +286,12 @@ public class Player extends Entity {
 	public void respawn() {
 		this.hp = maxhp();
 		this.justspawn = 50;
-		this.teleport(spawnpoint);
+		this.teleport(InternalServer.world.randomSpawnPoint());
 	}
 	
 	@Override
 	public void getJson(JsonObject jen) {
 		super.getJson(jen);
-		jen.addProperty("spawnpoint", spawnpoint.toString());
 		jen.add("inventory", castedInv.toJson());
 		jen.addProperty("name", nickname);
 	}
@@ -255,7 +299,6 @@ public class Player extends Entity {
 	@Override
 	public void fromJson(JsonObject jen) {
 		super.fromJson(jen);
-		this.spawnpoint = Vector3D.fromString(jen.get("spawnpoint").getAsString());
 		this.castedInv.fromJson(jen.get("inventory").getAsJsonObject());
 		this.nickname = jen.get("name").getAsString();
 	}
@@ -392,10 +435,66 @@ public class Player extends Entity {
 	public int getType() {
 		return 1;
 	}
-
+	
+	//client only
 	public void onPacket(Packet p) {
 		if (p instanceof ServerChatPacket) {
-			chat.send(((ServerChatPacket)p).getmsg());
+			chat.fromServer(((ServerChatPacket)p).getmsg());
+		} else if (p instanceof ServerLoadColumnPacket) {
+			ServerLoadColumnPacket packet = (ServerLoadColumnPacket)p;
+			world.getLoadedColumns().put(packet.c.pos, packet.c);
+		} else if (p instanceof ServerUnloadColumnPacket) {
+			ServerUnloadColumnPacket packet = (ServerUnloadColumnPacket)p;
+			world.getLoadedColumns().remove(packet.pos);
+		} else if (p instanceof ServerChunkLightPacket) {
+			ServerChunkLightPacket packet = (ServerChunkLightPacket)p;
+			Chunk c = world.getColumn(new Vector2I(
+					packet.chunkPos.x,
+					packet.chunkPos.z))
+			.chunks[packet.chunkPos.y];
+			c.setLightStorage(packet.light);
+			c.updateModel();//TODO сделать метод который будет обновлять не всю модель а только свет
+		} else if (p instanceof ServerSetblockPacket) {
+			ServerSetblockPacket packet = (ServerSetblockPacket) p;
+			if (packet.author == ActionAuthor.player && packet.id == 0) {
+				world.breakBlock(packet.pos);
+			} else {
+				world.setBlock(packet.id, packet.pos, packet.author);
+			}
+		} else if (p instanceof ServerSpawnEntityPacket) {
+			ServerSpawnEntityPacket packet = (ServerSpawnEntityPacket)p;
+			world.spawnEntity(packet.entity);
+		} else if (p instanceof ServerEntityPositionVelocityPacket) {
+			ServerEntityPositionVelocityPacket packet = (ServerEntityPositionVelocityPacket)p;
+			Entity e = world.getEntity(packet.id);
+			if (e == null) {
+				GameU.err("получена позиция для не созданой сущности");
+				return;
+			}
+			e.setPos(packet.pos);
+			e.vel = packet.vel;
+		} else if (p instanceof ServerEntityDespawnPacket) {
+			ServerEntityDespawnPacket packet = (ServerEntityDespawnPacket)p;
+			chat.debug("despawning entity!");
+			for (Column c : world.getLoadedColumns().values()) {
+				for (Entity entity : c.entites) {
+					if (entity.localId == packet.lid) {
+						entity.despawn();
+						chat.debug("found!");
+						return;
+					}
+				}
+			}
+			chat.debug("not found!");
+		} else if (p instanceof ServerSetHealthPacket) {
+			ServerSetHealthPacket packet = (ServerSetHealthPacket) p;
+			this.setHp(packet.hp);
+		} else if (p instanceof ServerSetupInventoryPacket) {
+			ServerSetupInventoryPacket packet = (ServerSetupInventoryPacket)p;
+			this.castedInv.setItems(packet.items);
+		} else if (p instanceof ServerSetSlotPacket) {
+			ServerSetSlotPacket packet = (ServerSetSlotPacket)p;
+			this.castedInv.setSlotFromPacketOnClient(packet.index, packet.item);
 		}
 	}
 }

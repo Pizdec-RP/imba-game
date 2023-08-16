@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.badlogic.gdx.math.Vector3;
 
@@ -13,6 +14,7 @@ import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.OTripple;
 import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
+import net.pzdcrp.Hyperborea.data.Vector3I;
 import net.pzdcrp.Hyperborea.world.elements.Column;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
@@ -132,35 +134,27 @@ public class VectorU {
 	
 	public static Vector3D getNear(Vector3D target, List<Vector3D> allPos) {
         Vector3D minpos = null;
-        List<Vector3D> temp = new ArrayList<>();
         for (Vector3D position : allPos) {
-        	if (!equalsInt(position, target)) {
-	        	double distance = sqrt(position, target);
-	        	if (minpos == null) {
-	        		minpos = position;
-	        	} else {
-	        		double distanceminpos = sqrt(minpos, target);
-	        		if (distance < distanceminpos) {
-	        			minpos = position;
-	        		} else if (distance == distanceminpos && MathU.rndi(1, 2) == 1) {
-	        			minpos = position;
-	        		}
-	        	}
+        	double distance = sqrt(position, target);
+        	if (minpos == null) {
+        		minpos = position;
+        	} else {
+        		double distanceminpos = sqrt(minpos, target);
+        		if (distance < distanceminpos) {
+        			minpos = position;
+        		}
         	}
         }
-        temp.add(minpos);
-        for (Vector3D position : allPos) {
-        	if (minpos == null || position == null) return null;
-        	if (sqrt(minpos, target) == sqrt(position, target)) {
-        		temp.add(position);
-        	}
-        }
-        return temp.get(MathU.rndi(0, temp.size()-1));
+        return minpos;
     }
 	
 
     public static Vector2I posToRegion(Vector3D pos) {
     	return new Vector2I((int)Math.floor(pos.x) >> 10, (int)Math.floor(pos.z) >> 10);
+    }
+    
+    public static Vector2I posToColumn(Vector3I pos) {
+    	return new Vector2I(pos.x >> 4, pos.z >> 4);
     }
     
     public static Vector2I posToColumn(Vector3D pos) {
@@ -206,5 +200,28 @@ public class VectorU {
             }
         }
         return vectors;
+    }
+    
+    public static Entity getNearest(List<? extends Entity> list, Vector3D target) {
+    	Entity minen = null;
+    	double minDistance = Double.MAX_VALUE;
+
+    	for (Entity en : list) {
+    		double dist = sqrt(en.pos, target);
+    		if (
+    				(minDistance < dist) ||
+    				(minDistance == dist && MathU.rndnrm() > 0.5)
+    		) {
+    			minDistance = dist;
+    			minen = en;
+    		}
+    	}
+    	return minen;
+    }
+    
+    public static List<? extends Entity> sortNearest(List<? extends Entity> list, Vector3D target) {
+        List<? extends Entity> sorted = new ArrayList<>(list);
+        sorted.sort(Comparator.comparingDouble(entity -> sqrt(entity.pos, target)));
+        return sorted;
     }
 }

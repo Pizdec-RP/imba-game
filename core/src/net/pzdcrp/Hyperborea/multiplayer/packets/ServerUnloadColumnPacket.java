@@ -5,7 +5,7 @@ import de.datasecs.hydra.shared.protocol.packets.PacketId;
 import io.netty.buffer.ByteBuf;
 import net.pzdcrp.Hyperborea.data.Vector2I;
 
-@PacketId(8)
+@PacketId(7)
 public class ServerUnloadColumnPacket extends Packet {
 	public Vector2I pos;
 	public ServerUnloadColumnPacket() {

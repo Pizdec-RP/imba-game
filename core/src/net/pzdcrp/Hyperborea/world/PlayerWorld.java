@@ -22,6 +22,8 @@ import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+
+import de.datasecs.hydra.shared.protocol.packets.Packet;
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.ActionAuthor;
 import net.pzdcrp.Hyperborea.data.Settings;
@@ -29,6 +31,7 @@ import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.multiplayer.packets.ClientWorldSuccLoadPacket;
 import net.pzdcrp.Hyperborea.player.Player;
+import net.pzdcrp.Hyperborea.utils.GameU;
 import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.utils.VectorU;
 import net.pzdcrp.Hyperborea.world.elements.Chunk;
@@ -60,19 +63,15 @@ public class PlayerWorld implements World {// implements RenderableProvider {
     public ModelInstance particlesModel = new ModelInstance(new Model());
     public List<Particle> particles = new CopyOnWriteArrayList<>();
 	
-	public boolean needToUpdateLoadedColumns = true;
+	public boolean needtoloadenviroment = false;
     
 	public PlayerWorld() {
-		Block.world = this;
 		particlesModel.userData = new Object[] {"particles"};
 	}
 	
 	public void load() {
-		System.out.println("подгружаем окружение");
-		loadEnvironment();
-		PlayerWorld.ready = true;
-		System.out.println("все заебок");
-		Hpb.session.send(new ClientWorldSuccLoadPacket(Hpb.playerId));
+		System.out.println("world loading");
+		needtoloadenviroment = true;
 	}
 
 	public void loadEnvironment() {
@@ -83,7 +82,7 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 		sky = new ModelInstance(model);
 		sky.userData = new Object[] {"sky"};
 		Matrix4 transform = new Matrix4();
-		transform.translate((float)player.pos.x,(float)player.pos.y,(float)player.pos.z);
+		transform.translate(0,0,0);
 		sky.transform.set(transform);
 		
 		modelBuilder = new ModelBuilder();
@@ -120,6 +119,29 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 		return loadedColumns.containsKey(VectorU.xzToColumn(x,z));
 	}
 	
+	@Override
+	public boolean posDostupna(Vector3D pos) {
+		if (pos.y < 0 || pos.y > maxheight-1) {
+			return false;
+		}
+		return loadedColumns.containsKey(VectorU.posToColumn(pos));
+	}
+	
+	@Override
+	public void setBlock(int block, Vector3D pos, ActionAuthor author) {
+		if (pos.y < 0 || pos.y >= buildheight) {
+			GameU.err("out of bounds block placement. at: "+pos.toString()+" id: "+block+" author: "+author.toString());
+			return;
+		}
+		Column col = getColumn(pos.x, pos.z);
+		col.setBlock(block, pos);
+		for (Vector3D pos1 : pos.sides()) {
+			if (posDostupna(pos1)) {
+				pos1.callChunkUpdate(this);
+			}
+		}
+	}
+	
 	static final float bs = 0.2f;
 	@Override
 	public boolean setBlock(Block block, ActionAuthor author) {
@@ -137,11 +159,21 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 		}
 		Column col = getColumn(block.pos.x,block.pos.z);
 		col.setBlock(block);
-		for (Block block1 : block.getSides()) {
-			block1.onNeighUpdate();
-			block1.callChunkUpdate();
+		for (Block block1 : block.getSides(this)) {
+			block1.callChunkUpdate(this);
 		}
 		return true;
+	}
+	@Override
+	public void breakBlock(Vector3D pos) {
+		if (pos.y < 0 || pos.y >= buildheight) return;
+		Block before = getBlock(pos);
+		setBlock(new Air(pos), ActionAuthor.player);
+		if (before.isRenderable()) {
+			for (int i = 0; i < MathU.rndi(10, 20); i++) {
+				spawnParticle(before.texture, pos.translate().add(MathU.rndf(0.3f, 0.7f), MathU.rndf(0.3f, 0.7f), MathU.rndf(0.3f, 0.7f)), new Vector3(MathU.rndf(-bs, bs),MathU.rndf(-bs, bs),MathU.rndf(-bs, bs)), MathU.rndi(8, 16));
+			}
+		}
 	}
 	
 	@Override
@@ -158,18 +190,6 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 			if (Math.random() > 0.5) return;
 		}
 		particles.add(new Particle(Hpb.mutex.getBlockTexture(tname), pos, vel, lifetime));
-	}
-	@Override
-	public void breakBlock(Vector3D pos) {
-		if (pos.y < 0 || pos.y >= buildheight) return;
-		Block before = getBlock(pos);
-		setBlock(new Air(pos), ActionAuthor.player);
-		before.onBreak();
-		if (before.isRenderable()) {
-			for (int i = 0; i < MathU.rndi(10, 20); i++) {
-				spawnParticle(before.texture, pos.translate().add(MathU.rndf(0.3f, 0.7f), MathU.rndf(0.3f, 0.7f), MathU.rndf(0.3f, 0.7f)), new Vector3(MathU.rndf(-bs, bs),MathU.rndf(-bs, bs),MathU.rndf(-bs, bs)), MathU.rndi(8, 16));
-			}
-		}
 	}
 	@Override
 	public Column getColumn(double x, double z) {
@@ -237,20 +257,21 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 	public void addLC(Column c) {
 		loadedColumns.put(c.pos, c);
 	}
+	
+	public boolean continuee = false;
 	@Override
 	public void tick() {
-		if (!ready || Hpb.exit) {
+		if (!ready || Hpb.exit || player == null) {
 			return;
 		}
 		//System.out.println("tick-------------------");
 		//deltaTime();
 		time++;
 		if (time > DAY_LENGTH) time = 0;
-		//deltaTime();
-		/** now only on server side
+		continuee = player.tick();
 		for (Entry<Vector2I, Column> column : loadedColumns.entrySet()) {
 			column.getValue().tick();
-		}*/
+		}
 		for (Particle p : particles) {
 			p.update();
 		}
@@ -259,7 +280,7 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 	static long now;
 	public void deltaTime() {
 		now = System.currentTimeMillis();
-		System.out.println(now - beforetime);
+		GameU.log(now - beforetime);
 		beforetime = now;
 	}
 	
@@ -273,9 +294,9 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 	        return Float.compare(distance2, distance1); // Сортировка в обратном порядке
 	    }
 	};
-	public boolean isCycleFree = true;
 	public void render() {
 		if (Hpb.exit) return;
+		
 		byte upd = 0;
 		for (Column col : loadedColumns.values()) {
 			for (Chunk chunk : col.chunks) {
@@ -290,8 +311,10 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 		}
 		renderSky();
 		for (Column col : loadedColumns.values()) {
-			col.renderNormal();
-			col.renderEntites();
+			if (col.canrender()) {
+				col.renderNormal();
+				col.renderEntites();
+			}
 		}
 		
 		Set<Chunk> notSorted = new HashSet<>();
@@ -305,8 +328,10 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 		List<Chunk> sortedChunks = new ArrayList<>(notSorted);
 		Collections.sort(sortedChunks, chunkComparator);
 		for (Chunk c : sortedChunks) {
-			if (!Vector3D.ZERO.equals(player.vel)/* || c.needUpdateTransp())*/ && VectorU.sqrt(new Vector3D(player.echc.x, player.pos.y/16, player.echc.z), c.pos) <= Settings.updatingDistance) c.rebuildTransparent();
-			if (c.transparent != null) Hpb.render(c.transparent);
+			if (c.column.canrender()) {
+				if (/*!Vector3D.ZERO.equals(player.vel)*//* || c.needUpdateTransp())*/ VectorU.sqrt(new Vector3D(player.echc.x, player.pos.y/16, player.echc.z), c.pos) <= Settings.updatingDistance) c.rebuildTransparent();
+				if (c.transparent != null) Hpb.render(c.transparent);
+			}
 		}
 		for (ModelInstance a : additional) {
 			Hpb.render(a);
@@ -316,11 +341,46 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 		}
 		Hpb.render(particlesModel);
 		player.render();
-		isCycleFree = true;
 	}
 	
 	@Override
 	public boolean isLocal() {
 		return true;
+	}
+
+	@Override
+	public boolean containColumn(Vector2I pos) {
+		return loadedColumns.containsKey(pos);
+	}
+
+	@Override
+	public Column getWithoutLoad(Vector2I cc) {
+		return loadedColumns.get(cc);
+	}
+
+	@Override
+	public Map<Vector2I, Column> getLoadedColumns() {
+		return this.loadedColumns;
+	}
+
+	@Override
+	public Entity getEntity(int id) {
+		for (Column column : Hpb.world.loadedColumns.values()) {
+			for (Entity en : column.entites) {
+				if (en.localId == id) return en;
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public List<Player> getPlayers(Vector3D pos, double radius) {
+		GameU.end("не должно использоваться");
+		return null;
+	}
+	
+	@Override
+	public void broadcastByColumn(Vector2I pos, Packet p) {
+		GameU.end("не должно использоваться");
 	}
 }

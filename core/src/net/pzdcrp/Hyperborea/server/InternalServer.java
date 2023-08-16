@@ -16,7 +16,7 @@ import net.pzdcrp.Hyperborea.utils.GameU;
 public class InternalServer implements HydraPacketListener {
 	public HydraServer server;
 	private HydraProtocol protocol = new HpbProtocol(this);
-	public ServerWorld world;
+	public static ServerWorld world;
 	
 	public InternalServer() {
 		world = new ServerWorld("save");

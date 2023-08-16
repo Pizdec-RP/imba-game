@@ -6,6 +6,7 @@ import de.datasecs.hydra.shared.protocol.packets.StandardPacket;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+//import net.pzdcrp.Hyperborea.utils.GameU;
 
 import java.io.Serializable;
 import java.net.SocketAddress;
@@ -47,6 +48,7 @@ public class HydraSession extends SimpleChannelInboundHandler<Packet> implements
 
     @Override
     public void send(Packet packet) {
+    	//GameU.log("outgoing packet "+packet.getClass().getSimpleName());
         channel.writeAndFlush(packet);
     }
 

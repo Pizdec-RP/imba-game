@@ -99,9 +99,9 @@ public class Mutex {
 			razm[2] = (float)twidth / (float)width;
 			razmetka.put(tex.getKey(), razm);
 		}
-		comp = new Texture(new PixmapTextureData(pixmap, Format.RGBA8888, true, false));
+		comp = new Texture(new PixmapTextureData(pixmap, Format.RGBA8888, false, false));
 		comp.setAnisotropicFilter(GL30.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT);
-		//comp.setFilter(TextureFilter.Nearest, TextureFilter.MipMapNearestLinear);
+		comp.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
 	}
 	
 	public void addOtherTexture(Texture t, String name) {
@@ -196,7 +196,7 @@ public class Mutex {
     public void render() {
     	MBIM m = new MBIM(null);
     	for (Item item : Item.items.values()) {
-    		System.out.println("jopa "+item.getClass().getName());
+    		System.out.println("rendered 2d image of block projection "+item.getClass().getName());
 	    	if (item.isModel()) {
 	    		Block block = Block.blockByItem(item).clone(new Vector3D(0,0,5));
 	    		if (block == null) continue;
@@ -232,7 +232,7 @@ public class Mutex {
 	            m.clear();
 	    	}
 	    }
-    	System.out.println("rendered items: "+itemtextures.size());
+    	GameU.log("rendered items: "+itemtextures.size());
     	Vector3D pos = new Vector3D(0, 0, 0);
     	ModelUtils.setScale(0.3f);
     	NotMBIM mm = new NotMBIM();
@@ -244,6 +244,7 @@ public class Mutex {
     		ModelInstance model = mm.end();
     		model.userData = new Object[] {"item", 0f};
     		Block.blockModels.put(b.getKey(), model);
+    		GameU.log("added block model: "+b.getKey());
     		mm.clear();
     	}
     	ModelUtils.setScale(1f);
@@ -272,15 +273,20 @@ public class Mutex {
 		if (fonts.containsKey(i)) {
 			return fonts.get(i);
 		} else {
-			FreeTypeFontParameter parameter = new FreeTypeFontParameter();
-			parameter.size = i;
-			parameter.minFilter = TextureFilter.Linear;
-			parameter.magFilter = TextureFilter.Linear;
-			parameter.genMipMaps = true;
-			parameter.characters = FreeTypeFontGenerator.DEFAULT_CHARS + "йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ";
-			BitmapFont font = generator.generateFont(parameter);
-			fonts.put(i, font);
-			return font;
+			try {
+				FreeTypeFontParameter parameter = new FreeTypeFontParameter();
+				parameter.size = i;
+				parameter.minFilter = TextureFilter.Linear;
+				parameter.magFilter = TextureFilter.Linear;
+				parameter.genMipMaps = true;
+				parameter.characters = FreeTypeFontGenerator.DEFAULT_CHARS + "йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ";
+				BitmapFont font = generator.generateFont(parameter);
+				fonts.put(i, font);
+				return font;
+			} catch (Exception e) {
+				GameU.end("error while generating font: "+e.getMessage());
+				return null;
+			}
 		}
 	}
 }

@@ -13,6 +13,8 @@ import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.DamageSource;
 import net.pzdcrp.Hyperborea.data.Settings;
 import net.pzdcrp.Hyperborea.data.Vector3D;
+import net.pzdcrp.Hyperborea.server.InternalServer;
+import net.pzdcrp.Hyperborea.utils.GameU;
 import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.world.PlayerWorld;
 import net.pzdcrp.Hyperborea.world.elements.Particle;
@@ -64,11 +66,11 @@ public class ControlListener implements InputProcessor {
 		}
 		if (keycode == Input.Keys.N) {
 			Settings.renderDistance += 1;
-			Hpb.world.needToUpdateLoadedColumns = true;
+			GameU.log("renderDistance cannot be changed while you in game");
 		}
 		if (keycode == Input.Keys.B) {
 			Settings.renderDistance -= 1;
-			Hpb.world.needToUpdateLoadedColumns = true;
+			GameU.log("renderDistance cannot be changed while you in game");
 		}
 		if (keycode == Input.Keys.TAB) {
 			if (p.castedInv.isOpened) {
@@ -116,8 +118,11 @@ public class ControlListener implements InputProcessor {
 			if (p.castedInv.isOpened) {
 				p.castedInv.close();
 			} else {
-				System.out.println("выходим без сохранения потмоучто оно не предусмотерно!!!!");
-				System.exit(0);
+				//System.out.println("выходим без сохранения потмоучто оно не предусмотерно!!!!");
+				if (InternalServer.world.save())
+					System.exit(0);
+				else
+					p.chat.send("error while saving world");
 			}
 		}
 		return true;

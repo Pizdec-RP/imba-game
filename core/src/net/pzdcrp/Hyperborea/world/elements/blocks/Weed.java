@@ -9,6 +9,7 @@ import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.data.MBIM.offset;
 import net.pzdcrp.Hyperborea.extended.SexyMeshBuilder;
 import net.pzdcrp.Hyperborea.utils.ModelUtils;
+import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block.BlockType;
 
 public class Weed extends Block {
@@ -77,8 +78,8 @@ public class Weed extends Block {
 	}
 	
 	@Override
-	public void onNeighUpdate() {
-		if (this.under().getType() != BlockType.solid) {
+	public void onNeighUpdate(World world) {
+		if (world.getBlock(pos.x,pos.y-1,pos.z).getType() != BlockType.solid) {
 			world.breakBlock(pos);
 		}
 	}

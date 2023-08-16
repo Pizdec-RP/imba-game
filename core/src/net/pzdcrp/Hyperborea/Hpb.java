@@ -39,9 +39,13 @@ import net.pzdcrp.Hyperborea.data.Settings;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.multiplayer.HpbProtocol;
 import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlayerConnectionPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ClientWorldSuccLoadPacket;
 import net.pzdcrp.Hyperborea.multiplayer.packets.ServerChatPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerChunkLightPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerLoadColumnPacket;
 import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSpawnPlayerPacket;
 import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSuccessConnectPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerUnloadColumnPacket;
 import net.pzdcrp.Hyperborea.player.ControlListener;
 import net.pzdcrp.Hyperborea.player.Player;
 import net.pzdcrp.Hyperborea.server.InternalServer;
@@ -93,29 +97,42 @@ public class Hpb extends ApplicationAdapter {
 	public static UUID playerId;
 	
 	public Hpb() {
+		
 	}
 	
 	public void packetReceived(Session s, Packet p) {
-		GameU.log("client got packet "+p.getClass().getName());
-		if (p instanceof ServerSuccessConnectPacket) {
-			playerId = ((ServerSuccessConnectPacket)p).getid();
-			world = new PlayerWorld();
-			world.load();
-			tickLoop();
-		} else if (p instanceof ServerSpawnPlayerPacket) {
-			if (spawned) GameU.end("спавн не должен вызываться более 1 раза");
-			spawned = true;
-			ServerSpawnPlayerPacket packet = (ServerSpawnPlayerPacket)p;
-			world.player = new Player(packet.x,packet.y,packet.z, "Player1488");
-			//TODO transfer other data like inventory, rotation, hp
-			multiplexer.addProcessor(controls = new ControlListener(world.player));
-		} else {
-			world.player.onPacket(p);
+		try {
+			if (!(p instanceof ServerChunkLightPacket) &&
+				!(p instanceof ServerLoadColumnPacket) &&
+				!(p instanceof ServerUnloadColumnPacket)) {
+				GameU.log("client got packet "+p.getClass().getSimpleName());
+			}
+			if (p instanceof ServerSuccessConnectPacket) {
+				playerId = ((ServerSuccessConnectPacket)p).getid();
+				world = new PlayerWorld();
+				world.load();
+				tickLoop();
+			} else if (p instanceof ServerSpawnPlayerPacket) {
+				if (spawned) GameU.end("спавн не должен вызываться более 1 раза");
+				spawned = true;
+				ServerSpawnPlayerPacket packet = (ServerSpawnPlayerPacket)p;
+				world.player = new Player(packet.x,packet.y,packet.z, "Player1488", world, packet.lid);
+				//TODO transfer other data like inventory+, rotation-, hp+
+				
+				multiplexer.addProcessor(controls = new ControlListener(world.player));
+			} else {
+				if (world.player == null) GameU.end("bad packet: "+p.getClass().getSimpleName());
+				world.player.onPacket(p);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(0);
 		}
 	}
 
 	@Override
 	public void create() {
+		Thread.currentThread().setName("main thd");
 		mutex = new Mutex();
 		System.out.println("loading textures");
 		loadTextures();
@@ -149,17 +166,20 @@ public class Hpb extends ApplicationAdapter {
 		hurtlevelatr = stage2shader.getUniformLocation("hurtlevel");
 		isdeadatr = stage2shader.getUniformLocation("isdead");
 		randomatr = stage2shader.getUniformLocation("random");
-		Thread.currentThread().setName("main thd");
+		
+		mutex.getFont(25);//инициализируем шрифт потомучто он используется в чате а создание чата происходит в потоке обработки пакетов
 	}
 	
 	@Override
 	public void resize (int width, int height) {
 		if (world == null) return;
-		world.player.cam.cam.viewportWidth = width;
-		world.player.cam.cam.viewportHeight = height;
+		if (world.player != null) {
+			world.player.cam.cam.viewportWidth = width;
+			world.player.cam.cam.viewportHeight = height;
+			world.player.pinterface.resize(width, height);
+		}
 	    spriteBatch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
 	    buffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, true);
-	    world.player.pinterface.resize(width, height);
 	}
 	
 	public void tick() {
@@ -320,6 +340,7 @@ public class Hpb extends ApplicationAdapter {
 			return;
 		}
 		try {
+			//GameU.log(state.toString()+" "+ (world == null) +" "+(world==null?"null":world.player==null)+" "+(world==null?"no":world.needtoloadenviroment));
 			if (state == State.CREATINGINTERNALSERVER) {
 				if (internalserver == null) {
 					GameU.log("opening server");
@@ -361,7 +382,15 @@ public class Hpb extends ApplicationAdapter {
 			} else if (state == State.INGAME) {
 				now = System.currentTimeMillis();
 				last = now;
-				
+				if (world.needtoloadenviroment) {
+					world.loadEnvironment();
+					PlayerWorld.ready = true;
+					System.out.println("все заебок, окружение прогружено");
+					session.send(new ClientWorldSuccLoadPacket(playerId));
+					world.needtoloadenviroment = false;
+					return;
+				}
+				if (world.player == null) return;
 				renderWorld();
 				
 				StringBuilder builder = new StringBuilder();
@@ -377,13 +406,14 @@ public class Hpb extends ApplicationAdapter {
 				builder.append(" | youInCol: ").append(world.player.beforeechc.toString());
 				builder.append(" | vecs: ").append(Vector3D.test);
 				builder.append(" | blocks: ").append(Block.count);
+				builder.append(" | player ticking: ").append(world.continuee);
 				label.setText(builder);
 				stage.act(Gdx.graphics.getDeltaTime());
 				stage.draw();
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
 			System.out.println("render error");
+			e.printStackTrace();
 			exit = true;
 			System.exit(0);
 		}
@@ -446,7 +476,7 @@ public class Hpb extends ApplicationAdapter {
 	    }, "client tick thread").start();
 	}
 	
-	public static void onCommand(String rawcommand) {
+	/*public static void onCommand(String rawcommand) {
 		if (rawcommand.split(" ").length == 0) return;
 		String command = rawcommand.split(" ")[0].replace("/", "");
 		String[] args = rawcommand.split(" ");
@@ -454,15 +484,15 @@ public class Hpb extends ApplicationAdapter {
 		//TODO ClientPlayerCommandPacket
 		
 		//System.out.println(command);
-		/*if (command.equals("stop")) {
-			if (Hpb.world.save()) {
+		if (command.equals("stop")) {
+			if (world.save()) {
 				System.out.println("всё");
 				System.exit(0);
 			} else {
 				System.out.println("откат, сохранение высрало ошибку");
 			}
 		} else if (command.equals("save")) {
-			Hpb.world.save();
+			world.save();
 			exit=false;
 			System.exit(0);
 		} else if (command.equals("setblock")) {
@@ -484,6 +514,6 @@ public class Hpb extends ApplicationAdapter {
 			case "rain":
 				return;//TODO
 			}
-		}*/
-	}
+		}
+	}*/
 }

@@ -1,5 +1,9 @@
 package net.pzdcrp.Hyperborea.utils;
 
+import java.util.List;
+
+import net.pzdcrp.Hyperborea.player.Player;
+
 public class GameU {
 	public static boolean debug = true;
 	public static void sleep(long ms) {
@@ -11,8 +15,13 @@ public class GameU {
     }
 	
 	public static void tracer() {
+		int i = 0;
+		System.out.println("tracing from thread: "+Thread.currentThread().getName());
 		for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
-		    System.out.println(ste);
+		    if (i > 2) {
+		    	System.err.println("    "+ste);
+		    }
+		    i++;
 		}
 	}
 	
@@ -53,5 +62,18 @@ public class GameU {
 	public static void d(String s) {
 		if (debug)
 			System.out.println(s);
+	}
+
+	public static void err(String s) {
+		System.err.println(s);
+	}
+
+	public static <T> String arrayString(String s, List<T> arr) {
+		StringBuilder sb = new StringBuilder(s+": [");
+		for (T element : arr) {
+			sb.append(element.toString()).append(", ");
+		}
+		sb.append("]");
+		return sb.toString();
 	}
 }

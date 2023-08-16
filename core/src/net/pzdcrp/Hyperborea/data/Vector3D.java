@@ -6,7 +6,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.badlogic.gdx.math.Vector3;
 
+import io.netty.buffer.ByteBuf;
 import net.pzdcrp.Hyperborea.Hpb;
+import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.Chunk;
 import net.pzdcrp.Hyperborea.world.elements.Column;
 
@@ -22,6 +24,13 @@ public class Vector3D {
 		this.x = 0;
 		this.y = 0;
 		this.z = 0;
+		test++;
+	}
+	
+	public Vector3D(ByteBuf byteBuf) {
+		this.x = byteBuf.readDouble();
+		this.y = byteBuf.readDouble();
+		this.z = byteBuf.readDouble();
 		test++;
 	}
 
@@ -391,5 +400,15 @@ public class Vector3D {
 			this.add(1, 0, 0), this.add(0, 1, 0), this.add(0, 0, 1),
 			this.add(-1, 0, 0), this.add(0, -1, 0), this.add(0, 0, -1)
 		};
+	}
+	
+	public void writeBuffer(ByteBuf byteBuf) {
+		byteBuf.writeDouble(x);
+		byteBuf.writeDouble(y);
+		byteBuf.writeDouble(z);
+	}
+	
+	public void callChunkUpdate(World world) {
+		world.getColumn(x, z).chunks[(int) (Math.floor(y)/16)].updateModel();
 	}
 }

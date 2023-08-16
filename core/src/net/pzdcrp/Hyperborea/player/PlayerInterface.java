@@ -24,12 +24,15 @@ public class PlayerInterface {
 	public PlayerInterface(Player p) {
 		this.p = p;
 		hppix = new Pixmap(130, 30, Pixmap.Format.RGBA8888);
-		hptex = new Texture(hppix);
 		crosshair = Hpb.mutex.getOTexture("crosshair");
 	}
 	
 	public void render(int halfwidth, int halfheight) {
 		if (Hpb.deadplayer) return;
+		if (hptex == null) {
+			hptex = new Texture(hppix);//инициализатор вызывается не в потоке рендера
+			this.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		}
 		if (!p.chat.isOpened()) {
 			p.inventory.render();
 			Hpb.spriteBatch.draw(hptex, hpx, hpy, hpw, hph);

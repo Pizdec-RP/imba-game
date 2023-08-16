@@ -11,8 +11,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.badlogic.gdx.math.Vector3;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -26,10 +28,16 @@ import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.ActionAuthor;
 import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
+import net.pzdcrp.Hyperborea.data.Vector3I;
 import net.pzdcrp.Hyperborea.multiplayer.ServerPlayer;
 import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlayerConnectionPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlayerPositionPacket;
 import net.pzdcrp.Hyperborea.multiplayer.packets.ClientWorldSuccLoadPacket;
 import net.pzdcrp.Hyperborea.multiplayer.packets.ServerChatPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerChunkLightPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSetblockPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSpawnEntityPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSpawnPlayerPacket;
 import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSuccessConnectPacket;
 import net.pzdcrp.Hyperborea.player.Player;
 import net.pzdcrp.Hyperborea.utils.GameU;
@@ -43,16 +51,18 @@ import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Voed;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
+import net.pzdcrp.Hyperborea.world.elements.entities.ItemEntity;
 import net.pzdcrp.Hyperborea.world.elements.generators.DefaultWorldGenerator;
+import net.pzdcrp.Hyperborea.world.elements.inventory.items.DirtItem;
 
 public class ServerWorld implements World {
-	private Map<Session, ServerPlayer> players = new ConcurrentHashMap<>();
+	public Map<Session, ServerPlayer> players = new ConcurrentHashMap<>();
 	public Map<Vector2I,Region> memoriedRegions = new ConcurrentHashMap<>();
 	public Map<Vector2I,Column> loadedColumns = new ConcurrentHashMap<>();
+	public List<Entity> shleduedSpawn = new CopyOnWriteArrayList<Entity>();
 	public int time = 0;
 	private static final int DAY_LENGTH = 60000;
 	private static final float DISTANCE_FROM_CENTER = 2000f;
-	private boolean started = false;
 	private JsonObject worlddata;
 	private String save;
 	
@@ -64,61 +74,95 @@ public class ServerWorld implements World {
 	}
 	
 	public void packetReceived(Session s, Packet p) {
-		GameU.log("server got packet "+p.getClass().getName());
+		if (!(p instanceof ClientPlayerPositionPacket)) {
+			GameU.log("server got packet "+p.getClass().getSimpleName());
+		}
 		if (p instanceof ClientPlayerConnectionPacket) {
 			ClientPlayerConnectionPacket packet = (ClientPlayerConnectionPacket) p;
 			UUID id = UUID.randomUUID();
-			ServerPlayer player = new ServerPlayer(id , packet.name, packet.renderDistance, s, this);
-			players.put(s, player);
+			ServerPlayer player = new ServerPlayer(id,
+					packet.name,
+					packet.renderDistance,
+					s,
+					this);
+			//players.put(s, player);
 			s.send(new ServerSuccessConnectPacket(id));
 			Vector2I playercol = readPlayerPos(packet.name);
 			if (playercol == null) {
-				broadcast("player is new on server!");
-				playercol = VectorU.posToColumn(randomSpawnPoint());
+				GameU.log("player is new on server!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+				Vector3D spawnpoint = randomSpawnPoint();
+				playercol = VectorU.posToColumn(spawnpoint);
+				player.playerEntity = new Player(spawnpoint.x,
+						spawnpoint.y,
+						spawnpoint.z,
+						player.name,
+						this,
+						Entity.genLocalId());
+			} else {
+				Column c = this.getColumn(playercol);
+				Player enplayer = c.getUnloadedPlayerByName(player.name);
+				GameU.log("got player "+enplayer.nickname);
+				player.playerEntity = enplayer;
+				player.setEntityDataset(enplayer);
+				/*if (player.playerEntity == null) {
+					GameU.end("cant found entity of player "+player.name+" in "+GameU.arrayString("players", c.unloadedPlayers));
+				}*/
 			}
-			Column c = this.getColumn(playercol);
-			for (Entity entity : c.entites) {
-				if (entity instanceof Player) {
-					Player enplayer = (Player) entity;
-					if (enplayer.nickname == packet.name) {
-						player.setEntiyDataset(enplayer);
-						return;
-					}
-				}
-			}
+			player.playerEntity.tick();
+			players.put(s, player);
 		} else {
 			ServerPlayer player = players.get(s);
+			if (player == null) {
+				GameU.end("player is not on server, but he sending packets");
+			}
 			player.onPacket(p);
 		}
+		//on ClientDisconnectPacket -> write position in worlddata.players
+	}
+	
+	public ServerPlayer getPlayerByName(String name) {
+		for (ServerPlayer p : players.values()) {
+			if (p.name.equals(name)) return p;
+		}
+		GameU.end("unknown player");
+		return null;
 	}
 	
 	public void broadcast(String text) {
 		for (ServerPlayer player : players.values()) {
-			player.session.send(new ServerChatPacket(text));
+			player.sendmsg(text);
 		}
 	}
 	
 	public Vector3D randomSpawnPoint() {
-		Vector3D pos = new Vector3D(MathU.rndi(-100, 100), 0, MathU.rndi(-100, 100));
+		Vector3I pos = new Vector3I(MathU.rndi(-100, 100), 0, MathU.rndi(-100, 100));
 		
-		pos.y = 100;//TODO fix
+		Column c = getColumn(VectorU.posToColumn(pos));
+		int nx = pos.x&15, nz = pos.z&15;
+		//GameU.log(nx+" - "+nz);
+		c.recalculateSLMD(nx,nz);
+		pos.y = c.getSLMD(nx,nz) + 1;
 		
-		return pos;
+		return new Vector3D(pos.x,pos.y,pos.z);
 	}
 	
 	public void start() {
 		try {
 			JsonReader reader = new JsonReader(new FileReader(save+"/wdata.dat"));
 			worlddata = JsonParser.parseReader(reader).getAsJsonObject();
-			startTickLoop();
-			started = true;
 		} catch (Exception e) {
-			e.printStackTrace();
-			System.exit(0);
+			GameU.log("new world!!!!!!!!!!!!!!!!!!!!!!!!!!!1111");
+			worlddata = new JsonObject();
+			worlddata.add("players", new JsonArray());
+			//e.printStackTrace();
 		}
+		startTickLoop();
 		Thread chunkUpdateThread = new Thread(()->{
 			while (true) {
 				updateChunkLights();
+				for (ServerPlayer sp : players.values()) {
+					sp.updateLoadedColumns();
+				}
 				GameU.sleep(500);
 			}
 		}, "server chunk update thread");
@@ -152,7 +196,7 @@ public class ServerWorld implements World {
 		        }
 	        }
 	    }
-		
+		//GameU.log("---------");
 		for (Entry<Vector2I, Column> column : loadedColumns.entrySet()) {
 			column.getValue().tick();
 		}
@@ -168,6 +212,16 @@ public class ServerWorld implements World {
 		return null;
 	}
 	
+	@Override
+	public void broadcastByColumn(Vector2I pos, Packet p) {
+		for (ServerPlayer player : players.values()) {
+			if (player.columnsAroundPlayer.containsKey(pos)) {
+				player.session.send(p);
+			}
+		}
+	}
+	
+	public boolean isCycleFree = true;
 	public void updateChunkLights() {
 		for (Column col : loadedColumns.values()) {
 			for (Chunk chunk : col.chunks) {
@@ -175,23 +229,24 @@ public class ServerWorld implements World {
 					chunk.updateLightMain();
 					chunk.inlightupd = false;
 					chunk.outlightupd = true;
-					Hpb.world.isCycleFree = false;
+					isCycleFree = false;
 				}
 			}
 		}
-		if (Hpb.world.isCycleFree) {
+		if (isCycleFree) {
 			for (Column col : loadedColumns.values()) {
 				for (Chunk chunk : col.chunks) {
 					if (chunk.outlightupd) {
 						chunk.updateLightFromOutbounds();
-						Hpb.world.isCycleFree = false;
+						broadcastByColumn(col.pos, new ServerChunkLightPacket(chunk.getLightStorage(), chunk.getPos()));
+						isCycleFree = false;
 						chunk.outlightupd = false;
 						chunk.updateModel();
 					}
 				}
 			}
 		}
-		
+		isCycleFree = true;
 	}
 	
 	static final int tickrate = 50;
@@ -217,7 +272,7 @@ public class ServerWorld implements World {
 	@Override
 	public boolean setBlock(Block block, ActionAuthor author) {
 		if (block.pos.y < 0 || block.pos.y >= buildheight) {
-			Hpb.displayInfo("build limit reached");
+			Hpb.displayInfo("build limit reached");//TODO изменить на ServerInfoBarPacket
 			return false;
 		}
 		
@@ -228,19 +283,31 @@ public class ServerWorld implements World {
 				}
 			}
 		}
+		
 		Column col = getColumn(block.pos.x,block.pos.z);
 		col.setBlock(block);
-		for (Block block1 : block.getSides()) {
-			block1.onNeighUpdate();
-			block1.callChunkUpdate();
+		this.broadcastByColumn(VectorU.posToColumn(block.pos), new ServerSetblockPacket(block.pos, block.getId(), author));
+		for (Block block1 : block.getSides(this)) {
+			block1.onNeighUpdate(this);
+			block1.callChunkUpdate(this);
 		}
 		return true;
 	}
 	
 	@Override
 	public void spawnEntity(Entity entity) {
-		Column spawnin = getColumn(VectorU.posToColumn(entity.pos));
-		spawnin.entites.add(entity);
+		Vector2I pos = VectorU.posToColumn(entity.pos);
+		if (loadedColumns.containsKey(pos)) {
+			Column spawnin = getColumn(pos);
+			if (entity.isPlayer) {
+				GameU.err("игрока не спавним для других игроков");
+			} else {
+				this.broadcastByColumn(spawnin.pos, new ServerSpawnEntityPacket(entity));
+			}
+			spawnin.entites.add(entity);
+		} else {
+			shleduedSpawn.add(entity);
+		}
 	}
 
 	@Override
@@ -248,7 +315,7 @@ public class ServerWorld implements World {
 		if (pos.y < 0 || pos.y >= buildheight) return;
 		Block before = getBlock(pos);
 		setBlock(new Air(pos), ActionAuthor.player);
-		before.onBreak();
+		before.onBreak(this);
 	}
 	@Override
 	public Column getColumn(double x, double z) {
@@ -260,7 +327,14 @@ public class ServerWorld implements World {
 	}
 	@Override
 	public Column getColumn(Vector2I cc) {
-		return loadedColumns.get(cc);
+		if (loadedColumns.containsKey(cc)) {
+			return loadedColumns.get(cc);
+		} else {
+			Region r = genOrLoadRegion(VectorU.ColumnToRegion(cc));
+			Column c = r.getColumn(cc);
+			addLC(c);
+			return c;
+		}
 	}
 	@Override
 	public int getLight(int x, int y, int z) {
@@ -301,6 +375,12 @@ public class ServerWorld implements World {
     		}
     		DefaultWorldGenerator.toadd.remove(c.pos);
     	}
+		for (Entity entity : shleduedSpawn) {
+			if (entity.beforeechc.equals(c.pos)) {
+				shleduedSpawn.remove(entity);
+				this.spawnEntity(entity);
+			}
+		}
 	}
 	
 	public boolean save() {
@@ -315,11 +395,32 @@ public class ServerWorld implements World {
 				writeRegion(region.getValue());
 			}
 			FileWriter writer = new FileWriter(save+"/wdata.dat");
+			JsonArray jplayers = worlddata.get("players").getAsJsonArray();
+			for (ServerPlayer player : players.values()) {
+				String name = player.name;
+				boolean gotIt = false;
+				for (JsonElement jppos : jplayers) {
+					JsonObject jp = jppos.getAsJsonObject();
+					if (jp.get("name").getAsString().equals(name)) {
+						jp.remove("pos");
+						jp.addProperty("pos", player.playerEntity.echc.toString());
+						gotIt = true;
+						break;
+					}
+				}
+				if (!gotIt) {
+					JsonObject njp = new JsonObject();
+					njp.addProperty("name", player.name);
+					njp.addProperty("pos", player.playerEntity.echc.toString());
+					jplayers.add(njp);
+				}
+			}
 			writer.write(worlddata.toString());
 			writer.close();
 			return true;
 		} catch (Exception e) {
 			e.printStackTrace();
+			Hpb.exit = false;
 			//System.exit(0);
 			return false;
 		}
@@ -330,16 +431,23 @@ public class ServerWorld implements World {
 			return memoriedRegions.get(regpos);
 		}
 		String need = regpos.x+"_"+regpos.z+".reg";
-	    for (final File fileEntry : new File(save).listFiles()) {
+		Region reg;
+		File[] files = new File(save).listFiles();
+		if (files == null) {
+			reg = new Region(regpos, this);
+			memoriedRegions.put(regpos, reg);
+			return reg;
+		}
+	    for (final File fileEntry : files) {
 	        if (!fileEntry.isDirectory()) {
 	        	if (fileEntry.getName().equals(need)) {
-	        		Region reg = readRegion(regpos);
+	        		reg = readRegion(regpos);
 	        		memoriedRegions.put(regpos, reg);
 	        		return reg;
 	        	}
 	        }
 	    }
-	    Region reg = new Region(regpos);
+	    reg = new Region(regpos, this);
 		memoriedRegions.put(regpos, reg);
 		return reg;
 	}
@@ -355,11 +463,11 @@ public class ServerWorld implements World {
 		try {
 			reader = new JsonReader(new FileReader(save+"/"+regpos.x+"_"+regpos.z+".reg"));
 			JsonObject obj = JsonParser.parseReader(reader).getAsJsonObject();
-			Region r = new Region(regpos);
+			Region r = new Region(regpos, this);
 			r.fromJson(obj);
 			return r;
 		} catch (ClassCastException e) {
-			return new Region(regpos);
+			return new Region(regpos, this);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			System.out.println("nema regiona :"+regpos.toString());
@@ -380,7 +488,7 @@ public class ServerWorld implements World {
 	@Override
 	public List<Entity> getEntities(Vector3D pos, double radius) {
 		ArrayList<Entity> e = new ArrayList<Entity>();
-		for (Column column : Hpb.world.loadedColumns.values()) {
+		for (Column column : loadedColumns.values()) {
 			for (Entity en : column.entites) {
 				if (VectorU.sqrt(en.pos, pos) <= radius) {
 					e.add(en);
@@ -396,5 +504,75 @@ public class ServerWorld implements World {
 			return false;
 		}
 		return loadedColumns.containsKey(VectorU.xzToColumn(x,z));
+	}
+
+	@Override
+	public boolean containColumn(Vector2I pos) {
+		return loadedColumns.containsKey(pos);
+	}
+
+	@Override
+	public Column getWithoutLoad(Vector2I cc) {
+		return loadedColumns.get(cc);
+	}
+	
+	@Override
+	public Map<Vector2I, Column> getLoadedColumns() {
+		return this.loadedColumns;
+	}
+
+	@Override
+	public void setBlock(int block, Vector3D pos, ActionAuthor author) {
+		GameU.end("under construction");
+	}
+
+	@Override
+	public boolean posDostupna(Vector3D pos) {
+		GameU.end("under construction");
+		return true;
+	}
+	
+	@Override
+	public Entity getEntity(int id) {
+		GameU.end("under construction");
+		return null;
+	}
+
+	public void commandExecutor(String text, ServerPlayer player) {
+		String[] splitted = text.split(" ");
+		String command = splitted[0];
+		String[] args = new String[splitted.length - 1];
+		System.arraycopy(splitted, 1, args, 0, splitted.length - 1);
+		if (command.equals("spawn")) {
+			String entity = args[0];
+			Entity en = null;
+			if (entity.equals("item")) {
+				this.spawnEntity(en = new ItemEntity(player.playerEntity.pos.clone(), 1, new DirtItem(1), this, Entity.genLocalId()));
+			} else {
+				player.sendmsg("не ебу что это "+entity);
+				return;
+			}
+			player.sendmsg("сущность "+en.getClass().getSimpleName()+" создана с айди "+en.localId);
+		} else if (command.equals("centities")) {
+			int i = 0;
+			for (Column c : loadedColumns.values()) {
+				i += c.entites.size();
+			}
+			player.sendmsg("there is "+i+" entities");
+		} else {
+			player.sendmsg("unknown command \""+command+"\"");
+		}
+	}
+
+	@Override
+	public List<Player> getPlayers(Vector3D pos, double radius) {
+		ArrayList<Player> e = new ArrayList<Player>();
+		for (ServerPlayer spl : players.values()) {
+			Player entity = spl.playerEntity;
+			if (VectorU.sqrt(entity.pos, pos) <= radius) {
+				e.add(entity);
+			}
+		}
+		return e;
 	}
 }
