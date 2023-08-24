@@ -7,30 +7,189 @@
 система разрушения блоков +- добавить инструменты 2
 инвентарь + 1
 обьект предмета (он должен вращаться после броска а затем при приземлении не двигаться и как бы лежать ровно на земле) +- 2
-обьект предмета плавно поднимается с земли + 0.5
+обьект предмета плавно поднимается с земли +- 0.5
 кликабельные блоки и двойные блоки
 разноцветное небо
 красивый экран смерти+ 0.5
 
+при наведении на предмет в инвентаре курсором высветится инфа о нем
+система крафта
+
+фикс урона от падения + 0.5
+фикс системы смерти (перенос на серверную сторону) + 0.5
+обновление освещения также должно происходить на клиентской стороне чтобы небыло черных блоков когда сервак зависает
+
+фикс рендера инвентаря при открытом item storage +
+
+рядом с шкалами игрока значком обозначать что они значат по тиму 
+
 не очень:
 
-хранение блоков по айди а не целыми обьектами ()
+хранение блоков по айди а не целыми обьектами +- (осталось убрать использование обьектов блока там где можно использовать только айди)
 ретекстурирование
 анимирлваные партиклы 
 анимации тряски экрана при ходьбе, наклонах при повороте 
 облака 
-РАЗЬЕДЕНИТЬ ИГРУ НА КЛИЕНТ И СЕРВЕР (СВЯЗАТЬ ЧЕРЕЗ СОКЕТЫ) +- 5 / 9
-МУЛЬТИПЛЕЕР 
+РАЗЬЕДЕНИТЬ ИГРУ НА КЛИЕНТ И СЕРВЕР (СВЯЗАТЬ ЧЕРЕЗ СОКЕТЫ) + 8 / 13
+МУЛЬТИПЛЕЕР +- (не добавлена возможность визуализировать других игроков)
 
 когда нибудь потом:
 
 переделать рендер моделек в инвентаре
 убрать халтуру в освещении 
-сглаживание между предидущим и следующим кадром 
-отделение цикла тика игока от тика мира 
+сглаживание между предидущим и следующим кадром (хз как)
+отделение цикла тика игока от тика мира + (неактуал)
 создание модельки игрока 
-сделать так чтобы по всей площади неба виднелись ораньжевые шестигранники мигающие рандомно, а ночью они становились бы фиолетовыми
-фог 
-при возрождении игрок должен сначала лежать на земле лицом вверх а потом должна проигрываться анимация вставания
+фог
 
-ursa
+ursa 
+
+баги:
+
+иногда модель предмета перекрывается прозрачным блоком изза порядка рендера (перейти на поблочную систему рендера либо сделать большой массив вершин)
+визуальный клиентский баг с неправильным отображением кол-ва предметов в инвентаре +-
+спавн структур из непрогруженых чанков задевающих прогруженные 
+
+непонятные ошибки возникающие рандомно:
+
+java.lang.ArrayIndexOutOfBoundsException: Index -1(иногда пишет -2) out of bounds for length 40
+	at com.badlogic.gdx.utils.TimSort.pushRun(TimSort.java:362)
+	at com.badlogic.gdx.utils.TimSort.doSort(TimSort.java:128)
+	at com.badlogic.gdx.utils.Sort.sort(Sort.java:59)
+	at com.badlogic.gdx.utils.Array.sort(Array.java:433)
+	at com.badlogic.gdx.graphics.g3d.utils.DefaultRenderableSorter.sort(DefaultRenderableSorter.java:36)
+	at com.badlogic.gdx.graphics.g3d.ModelBatch.flush(ModelBatch.java:201)
+	at com.badlogic.gdx.graphics.g3d.ModelBatch.end(ModelBatch.java:221)
+	at net.pzdcrp.Hyperborea.Hpb.renderWorld(Hpb.java:270)
+	at net.pzdcrp.Hyperborea.Hpb.render(Hpb.java:407)
+	at com.badlogic.gdx.backends.lwjgl3.Lwjgl3Window.update(Lwjgl3Window.java:387)
+	at com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application.loop(Lwjgl3Application.java:192)
+	at com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application.<init>(Lwjgl3Application.java:166)
+	at net.pzdc.Hyperboreastarter.DesktopLauncher.main(DesktopLauncher.java:16)
+	
+com.badlogic.gdx.utils.GdxRuntimeException: Too many vertices used
+new col: CC[ x:-2, z:-7]
+	at com.badlogic.gdx.graphics.g3d.utils.MeshBuilder.vertex(MeshBuilder.java:545)
+	at net.pzdcrp.Hyperborea.extended.SexyMeshBuilder.vertex(SexyMeshBuilder.java:22)
+	at com.badlogic.gdx.graphics.g3d.utils.MeshBuilder.vertex(MeshBuilder.java:588)
+	at com.badlogic.gdx.graphics.g3d.utils.MeshBuilder.rect(MeshBuilder.java:714)
+	at com.badlogic.gdx.graphics.g3d.utils.MeshBuilder.rect(MeshBuilder.java:726)
+	at net.pzdcrp.Hyperborea.extended.SexyMeshBuilder.rect(SexyMeshBuilder.java:28)
+	at net.pzdcrp.Hyperborea.utils.ModelUtils.buildFrontY(ModelUtils.java:238)
+	at net.pzdcrp.Hyperborea.world.elements.blocks.Grass.addModel(Grass.java:48)
+	at net.pzdcrp.Hyperborea.world.elements.Chunk.lUpdateModel(Chunk.java:250)
+	at net.pzdcrp.Hyperborea.world.PlayerWorld.render(PlayerWorld.java:305)
+	at net.pzdcrp.Hyperborea.Hpb.renderWorld(Hpb.java:269)
+	at net.pzdcrp.Hyperborea.Hpb.render(Hpb.java:407)
+	at com.badlogic.gdx.backends.lwjgl3.Lwjgl3Window.update(Lwjgl3Window.java:387)
+	at com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application.loop(Lwjgl3Application.java:192)
+	at com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application.<init>(Lwjgl3Application.java:166)
+	at net.pzdc.Hyperboreastarter.DesktopLauncher.main(DesktopLauncher.java:16)
+	
+unknown block id 0 in item: ItemEntity blockid:0 item: Item[ i:0, c:0] lid: -2147483491
+    \|/
+tracing from thread: main thd
+    net.pzdcrp.Hyperborea.world.elements.entities.ItemEntity.render(ItemEntity.java:57)
+    net.pzdcrp.Hyperborea.world.elements.Column.renderEntites(Column.java:146)
+    net.pzdcrp.Hyperborea.world.PlayerWorld.render(PlayerWorld.java:315)
+    net.pzdcrp.Hyperborea.Hpb.renderWorld(Hpb.java:269)
+    net.pzdcrp.Hyperborea.Hpb.render(Hpb.java:407)
+    com.badlogic.gdx.backends.lwjgl3.Lwjgl3Window.update(Lwjgl3Window.java:387)
+    com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application.loop(Lwjgl3Application.java:192)
+    com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application.<init>(Lwjgl3Application.java:166)
+    net.pzdc.Hyperboreastarter.DesktopLauncher.main(DesktopLauncher.java:16)
+    
+���. 18, 2023 8:20:33 AM io.netty.util.ResourceLeakDetector reportTracedLeak
+SEVERE: LEAK: ByteBuf.release() was not called before it's garbage-collected. See https://netty.io/wiki/reference-counted-objects.html for more information.
+Recent access records: 
+Created at:
+	io.netty.buffer.PooledByteBufAllocator.newDirectBuffer(PooledByteBufAllocator.java:403)
+	io.netty.buffer.AbstractByteBufAllocator.directBuffer(AbstractByteBufAllocator.java:188)
+	io.netty.buffer.AbstractByteBufAllocator.directBuffer(AbstractByteBufAllocator.java:174)
+	io.netty.buffer.AbstractByteBufAllocator.buffer(AbstractByteBufAllocator.java:108)
+	de.datasecs.hydra.shared.protocol.packets.serialization.PacketEncoder.encode(PacketEncoder.java:24)
+	de.datasecs.hydra.shared.protocol.packets.serialization.PacketEncoder.encode(PacketEncoder.java:1)
+	io.netty.handler.codec.MessageToMessageEncoder.write(MessageToMessageEncoder.java:89)
+	io.netty.channel.AbstractChannelHandlerContext.invokeWrite0(AbstractChannelHandlerContext.java:717)
+	io.netty.channel.AbstractChannelHandlerContext.invokeWriteAndFlush(AbstractChannelHandlerContext.java:764)
+	io.netty.channel.AbstractChannelHandlerContext.write(AbstractChannelHandlerContext.java:790)
+	io.netty.channel.AbstractChannelHandlerContext.writeAndFlush(AbstractChannelHandlerContext.java:758)
+	io.netty.channel.AbstractChannelHandlerContext.writeAndFlush(AbstractChannelHandlerContext.java:808)
+	io.netty.channel.DefaultChannelPipeline.writeAndFlush(DefaultChannelPipeline.java:1025)
+	io.netty.channel.AbstractChannel.writeAndFlush(AbstractChannel.java:306)
+	de.datasecs.hydra.shared.handler.HydraSession.send(HydraSession.java:52)
+	net.pzdcrp.Hyperborea.server.ServerWorld.broadcastByColumn(ServerWorld.java:220)
+	net.pzdcrp.Hyperborea.world.elements.entities.Entity.<init>(Entity.java:108)
+	net.pzdcrp.Hyperborea.world.elements.entities.ItemEntity.<init>(ItemEntity.java:40)
+	net.pzdcrp.Hyperborea.world.elements.blocks.Block.onBreak(Block.java:304)
+	net.pzdcrp.Hyperborea.server.ServerWorld.breakBlock(ServerWorld.java:326)
+	net.pzdcrp.Hyperborea.multiplayer.ServerPlayer.onPacket(ServerPlayer.java:100)
+	net.pzdcrp.Hyperborea.server.ServerWorld.packetReceived(ServerWorld.java:117)
+	net.pzdcrp.Hyperborea.server.InternalServer.onStandardPacket(InternalServer.java:46)
+	java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	java.base/java.lang.reflect.Method.invoke(Method.java:577)
+	de.datasecs.hydra.shared.protocol.HydraProtocol.callPacketListener(HydraProtocol.java:120)
+	de.datasecs.hydra.shared.handler.HydraSession.channelRead0(HydraSession.java:31)
+	de.datasecs.hydra.shared.handler.HydraSession.channelRead0(HydraSession.java:1)
+	io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)
+	io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:379)
+	io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:365)
+	io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:357)
+	io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)
+	io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:379)
+	io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:365)
+	io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:357)
+	io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:327)
+	io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:299)
+	io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:379)
+	io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:365)
+	io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:357)
+	io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)
+	io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:379)
+	io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:365)
+	io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)
+	io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)
+	io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:722)
+	io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:658)
+	io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:584)
+	io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:496)
+	io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:995)
+	io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+	io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	java.base/java.lang.Thread.run(Thread.java:833)
+единственный вариант фикса - перейти на другую библиотеку:
+https://github.com/Dragon-Labs/TheScaleAdapter
+https://github.com/adamaq01/ozao-net
+или обновить текущую
+
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+идеи по геймплею:
+
+для назначения точек откуда и куда будет передаваться энергия будут использоваться заклинания. их можно будет получать на специальном столе заклинаний. и со временем длительность выполнения заклинаний будет увеличиваться и уменьшить ее можно будет на все том же столе заклинаний

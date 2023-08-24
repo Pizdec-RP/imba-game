@@ -1,6 +1,8 @@
 package net.pzdcrp.Hyperborea;
 
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
@@ -31,31 +33,28 @@ import de.datasecs.hydra.client.HydraClient;
 import de.datasecs.hydra.shared.handler.Session;
 import de.datasecs.hydra.shared.protocol.HydraProtocol;
 import de.datasecs.hydra.shared.protocol.packets.Packet;
-import de.datasecs.hydra.shared.protocol.packets.listener.HydraPacketListener;
 import io.netty.channel.ChannelOption;
-import net.pzdcrp.Hyperborea.data.ActionAuthor;
 import net.pzdcrp.Hyperborea.data.Mutex;
 import net.pzdcrp.Hyperborea.data.Settings;
 import net.pzdcrp.Hyperborea.data.Vector3D;
+import net.pzdcrp.Hyperborea.data.Vector3I;
 import net.pzdcrp.Hyperborea.multiplayer.HpbProtocol;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlayerConnectionPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientWorldSuccLoadPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerChatPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerChunkLightPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerLoadColumnPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSpawnPlayerPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSuccessConnectPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerUnloadColumnPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ClientPlayerConnectionPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ClientWorldSuccLoadPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.ServerSuccessConnectPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.ingame.ServerSpawnPlayerPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.world.ServerChunkLightPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.world.ServerLoadColumnPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.world.ServerUnloadColumnPacket;
 import net.pzdcrp.Hyperborea.player.ControlListener;
 import net.pzdcrp.Hyperborea.player.Player;
 import net.pzdcrp.Hyperborea.server.InternalServer;
 import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.utils.GameU;
-import net.pzdcrp.Hyperborea.utils.VectorU;
 import net.pzdcrp.Hyperborea.world.PlayerWorld;
+import net.pzdcrp.Hyperborea.world.elements.Chunk;
 import net.pzdcrp.Hyperborea.world.elements.Column;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Block;
-import net.pzdcrp.Hyperborea.world.elements.blocks.Stone;
 
 public class Hpb extends ApplicationAdapter {
 	private static ModelBatch modelBatch;
@@ -166,6 +165,7 @@ public class Hpb extends ApplicationAdapter {
 		hurtlevelatr = stage2shader.getUniformLocation("hurtlevel");
 		isdeadatr = stage2shader.getUniformLocation("isdead");
 		randomatr = stage2shader.getUniformLocation("random");
+		respawnshadesatr = stage2shader.getUniformLocation("deadshades");
 		
 		mutex.getFont(25);//инициализируем шрифт потомучто он используется в чате а создание чата происходит в потоке обработки пакетов
 	}
@@ -246,8 +246,8 @@ public class Hpb extends ApplicationAdapter {
     }
 	private static FrameBuffer buffer;
 	private static TextureRegion textureRegion;
-	private static int screensizeatr, hurtlevelatr, isdeadatr, randomatr;
-	public static float hurtlvl = 0, deadtimer = 0;
+	private static int screensizeatr, hurtlevelatr, isdeadatr, randomatr, respawnshadesatr;
+	public static float hurtlvl = 0, deadtimer = 0, respawnshades = 0;
 	
 	public void renderWorld() {
 		if (hurtlvl > 0) {
@@ -263,11 +263,13 @@ public class Hpb extends ApplicationAdapter {
 		int halfheight = Gdx.graphics.getHeight()/2;
 		
 		//1 стадия
-		shaderprovider.newstage();
-		modelBatch.begin(world.player.cam.cam);
-		world.render();
-		modelBatch.end();
-		shaderprovider.end();
+		if (deadtimer == 0 || deadtimer >= 400) {
+			shaderprovider.newstage();
+			modelBatch.begin(world.player.cam.cam);
+			world.render();
+			modelBatch.end();
+			shaderprovider.end();
+		}
 		//конец 1 стадии
 		
 		//2 стадия
@@ -282,6 +284,7 @@ public class Hpb extends ApplicationAdapter {
 		stage2shader.setUniformf(screensizeatr, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		stage2shader.setUniformf(isdeadatr, deadplayer?1f:0f);
 		stage2shader.setUniformf(hurtlevelatr, hurtlvl);
+		stage2shader.setUniformf(respawnshadesatr, respawnshades);
 		stage2shader.setUniformf(randomatr, MathU.rndnrm());
 		
 		Texture buftex = textureRegion.getTexture();
@@ -293,22 +296,32 @@ public class Hpb extends ApplicationAdapter {
 			if (hurtlvl == 0) {
 				BitmapFont f = mutex.getFont(40);
 				deadtimer++;
-				if (deadtimer >= 400) {
+				if (deadtimer == 300) {
 					world.player.respawn();
-					deadplayer = false;
-					deadtimer = 0f;
-				} else if (deadtimer >= 300) {
-					float a = 1-MathU.norm(300, 400, deadtimer);
+				}
+				if (deadtimer >= 300 && deadtimer <= 400) {
+					float a = 1f-MathU.norm(300, 400, deadtimer);
 					float b = MathU.norm(300, 400, deadtimer);
 					f.getColor().set(0, 1, b, a);
+				} else if (deadtimer >= 400 && deadtimer < 500) {
+					f.getColor().set(0, 0, 0, 0);
+					respawnshades = MathU.norm(400, 500, deadtimer);
+					if (!world.player.curCol.canrender()) {
+						deadtimer--;
+					}
+					//shades on
 				} else if (deadtimer >= 0 && deadtimer <= 100) {
-					f.getColor().r = 1-MathU.norm(0, 100, deadtimer);
+					f.getColor().r = 1f-MathU.norm(0, 100, deadtimer);
 				} else if (deadtimer >= 100 && deadtimer <= 200) {
-					f.getColor().g = 1-MathU.norm(100, 200, deadtimer);
+					f.getColor().g = 1f-MathU.norm(100, 200, deadtimer);
 					f.getColor().r = MathU.norm(100, 200, deadtimer);
 				} else if (deadtimer >= 200 && deadtimer <= 300) {
-					f.getColor().b = 1-MathU.norm(200, 300, deadtimer);
+					f.getColor().b = 1f-MathU.norm(200, 300, deadtimer);
 					f.getColor().g = MathU.norm(200, 300, deadtimer);
+				} else if (deadtimer >= 500) {
+					deadplayer = false;
+					deadtimer = 0f;
+					respawnshades = 0;
 				}
 				f.draw(spriteBatch,
 						"Ты сдох. Возвращаемся через "+String.format("%.2f",((1-MathU.norm(0, 400, deadtimer))*5))+"!",
@@ -364,7 +377,7 @@ public class Hpb extends ApplicationAdapter {
 				if (client.isConnected()) {
 					state = State.WAITFORSERVER;
 					GameU.log("sending...");
-					session.send(new ClientPlayerConnectionPacket("smartass", Settings.renderDistance));
+					session.send(new ClientPlayerConnectionPacket("smartass", Settings.streamZone));
 				}
 			} else if (state == State.WAITFORSERVER) {
 				if (playerId != null) {
@@ -393,21 +406,32 @@ public class Hpb extends ApplicationAdapter {
 				if (world.player == null) return;
 				renderWorld();
 				
-				StringBuilder builder = new StringBuilder();
-				builder.append(" time: ").append(world.time);
-				builder.append(" col: ").append(world.loadedColumns.size());
-				builder.append(" | pos: ").append("x:"+String.format("%.2f",world.player.pos.x)+" y:"+String.format("%.2f",world.player.pos.y)+" z:"+String.format("%.2f",world.player.pos.z));
-				en = 0;
-				for (Column col : world.loadedColumns.values()) {
-					en += col.entites.size();
+				if (Settings.debug) {
+					StringBuilder builder = new StringBuilder();
+					if (world.player.curCol != null) {
+						builder.append("C: ");
+						for (Chunk c : world.player.curCol.chunks) {
+							builder.append(c.canrender+" ");
+						}
+					}
+					builder.append("\n");
+					builder.append(" time: ").append(world.time);
+					builder.append(" col: ").append(world.loadedColumns.size());
+					builder.append(" | pos: ").append("x:"+String.format("%.2f",world.player.pos.x)+" y:"+String.format("%.2f",world.player.pos.y)+" z:"+String.format("%.2f",world.player.pos.z));
+					en = 0;
+					for (Column col : world.loadedColumns.values()) {
+						en += col.entites.size();
+					}
+					builder.append(" | ent: ").append(en).append("\n");
+					builder.append(" | fps: ").append(Gdx.app.getGraphics().getFramesPerSecond());
+					builder.append(" | youInCol: ").append(world.player.beforeechc.toString());
+					builder.append(" | vecs: ").append(Vector3D.test);
+					builder.append(" | blocks: ").append(Block.count);
+					builder.append(" | player ticking: ").append(world.continuee).append("\n\n");
+					label.setText(builder);
+				} else {
+					label.setText("");
 				}
-				builder.append(" | ent: ").append(en);
-				builder.append(" | fps: ").append(Gdx.app.getGraphics().getFramesPerSecond());
-				builder.append(" | youInCol: ").append(world.player.beforeechc.toString());
-				builder.append(" | vecs: ").append(Vector3D.test);
-				builder.append(" | blocks: ").append(Block.count);
-				builder.append(" | player ticking: ").append(world.continuee);
-				label.setText(builder);
 				stage.act(Gdx.graphics.getDeltaTime());
 				stage.draw();
 			}

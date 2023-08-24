@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.Map.Entry;
 
 import com.badlogic.gdx.math.Vector3;
@@ -18,21 +19,28 @@ import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.ActionAuthor;
 import net.pzdcrp.Hyperborea.data.Settings;
 import net.pzdcrp.Hyperborea.data.Vector2I;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientChatPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientInventoryActionPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlaceBlockPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlayerActionPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlayerPositionPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientWorldSuccLoadPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerChatPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerLoadColumnPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSetHealthPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSetblockPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSetupInventoryPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSpawnEntityPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSpawnPlayerPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerUnloadColumnPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlayerActionPacket.PlayerAction;
+import net.pzdcrp.Hyperborea.data.Vector3I;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ClientWorldSuccLoadPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientChatPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientClickBlockPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientPlaceBlockPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientPlayerActionPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientPlayerActionPacket.PlayerAction;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientPlayerLocationDataPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientPlayerRespawnPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientSetHotbarSlotPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.inventory.ClientCloseInventoryPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.inventory.ClientInventoryActionPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.inventory.ClientPlayerInventoryActionPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.entity.ServerSpawnEntityPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.ingame.ServerChatPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.ingame.ServerSetHealthPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.ingame.ServerSpawnPlayerPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.inventory.ServerCloseInventoryPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.inventory.ServerSetupInventoryPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.world.ServerChunkLightPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.world.ServerLoadColumnPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.world.ServerUnloadColumnPacket;
 import net.pzdcrp.Hyperborea.player.Player;
 import net.pzdcrp.Hyperborea.server.ServerWorld;
 import net.pzdcrp.Hyperborea.utils.GameU;
@@ -41,6 +49,7 @@ import net.pzdcrp.Hyperborea.world.elements.Chunk;
 import net.pzdcrp.Hyperborea.world.elements.Column;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Air;
 import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
+import net.pzdcrp.Hyperborea.world.elements.generators.DefaultWorldGenerator;
 
 
 public class ServerPlayer {
@@ -55,6 +64,7 @@ public class ServerPlayer {
 	
 	//хранит только ссылки на классы в стеке, оптимизировать не надо
 	public Map<Vector2I, Column> columnsAroundPlayer = new ConcurrentHashMap<>();
+	public List<Vector3I> chunkLightOrder = new CopyOnWriteArrayList<>();
 
 	public ServerPlayer(UUID id, String name, int renderDistance, Session s, ServerWorld world) {
 		this.id=id;
@@ -76,18 +86,35 @@ public class ServerPlayer {
 				session.send(new ServerSetHealthPacket(playerEntity.hp));
 				world.broadcast(name+" logged in!");
 				session.send(new ServerLoadColumnPacket(playerEntity.curCol));
-			} else if (p instanceof ClientPlayerPositionPacket) {
-				ClientPlayerPositionPacket packet = (ClientPlayerPositionPacket)p;
-				playerEntity.pos.setComponents(packet.x, packet.y, packet.z);
+			} else if (p instanceof ClientPlayerLocationDataPacket) {
+				ClientPlayerLocationDataPacket packet = (ClientPlayerLocationDataPacket)p;
+				//TODO античит + антикраш
+				playerEntity.pos.set(packet.pos);
+				playerEntity.vel.set(packet.vel);
 				playerEntity.onGround = packet.onGround;
+				playerEntity.setYaw(packet.yaw);
+				playerEntity.setPitch(packet.pitch);
 			} else if (p instanceof ClientPlayerActionPacket) {
 				ClientPlayerActionPacket packet = (ClientPlayerActionPacket)p;
 				//TODO доделать
-				if (packet.action == PlayerAction.EndBreakingBlock) {
-					world.breakBlock(packet.pos);
+				if (packet.action == PlayerAction.DropItem) {
+					playerEntity.castedInv.dropHandItem(false);
+				} else if (packet.action == PlayerAction.DropItemStack) {
+					playerEntity.castedInv.dropHandItem(true);
+				} else {
+					if (!world.loadedColumns.containsKey(VectorU.posToColumn(packet.pos))) {
+						disconnect("click outside of range "+packet.pos.toString());
+					}
+					if (packet.action == PlayerAction.EndBreakingBlock) {
+						world.breakBlock(packet.pos);
+					}
 				}
 			} else if (p instanceof ClientPlaceBlockPacket) {
-				//TODO
+				ClientPlaceBlockPacket packet = (ClientPlaceBlockPacket)p;
+				if (!world.loadedColumns.containsKey(VectorU.posToColumn(packet.pos))) {
+					disconnect("click outside of range "+packet.pos.toString());
+				}
+				playerEntity.castedInv.onRClick(packet.pos, packet.face);
 			} else if (p instanceof ClientChatPacket) {
 				ClientChatPacket packet = (ClientChatPacket) p;
 				if (packet.msg.startsWith("/")) {
@@ -100,7 +127,33 @@ public class ServerPlayer {
 				playerEntity.castedInv.transferSlotOnServerByPacket(packet.fromSlot, packet.toSlot);*/
 			} else if (p instanceof ClientInventoryActionPacket) {
 				ClientInventoryActionPacket packet = (ClientInventoryActionPacket)p;
+				if (!playerEntity.castedInv.correctSlot(packet.clickedslot)) {
+					disconnect("bad slot "+packet.clickedslot);
+				}
 				playerEntity.castedInv.doActionByPacketOnServer(packet.clickedslot, packet.downclick, packet.mousebutton);
+			} else if (p instanceof ClientSetHotbarSlotPacket) {
+				ClientSetHotbarSlotPacket packet = (ClientSetHotbarSlotPacket)p;
+				if (packet.slot > 9 || packet.slot < 0) {
+					disconnect("bad hotbar slot "+packet.slot);
+				}
+				playerEntity.castedInv.setCurrentSlotInt(packet.slot);
+			} else if (p instanceof ClientPlayerRespawnPacket) {
+				if (playerEntity.hp != 0) {
+					disconnect("respawn with "+playerEntity.hp+" hp?");
+				}
+				playerEntity.respawn();
+			} else if (p instanceof ClientPlayerInventoryActionPacket) {
+				if (!playerEntity.castedInv.isOpened) {
+					session.send(new ServerCloseInventoryPacket());
+					return;
+				}
+				ClientPlayerInventoryActionPacket packet = (ClientPlayerInventoryActionPacket)p;
+				playerEntity.castedInv.isOpened = packet.open;
+			} else if (p instanceof ClientCloseInventoryPacket) {
+				playerEntity.castedInv.close();
+			} else if (p instanceof ClientClickBlockPacket) {
+				ClientClickBlockPacket packet = (ClientClickBlockPacket)p;
+				world.getBlock(packet.pos).onClick(playerEntity);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -108,12 +161,16 @@ public class ServerPlayer {
 		}
 	}
 	
+	public void disconnect(String reason) {
+		GameU.end(reason);
+		//TODO переделать
+	}
+	
 	public void updateLoadedColumns()  {
 		if (!isLoaded) return;
 		if (playerEntity.echc == null) {
 			playerEntity.echc = new Vector2I(playerEntity.pos.x,playerEntity.pos.z);
 		}
-		//GameU.log(playerEntity.echc.x+" "+playerEntity.echc.z);
 	    Set<Vector2I> cl = new HashSet<>();
 	    for (int x = -renderDistance; x <= renderDistance; x++) {
             for (int z = -renderDistance; z <= renderDistance; z++) {
@@ -135,6 +192,10 @@ public class ServerPlayer {
 	    // Удаляем столбцы
 	    for (Vector2I key : toRemove) {
 	    	columnsAroundPlayer.remove(key);
+	    	for (Chunk chunk : world.getColumn(key).chunks) {
+	    		if (chunkLightOrder.contains(chunk.getPos()))
+	    			chunkLightOrder.remove(chunk.getPos());
+	    	}
 	    	session.send(new ServerUnloadColumnPacket(key));
 	    }
 	    // подгружаем недоставшиеся
@@ -142,12 +203,31 @@ public class ServerPlayer {
 	    	Column col = world.getColumn(c);
 	    	columnsAroundPlayer.put(col.pos, col);
 	    	session.send(new ServerLoadColumnPacket(col));
+	    	for (Chunk chunk : col.chunks) {
+	    		chunkLightOrder.add(chunk.getPos());
+	    	}
 	    	for (Entity entity : col.entites) {
 	    		if (!entity.isPlayer) {//TODO send player if it online
 	    			session.send(new ServerSpawnEntityPacket(entity));
+	    		} else {
+	    			GameU.err("send player if it online");
 	    		}
 	    	}
 	    }
+	    //GameU.log("chunks in order: "+chunkLightOrder.size());
+	    int i = 0;
+	    for (Vector3I orderedPos : chunkLightOrder) {
+	    	Chunk c = world.getColumn(new Vector2I(orderedPos.x,orderedPos.z)).chunks[orderedPos.y];
+	    	if (c.inlightupd || c.outlightupd) {//убираем потомучто эти чанки отсылаются после обновления света
+	    		chunkLightOrder.remove(orderedPos);
+	    	} else {
+	    		i++;
+	    		session.send(new ServerChunkLightPacket(c.getLightStorage(), orderedPos));
+	    		chunkLightOrder.remove(orderedPos);
+	    	}
+	    	if (i >= 128) break;
+	    }
+	    //GameU.log(DefaultWorldGenerator.toadd.size());
 	}
 
 	public void setEntityDataset(Player enplayer) {

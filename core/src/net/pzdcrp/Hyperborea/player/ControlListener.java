@@ -1,27 +1,18 @@
 package net.pzdcrp.Hyperborea.player;
 
-import java.util.Random;
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.math.Vector3;
 
 import net.pzdcrp.Hyperborea.Hpb;
-import net.pzdcrp.Hyperborea.data.AABB;
-import net.pzdcrp.Hyperborea.data.BlockFace;
-import net.pzdcrp.Hyperborea.data.DamageSource;
 import net.pzdcrp.Hyperborea.data.Settings;
 import net.pzdcrp.Hyperborea.data.Vector3D;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientPlayerActionPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientPlayerActionPacket.PlayerAction;
 import net.pzdcrp.Hyperborea.server.InternalServer;
 import net.pzdcrp.Hyperborea.utils.GameU;
-import net.pzdcrp.Hyperborea.utils.MathU;
-import net.pzdcrp.Hyperborea.world.PlayerWorld;
 import net.pzdcrp.Hyperborea.world.elements.Particle;
-import net.pzdcrp.Hyperborea.world.elements.blocks.OakLog;
-import net.pzdcrp.Hyperborea.world.elements.blocks.OakLeaves;
-import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
-import net.pzdcrp.Hyperborea.world.elements.entities.ItemEntity;
 import net.pzdcrp.Hyperborea.world.elements.generators.DefaultWorldGenerator;
 
 public class ControlListener implements InputProcessor {
@@ -32,8 +23,16 @@ public class ControlListener implements InputProcessor {
 	@Override
 	public boolean keyDown(int keycode) {
 		if (p.chat.isOpened()) return false;
+		if (keycode == Input.Keys.Q) {
+			if (p.castedInv.getHandItem().id == 0) return false;
+			if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)) {
+				Hpb.session.send(new ClientPlayerActionPacket(PlayerAction.DropItemStack, null));
+			} else {
+				Hpb.session.send(new ClientPlayerActionPacket(PlayerAction.DropItem, null));
+			}
+		}
 		if (keycode == Input.Keys.F3) {
-			Settings.showHitbox = !Settings.showHitbox;
+			Settings.debug = !Settings.debug;
 		}
 		if (keycode == Input.Keys.M) {
 			Gdx.input.setCursorCatched(!Gdx.input.isCursorCatched());
@@ -48,28 +47,25 @@ public class ControlListener implements InputProcessor {
 			p.pos.y += 5;
 			p.vel.y = 0;
 		}
-		if (keycode == Input.Keys.G) {
-			p.hit(DamageSource.Magic, 2);
-		}
 		if (keycode == Input.Keys.H) {
-			//Hpb.displayInfo("i like sex!");
-			//p.teleport(new Vector3D(p.pos.x+12550820/300, 100, 0));
-			for (Entity en : Hpb.world.getEntities(p.pos, 99)) {
+			Hpb.displayInfo("i like sex!");
+			p.teleport(new Vector3D(p.pos.x+12550820/300, 100, 0));
+			/*for (Entity en : Hpb.world.getEntities(p.pos, 99)) {
 				if (en instanceof ItemEntity) {
 					ItemEntity i = (ItemEntity) en;
 					i.vel = i.pos.getDirection(p.pos);
 				}
-			}
+			}*/
 		}
 		if (keycode == Input.Keys.V) {
 			Hpb.world.particles.add(new Particle(Hpb.mutex.getBlockTexture("dirt"), p.pos.translate().add(0, 2f, 0), new Vector3(), 1200));
 		}
 		if (keycode == Input.Keys.N) {
-			Settings.renderDistance += 1;
+			Settings.streamZone += 1;
 			GameU.log("renderDistance cannot be changed while you in game");
 		}
 		if (keycode == Input.Keys.B) {
-			Settings.renderDistance -= 1;
+			Settings.streamZone -= 1;
 			GameU.log("renderDistance cannot be changed while you in game");
 		}
 		if (keycode == Input.Keys.TAB) {
@@ -81,34 +77,34 @@ public class ControlListener implements InputProcessor {
 		}
 		switch (keycode) {
 			case Input.Keys.NUM_1:
-	            p.curentNumPressed = 1;
+	            p.castedInv.setCurrentSlotInt(0);
 	            break;
 	        case Input.Keys.NUM_2:
-	        	p.curentNumPressed = 2;
+	        	p.castedInv.setCurrentSlotInt(1);
 	            break;
 	        case Input.Keys.NUM_3:
-	        	p.curentNumPressed = 3;
+	        	p.castedInv.setCurrentSlotInt(2);
 	            break;
 	        case Input.Keys.NUM_4:
-	        	p.curentNumPressed = 4;
+	        	p.castedInv.setCurrentSlotInt(3);
 	            break;
 	        case Input.Keys.NUM_5:
-	        	p.curentNumPressed = 5;
+	        	p.castedInv.setCurrentSlotInt(4);
 	            break;
 	        case Input.Keys.NUM_6:
-	        	p.curentNumPressed = 6;
+	        	p.castedInv.setCurrentSlotInt(5);
 	            break;
 	        case Input.Keys.NUM_7:
-	        	p.curentNumPressed = 7;
+	        	p.castedInv.setCurrentSlotInt(6);
 	            break;
 	        case Input.Keys.NUM_8:
-	        	p.curentNumPressed = 8;
+	        	p.castedInv.setCurrentSlotInt(7);
 	            break;
 	        case Input.Keys.NUM_9:
-	        	p.curentNumPressed = 9;
+	        	p.castedInv.setCurrentSlotInt(8);
 	            break;
 	        case Input.Keys.NUM_0:
-	        	p.curentNumPressed = 10;
+	        	p.castedInv.setCurrentSlotInt(9);
 	            break;
 		}
 		if (keycode == Input.Keys.L) {
@@ -140,13 +136,13 @@ public class ControlListener implements InputProcessor {
 
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-		if (p.castedInv.isOpened) p.castedInv.onMouseClick(screenX, screenY, true, button);
+		p.castedInv.onMouseClick(screenX, screenY, true, button);
 		return true;
 	}
 
 	@Override
 	public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-		if (p.castedInv.isOpened) p.castedInv.onMouseClick(screenX, screenY, false, button);
+		//if (p.castedInv.isOpened) p.castedInv.onMouseClick(screenX, screenY, false, button);
 		return true;
 	}
 
@@ -174,13 +170,13 @@ public class ControlListener implements InputProcessor {
 	public boolean scrolled(float ax, float ay) {
 		if (p.chat.isOpened() || p.castedInv.isOpened) return true;
 		//System.out.println(ax+" "+ay);
-		p.curentNumPressed+=ay;
-		if (p.curentNumPressed > 10) {
-			p.curentNumPressed = 1;
-		} else if (p.curentNumPressed < 1) {
-			p.curentNumPressed = 10;
-		}
-		//System.out.println(curentNumPressed);
+		int cur = p.castedInv.getCurrentSlotInt();
+		cur+=ay;
+		
+		if (cur > 9) cur = 0;
+		else if (cur < 0) cur = 9;
+		
+		p.castedInv.setCurrentSlotInt(cur);
 		return true;
 	}
 

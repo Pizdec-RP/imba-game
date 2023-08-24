@@ -67,9 +67,6 @@ public class DefaultWorldGenerator {
 		int maxcrona = trunk+1;
 		int mincrona = 6;
 		
-		for (int i = 0; i < trunk; i++) {
-            blocks.add(new OakLog(pos.add(0, i, 0), BlockFace.PY));
-        }
 		int mid = (mincrona+maxcrona)/2;
 		for (int i = mincrona; i < maxcrona; i++) {
 			int rad = 3;
@@ -78,6 +75,10 @@ public class DefaultWorldGenerator {
 			if (i+1 >= mid && i-1 <= mid) pos = pos.add(MathU.rndi(-1, 1), 0, MathU.rndi(-1, 1)); 
 			blocks.addAll(getBlocksInRadius(pos.add(0, i, 0), rad, new OakLeaves(new Vector3D())));
 		}
+		
+		for (int i = 0; i < trunk; i++) {
+            blocks.add(new OakLog(pos.add(0, i, 0), BlockFace.PY));
+        }
 		
         for (Block b : blocks) {
         	Vector2I bp2 = VectorU.posToColumn(b.pos);

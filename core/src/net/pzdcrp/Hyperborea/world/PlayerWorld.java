@@ -10,6 +10,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.VertexAttributes;
@@ -29,7 +31,6 @@ import net.pzdcrp.Hyperborea.data.ActionAuthor;
 import net.pzdcrp.Hyperborea.data.Settings;
 import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientWorldSuccLoadPacket;
 import net.pzdcrp.Hyperborea.player.Player;
 import net.pzdcrp.Hyperborea.utils.GameU;
 import net.pzdcrp.Hyperborea.utils.MathU;
@@ -278,7 +279,7 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 	}
 	static long beforetime = System.currentTimeMillis();
 	static long now;
-	public void deltaTime() {
+	public static void deltaTime() {
 		now = System.currentTimeMillis();
 		GameU.log(now - beforetime);
 		beforetime = now;
@@ -312,8 +313,8 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 		renderSky();
 		for (Column col : loadedColumns.values()) {
 			if (col.canrender()) {
-				col.renderNormal();
 				col.renderEntites();
+				col.renderNormal();
 			}
 		}
 		

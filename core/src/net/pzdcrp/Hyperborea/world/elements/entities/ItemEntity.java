@@ -36,12 +36,12 @@ public class ItemEntity extends Entity {
 		super(pos, new AABB(-0.15, -0.15, -0.15, 0.15, 0.15, 0.15), EntityType.item, world, lid);
 	}
 	
-	public ItemEntity(Vector3D pos, int ofblock, Item item, World world, int lid) {
+	public ItemEntity(Vector3D pos, Item item, World world, int lid) {
 		super(pos, new AABB(-0.15, -0.15, -0.15, 0.15, 0.15, 0.15), EntityType.item, world, lid);
-		this.blockid = ofblock;
-		GameU.log("spawned item with id: "+blockid+" in "+(world.isLocal()?"client":"server"));
-		if (blockid == 0) GameU.end("air can not be as item");
+		if (item.getId() == 0) GameU.end("air can not be as item");
 		this.item = item;
+		this.blockid = Block.itemIdToBlockId(item.id);
+		//GameU.log("spawned item with id: "+blockid+" in "+(world.isLocal()?"client":"server"));
 	}
 	
 	@Override
@@ -52,8 +52,12 @@ public class ItemEntity extends Entity {
 		}
 		super.render();
 		if (model == null) {
-			GameU.log("getting id: "+blockid);
-			this.model = Block.blockModels.get(blockid).copy();
+			ModelInstance temp = Block.blockModels.get(blockid);
+			if (temp == null) {
+				GameU.err("unknown block id "+blockid+" in item: "+toString()+" lid: "+localId);
+				return;
+			}
+			this.model = temp.copy();
 			model.userData = new Object[] {"item", 0f};
 			updateLight();
 		}
@@ -89,7 +93,8 @@ public class ItemEntity extends Entity {
 				super.despawn();
 				return false;
 			}
-			List<Player> nearPlayers = world.getPlayers(pos, 1);
+			if (lifetime > 5990) return true;
+			List<Player> nearPlayers = world.getPlayers(pos, 1.3d);
 			
 			@SuppressWarnings("unchecked")
 			List<Player> nearestPlayers = (List<Player>) VectorU.sortNearest(nearPlayers, pos);
@@ -100,10 +105,10 @@ public class ItemEntity extends Entity {
 					if (val) {
 						if (item.count == 0) {
 							this.despawn();
-							GameU.log("item count == 0, despawning");
+							//GameU.log("item count == 0, despawning");
 						}//else цикл продолжается дальше
 					}//else цикл продолжается дальше
-				}
+				} 
 			}
 			return true;//не используется
 		} else {
@@ -114,13 +119,13 @@ public class ItemEntity extends Entity {
 	@Override
 	public void despawn() {
 		despawn = true;
-		GameU.log("despawning item");
+		//GameU.log("despawning item");
 		//super.despawn();
 		//model.model.dispose();
 	}
 	
 	@Override
-	public void hit(DamageSource src, int damage) {
+	public void hit(DamageSource src, byte damage) {
 		if (src == DamageSource.Explosion) this.despawn();
 	}
 	
@@ -147,7 +152,7 @@ public class ItemEntity extends Entity {
 	@Override
 	public Entity clone(Vector3D pos, World world, ObjectData data, int lid) {
 		ItemEntityData ied = (ItemEntityData)data;
-		Entity e = new ItemEntity(pos, ied.blockIdModel, null, world, lid);
+		Entity e = new ItemEntity(pos, Item.items.get(ied.item).clone(ied.count), world, lid);
 		return e;
 	}
 	
@@ -160,13 +165,13 @@ public class ItemEntity extends Entity {
 	@Override
 	public ObjectData consumeData() {
 		ItemEntityData data = new ItemEntityData();
-		if (blockid == 0) GameU.end("zeroid "+toString());
-		data.blockIdModel = blockid;
+		data.item = item.id;
+		data.count = item.count;
 		return data;
 	}
 	
 	@Override
 	public String toString() {
-		return "ItemEntity id:"+blockid+" item: "+item.toString();
+		return "ItemEntity blockid:"+blockid+" item: "+item.toString();
 	}
 }

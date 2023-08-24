@@ -23,8 +23,8 @@ public class OakLogItem extends Item {
 	}
 
 	@Override
-	public void placeBlockAction(Vector3D cp, Player actor) {
-		if (actor.placeBlock(new OakLog(cp, actor.currentAimFace))) actor.castedInv.wasteHandItem();
+	public void placeBlockAction(Vector3D cp, BlockFace face, Player actor) {
+		if (actor.placeBlock(new OakLog(cp, face))) actor.castedInv.wasteHandItem();
 	}
 
 	@Override

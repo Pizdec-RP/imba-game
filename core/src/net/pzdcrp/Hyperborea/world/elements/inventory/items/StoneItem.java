@@ -21,7 +21,7 @@ public class StoneItem extends Item {
 	}
 
 	@Override
-	public void placeBlockAction(Vector3D cp, Player actor) {
+	public void placeBlockAction(Vector3D cp, BlockFace face, Player actor) {
 		if (actor.placeBlock(new Stone(cp))) actor.castedInv.wasteHandItem();
 	}
 

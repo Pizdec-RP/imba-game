@@ -33,7 +33,6 @@ public class Dirt extends Block {
 		super(pos,tname);
 	}
 	
-	
 	@Override
 	public BlockType getType() {
 		return BlockType.solid;

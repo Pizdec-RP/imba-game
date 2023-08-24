@@ -28,7 +28,13 @@ public interface World {
 	int getLight(int x, int y, int z);
 
 	Column getColumn(Vector2I cc);
-
+	
+	/**
+	 * 
+	 * @param x - block pos
+	 * @param z - block pos
+	 * @return
+	 */
 	Column getColumn(double x, double z);
 
 	void breakBlock(Vector3D pos);

@@ -3,6 +3,7 @@ package net.pzdcrp.Hyperborea.world.elements.inventory.items;
 import com.badlogic.gdx.graphics.Texture;
 
 import net.pzdcrp.Hyperborea.Hpb;
+import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.player.Player;
 import net.pzdcrp.Hyperborea.world.elements.blocks.Grass;
@@ -16,7 +17,7 @@ public class WeedItem extends Item {
 	}
 
 	@Override
-	public void placeBlockAction(Vector3D cp, Player actor) {
+	public void placeBlockAction(Vector3D cp, BlockFace face, Player actor) {
 		if (actor.placeBlock(new Weed(cp))) actor.castedInv.wasteHandItem();
 	}
 

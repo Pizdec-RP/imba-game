@@ -22,10 +22,6 @@ public class EntityInventory implements IInventory {
 	}
 
 	@Override
-	public void addItem(Item item, int index) {
-	}
-
-	@Override
 	public void render() {
 	}
 

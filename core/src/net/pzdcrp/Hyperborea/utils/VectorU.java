@@ -157,6 +157,10 @@ public class VectorU {
     	return new Vector2I(pos.x >> 4, pos.z >> 4);
     }
     
+    public static Vector3I posToChunk(Vector3D pos) {
+    	return new Vector3I((int)Math.floor(pos.x) >> 4, (int)pos.y/16, (int)Math.floor(pos.z) >> 4);
+    }
+    
     public static Vector2I posToColumn(Vector3D pos) {
     	return new Vector2I((int)Math.floor(pos.x) >> 4, (int)Math.floor(pos.z) >> 4);
     }

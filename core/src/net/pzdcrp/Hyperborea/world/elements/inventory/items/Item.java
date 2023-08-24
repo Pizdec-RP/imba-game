@@ -12,6 +12,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 
 import net.pzdcrp.Hyperborea.Hpb;
+import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.player.Player;
@@ -30,6 +31,7 @@ public class Item {
 		put(6, new OakLogItem(0));
 		put(7, new PlanksItem(0));
 		put(2, new StoneItem(0));
+		put(8, new CrateItem(0));
 		/*put(8, new TntCrateItem(0));
 		put(4, new WaterBucketItem());*/
 	}};
@@ -64,7 +66,7 @@ public class Item {
 		return 99;
 	}
 	
-	public void placeBlockAction(Vector3D cp, Player actor) {
+	public void placeBlockAction(Vector3D cp, BlockFace face, Player actor) {
 		
 	}
 	
@@ -90,7 +92,7 @@ public class Item {
 		return false;
 	}
 
-	public int getDamage() {
+	public byte getDamage() {
 		return 1;
 	}
 	

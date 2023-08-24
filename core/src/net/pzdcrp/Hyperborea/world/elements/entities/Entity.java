@@ -32,10 +32,10 @@ import net.pzdcrp.Hyperborea.data.DamageSource;
 import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.data.objects.ObjectData;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlayerPositionPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerEntityDespawnPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerEntityPositionVelocityPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSpawnEntityPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientPlayerLocationDataPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.entity.ServerEntityDespawnPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.entity.ServerEntityPositionVelocityPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.entity.ServerSpawnEntityPacket;
 import net.pzdcrp.Hyperborea.player.Player;
 import net.pzdcrp.Hyperborea.utils.GameU;
 import net.pzdcrp.Hyperborea.utils.VectorU;
@@ -96,6 +96,7 @@ public class Entity {
 		this.beforepos=pos.clone();
 		this.hitbox=hitbox;
 		this.beforeechc = new Vector2I(pos.x,pos.z);
+		this.echc = new Vector2I(pos.x,pos.z);
 		if (type == EntityType.player) {//переместить в конкретных ентити
 			inventory = new PlayerInventory((Player) this);
 			this.isPlayer = true;
@@ -114,41 +115,42 @@ public class Entity {
 		Vector3D justBeforePos = beforepos.clone();
 		beforepos.set(pos);
 		if (justspawn > 0) justspawn--;
-		//if (!world.isLocal()) GameU.log("2");
+		
+		echc = new Vector2I(pos.x,pos.z);
+		
 		if (curCol == null) {
-			Column col = world.getColumn(pos.x,pos.z);
+			Column col = world.getColumn(echc);
 			if (col == null) return false;
 			this.curCol = col;
-		} else {
-			if ((!world.isLocal() && !isPlayer) || world.isLocal()) {
-				updateGravity();
-				applyMovement();
-			}
-			
-			if (!world.isLocal()) {
-				if (!invincible()) {
-					if (vel.y < 0) {
-				        if (fallstartblock == 0) {
-				        	fallstartblock = pos.y;
-				        }
-			        } else {
-			        	if (onGround) {
-				        	if (fallstartblock != 0) {
-					        	double falled = fallstartblock - pos.y;
-					        	if (falled > 3.5) {
-					        		int dmg = (int) (falled-3) * 2;
-					        		hit(DamageSource.Fall, dmg);
-					        	}
-					        	fallstartblock = 0;
-				        	}
-				        } else {
-			        		fallstartblock = 0;
-				        }
+		}
+		
+		if ((!world.isLocal() && !isPlayer) || world.isLocal()) {
+			updateGravity();
+			applyMovement();
+		}
+		
+		if (!world.isLocal()) {
+			if (!invincible()) {
+				if (vel.y < 0) {
+			        if (fallstartblock == 0) {
+			        	fallstartblock = pos.y;
 			        }
-				}
+		        } else {
+		        	if (onGround) {
+			        	if (fallstartblock != 0) {
+				        	double falled = fallstartblock - pos.y;
+				        	if (falled > 3.5) {
+				        		byte dmg = (byte) ((falled-3) * 2);
+				        		hit(DamageSource.Fall, dmg);
+				        	}
+				        	fallstartblock = 0;
+			        	}
+			        } else {
+		        		fallstartblock = 0;
+			        }
+		        }
 			}
 		}
-		echc = new Vector2I(pos.x,pos.z);
 		
 		
 		
@@ -161,7 +163,7 @@ public class Entity {
 				if (!justBeforePos.equals(pos))
 					world.broadcastByColumn(echc, new ServerEntityPositionVelocityPacket(pos, vel, localId));
 			} else if (world.isLocal() && isPlayer) {
-				Hpb.session.send(new ClientPlayerPositionPacket(pos, onGround));
+				Hpb.session.send(new ClientPlayerLocationDataPacket(pos, vel, onGround, yaw, pitch));
 			}
 		}
 		
@@ -176,10 +178,14 @@ public class Entity {
 		//if (!world.isLocal()) GameU.log("new echc: "+echc.toString());
 		if (!beforeechc.equals(echc)) {
 			Column beforecol = world.getColumn(beforeechc);
-			Column col = world.getColumn(pos.x,pos.z);
-			if (col == null || beforecol == null) return false;
+			Column col = world.getColumn(echc);
+			if (col == null) {
+				return false;
+			}
+			if (beforecol != null) 
+				beforecol.entites.remove(this);
+			
 			this.curCol = col;
-			beforecol.entites.remove(this);
 			col.entites.add(this);
 			beforeechc = echc;
 		}
@@ -208,8 +214,11 @@ public class Entity {
 	}
 	
 	public void teleport(Vector3D pos) {
+		GameU.log((world.isLocal()?"client":"server")+" bpos: "+this.pos.toString()+" npos: "+pos.toString());
 		this.pos = pos;
 		this.vel.setZero();
+		echc = new Vector2I(pos.x,pos.z);
+		curCol = world.getColumn(echc);
 	}
 	
 	public void onPlayerClick(Player p) {
@@ -315,6 +324,12 @@ public class Entity {
 		jen.addProperty("onGround", onGround);
 		jen.addProperty("yawpitch", yaw+" "+pitch);
 		jen.addProperty("beforeechc", beforeechc.toString());
+		if (echc == null) {
+			echc = new Vector2I(pos.x,pos.z);
+			GameU.err("echc is null?");
+			GameU.tracer();
+		}
+		jen.addProperty("echc", echc.toString());
 		jen.addProperty("hp", this.hp);
 		jen.addProperty("fsb", fallstartblock);
 	}
@@ -331,6 +346,7 @@ public class Entity {
 		setYaw(Float.parseFloat(rot[0]));
 		setPitch(Float.parseFloat(rot[1]));
 		beforeechc = Vector2I.fromString(jen.get("beforeechc").getAsString());
+		echc = Vector2I.fromString(jen.get("echc").getAsString());
 		hp = jen.get("hp").getAsByte();
 		fallstartblock = jen.get("fsb").getAsDouble();
 	}
@@ -362,7 +378,7 @@ public class Entity {
 	}
 
 	public void render() {
-		if (Settings.showHitbox) {
+		if (Settings.debug) {
 			Hpb.render(getFrame());
 		}
 	}
@@ -375,7 +391,11 @@ public class Entity {
 		return 0;
 	}
 
-	public void hit(DamageSource src, int damage) {
+	public void hit(DamageSource src, byte damage) {
+		if (damage < 0) {
+			System.out.println("wrong damage: "+damage);
+			return;
+		}
 		if (hp == -Byte.MIN_VALUE) return;
 		this.setHp(hp -= damage);
 		if (hp < 0) {
@@ -406,7 +426,11 @@ public class Entity {
 		return idCounter++;
 	}
 	
+	/**client side, call by packet*/
 	public void setPos(Vector3D newpos) {
+		if (world.getColumn(VectorU.posToColumn(newpos)) == null) {
+			this.despawn();
+		}
 		this.beforepos.set(pos);
 		this.pos = newpos;
 	}

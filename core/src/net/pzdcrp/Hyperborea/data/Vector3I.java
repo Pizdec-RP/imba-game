@@ -32,6 +32,25 @@ public class Vector3I {
 		return new Vector3I(this.x + x, this.y + y, this.z + z);
 	}
 	
+	@Override
+	public boolean equals(Object anObject) {
+		if (anObject instanceof Vector3I) {
+			Vector3I pos1 = (Vector3I) anObject;
+			return pos1.x == this.x && pos1.y == this.y && pos1.z == this.z;
+		} else {
+			return false;
+		}
+	}
+	
+	@Override
+	public int hashCode() {
+		int hash = 7;
+		hash = 31 * hash + x;
+		hash = 31 * hash + y;
+		hash = 31 * hash + z;
+		return hash;
+	}
+	
 	public List<Vector3I> sides() {
 		List<Vector3I> sides = new ArrayList<Vector3I>() {{
 			add(addd(1, 0, 0));

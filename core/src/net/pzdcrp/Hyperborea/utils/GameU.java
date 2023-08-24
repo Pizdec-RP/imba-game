@@ -32,10 +32,11 @@ public class GameU {
 	}
 	
 	public static <T> void arrayPrint(T[] arr) {
+		String s = "";
 		for (T element : arr) {
-			System.out.print(element.toString()+" ");
+			s += element.toString()+" ";
 		}
-		System.out.println();
+		System.out.println(s);
 	}
 	
 	public static <T> void arrayPrint(String s, T[] arr) {

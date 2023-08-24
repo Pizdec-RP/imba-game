@@ -18,24 +18,30 @@ import net.pzdcrp.Hyperborea.data.EntityType;
 import net.pzdcrp.Hyperborea.data.Settings;
 import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlayerActionPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlayerActionPacket.PlayerAction;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlayerPositionPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerChatPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerChunkLightPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerEntityDespawnPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerEntityPositionVelocityPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerLoadColumnPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSetHealthPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSetSlotPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSetblockPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSetupInventoryPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSpawnEntityPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerUnloadColumnPacket;
+import net.pzdcrp.Hyperborea.multiplayer.ServerPlayer;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientPlayerActionPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientPlayerActionPacket.PlayerAction;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientPlayerLocationDataPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientPlayerRespawnPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.entity.ServerEntityDespawnPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.entity.ServerEntityPositionVelocityPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.entity.ServerSpawnEntityPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.ingame.ServerChatPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.ingame.ServerPlayerRespawnPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.ingame.ServerSetHealthPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.inventory.ServerCloseInventoryPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.inventory.ServerOpenInventoryPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.inventory.ServerSetSlotPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.inventory.ServerSetupInventoryPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.world.ServerChunkLightPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.world.ServerLoadColumnPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.world.ServerSetblockPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.world.ServerUnloadColumnPacket;
 import net.pzdcrp.Hyperborea.server.InternalServer;
 import net.pzdcrp.Hyperborea.server.ServerWorld;
 import net.pzdcrp.Hyperborea.utils.GameU;
 import net.pzdcrp.Hyperborea.utils.MathU;
+import net.pzdcrp.Hyperborea.utils.VectorU;
 import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.Chunk;
 import net.pzdcrp.Hyperborea.world.elements.Column;
@@ -52,6 +58,7 @@ import net.pzdcrp.Hyperborea.world.elements.inventory.items.OakLogItem;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.PlanksItem;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.StoneItem;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.WeedItem;
+import net.pzdcrp.Hyperborea.world.elements.storages.ItemStorage;
 
 public class Player extends Entity {
 	//public float pitch, yaw;//yaw left-right
@@ -72,20 +79,23 @@ public class Player extends Entity {
 	private Chunk bbchunk;
 	private boolean isMining = false;
 	public PlayerInventory castedInv;
-	public int curentNumPressed = -1;
-	public String nickname;
 	
+	
+	//server
+	public String nickname;
+	public ServerPlayer serverProfile;
 	
 	
 	public Player(double tx, double ty, double tz, String name, World world, int lid) {
 		super(new Vector3D(tx,ty,tz),new AABB(-0.3, 0, -0.3, 0.3, 1.7, 0.3), EntityType.player, world, lid);
 		this.nickname = name;
-		cam = new Camera();
-		cam.setpos(this.pos.x,this.pos.y,this.pos.z);
-		cam.cam.update();
+		if (world.isLocal()) {
+			cam = new Camera();
+			cam.setpos(this.pos.x,this.pos.y,this.pos.z);
+			cam.cam.update();
+		}
 		pinterface = new PlayerInterface(this);
 		this.castedInv = (PlayerInventory) inventory;
-		
 		/*this.inventory.addItem(new TntCrateItem(99), 0);
 		this.inventory.addItem(new GlassItem(99), 1);
 		this.inventory.addItem(new GrassItem(99), 2);
@@ -100,7 +110,7 @@ public class Player extends Entity {
 	public boolean tick() {
 		boolean continuee = super.tick();
 		if (!this.world.isLocal()) {
-			if (hp < maxhp()) {
+			if (hp < maxhp() && hp != 0) {
 				if (healcd > 0) {
 					healcd--;
 				} else {
@@ -124,7 +134,9 @@ public class Player extends Entity {
 				}
 			}
 		}
-		cam.setpos(getEyeLocation());
+		if (world.isLocal()) {
+			cam.setpos(getEyeLocation());
+		}
 		
 		return true;
 	}
@@ -135,6 +147,9 @@ public class Player extends Entity {
 			this.hp = i;
 			if (!world.isLocal()) {
 				sendSelfPacket(new ServerSetHealthPacket(hp));
+			}
+			if (hp <= 0) {
+				onDeath();
 			}
 		}
 	}
@@ -211,25 +226,28 @@ public class Player extends Entity {
 	
 	public void movement() {
 		Vector3D velocityGoal = new Vector3D(0,0,0);
-		double speed = 0d;
+		double speed = 0d, ospeed = 0d;
 		if (down) {
 			speed = DM.walkSpeed/3;
+			ospeed = speed;
 		} else if (run) {
 			speed = DM.runSpeed;
+			ospeed = DM.walkSpeed;
 		} else {
 			speed = DM.walkSpeed;
+			ospeed = DM.walkSpeed;
 		}
 		if (forward) {
 			velocityGoal.x = speed;
 		}
 		if (reverse) {
-			velocityGoal.x = -speed;
+			velocityGoal.x = -ospeed;
 		}
 		if (left) {
-			velocityGoal.z = -speed;
+			velocityGoal.z = -ospeed;
 		}
 		if (right) {
-			velocityGoal.z = speed;
+			velocityGoal.z = ospeed;
 		}
         vel.x += velocityGoal.x * (float) Math.sin(yaw) + velocityGoal.z * (float) Math.cos(yaw);
         vel.z += velocityGoal.z * (float) Math.sin(yaw) - velocityGoal.x * (float) Math.cos(yaw);
@@ -260,33 +278,52 @@ public class Player extends Entity {
 	
 	int healcd = 0;
 	@Override
-	public void hit(DamageSource src, int damage) {
+	public void hit(DamageSource src, byte damage) {
 		if (justspawn > 0) return;
 		System.out.println("hp: "+hp+" dmg:"+damage);
-		if (damage < 0) {
-			System.out.println("wrong damage: "+damage);
-			return;
-		}
 		healcd = 80;
 		if (hp == -Byte.MIN_VALUE) return;
-		this.hp -= damage;
+		setHp((byte) (this.hp - damage));
 		Hpb.hurtlvl = 50;
 		if (hp < 0) {
 			Hpb.hurtlvl = 99;
 			Hpb.world.player.chat.send(this.getClass().getName()+" died of "+src.toString());
-			onDeath();
 		}
 	}
 	
+	/**multi side*/
 	public void onDeath() {
-		Hpb.deadplayer = true;
-		this.inventory.dropAllItems();
+		if (world.isLocal()) {
+			Hpb.deadplayer = true;
+		} else {
+			this.inventory.dropAllItems();
+			//TODO отослать близжайшим игрокам пакет о смерти игрока
+			//TODO при телепорте ентити проверять пропадает ли она из зоны стрима игроков и если да то деспавнить
+		}
+		//this.inventory.dropAllItems();
 	}
 	
 	public void respawn() {
-		this.hp = maxhp();
-		this.justspawn = 50;
-		this.teleport(InternalServer.world.randomSpawnPoint());
+		if (world.isLocal()) {
+			Hpb.session.send(new ClientPlayerRespawnPacket());
+		} else {
+			setHp(maxhp());
+			this.justspawn = 50;
+			this.teleport(InternalServer.world.randomSpawnPoint());
+			sendSelfPacket(new ServerPlayerRespawnPacket(pos));
+			echc = new Vector2I(pos.x,pos.z);
+		}
+	}
+	
+	@Override
+	public void teleport(Vector3D pos1) {
+		super.teleport(pos1);
+		if (world.isLocal()) {
+			Hpb.session.send(new ClientPlayerLocationDataPacket(pos, vel, onGround, yaw, pitch));
+		}/* else {
+			if (!serverProfile.columnsAroundPlayer.containsKey(VectorU.posToColumn(pos1)))
+				sendSelfPacket(new ServerLoadColumnPacket(world.getColumn(echc)));
+		}*/
 	}
 	
 	@Override
@@ -340,9 +377,6 @@ public class Player extends Entity {
 		if (Gdx.input.isKeyPressed(Input.Keys.R)) {
 			Hpb.world.time += 1000;
 		}
-		if (curentNumPressed != -1) {
-			this.inventory.setCurrentSlotInt(curentNumPressed-1);
-		}
 		
 		if (down) {
 			this.camHeight = 1.4f;
@@ -357,10 +391,16 @@ public class Player extends Entity {
 	
 	public void render() {
 		super.render();
-		if (run && cam.getFov() < Settings.fov+5) {
-			cam.setFov(cam.getFov() + 0.4f);
+		if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+			if (run && cam.getFov() < Settings.fov+5) {
+				cam.setFov(cam.getFov() + 0.4f);
+			} else {
+				if (!run && cam.getFov() > Settings.fov) {
+					cam.setFov(cam.getFov() - 0.4f);
+				}
+			}
 		} else {
-			if (!run && cam.getFov() > Settings.fov) {
+			if (cam.getFov() > Settings.fov) {
 				cam.setFov(cam.getFov() - 0.4f);
 			}
 		}
@@ -405,16 +445,19 @@ public class Player extends Entity {
 	@Override
 	public void setYaw(float yaw) {
 		super.setYaw(yaw);
-		System.out.println("yaws");
-		cam.cam.rotate(Vector3.Y, yaw);
-		cam.cam.update();
+		if (world.isLocal()) {
+			cam.cam.rotate(Vector3.Y, yaw);
+			cam.cam.update();
+		}
 	}
 	
 	@Override
 	public void setPitch(float pitch) {
 		super.setPitch(pitch);
-		cam.cam.rotate(Vector3.X, pitch);
-		cam.cam.update();
+		if (world.isLocal()) {
+			cam.cam.rotate(Vector3.X, pitch);
+			cam.cam.update();
+		}
 	}
 	
 	private final Vector3 tmp = new Vector3();
@@ -454,6 +497,7 @@ public class Player extends Entity {
 			.chunks[packet.chunkPos.y];
 			c.setLightStorage(packet.light);
 			c.updateModel();//TODO сделать метод который будет обновлять не всю модель а только свет
+			
 		} else if (p instanceof ServerSetblockPacket) {
 			ServerSetblockPacket packet = (ServerSetblockPacket) p;
 			if (packet.author == ActionAuthor.player && packet.id == 0) {
@@ -475,12 +519,10 @@ public class Player extends Entity {
 			e.vel = packet.vel;
 		} else if (p instanceof ServerEntityDespawnPacket) {
 			ServerEntityDespawnPacket packet = (ServerEntityDespawnPacket)p;
-			chat.debug("despawning entity!");
 			for (Column c : world.getLoadedColumns().values()) {
 				for (Entity entity : c.entites) {
 					if (entity.localId == packet.lid) {
 						entity.despawn();
-						chat.debug("found!");
 						return;
 					}
 				}
@@ -495,6 +537,18 @@ public class Player extends Entity {
 		} else if (p instanceof ServerSetSlotPacket) {
 			ServerSetSlotPacket packet = (ServerSetSlotPacket)p;
 			this.castedInv.setSlotFromPacketOnClient(packet.index, packet.item);
+		} else if (p instanceof ServerPlayerRespawnPacket) {
+			ServerPlayerRespawnPacket packet = (ServerPlayerRespawnPacket)p;
+			teleport(packet.pos);
+			//Hpb.deadplayer = false;
+			//Hpb.deadtimer = 0f;
+		} else if (p instanceof ServerCloseInventoryPacket) {
+			castedInv.close();
+		} else if (p instanceof ServerOpenInventoryPacket) {
+			ServerOpenInventoryPacket packet = (ServerOpenInventoryPacket)p;
+			ItemStorage is = ItemStorage.storageTable.get(packet.id);
+			is.setItems(packet.items);
+			castedInv.open(is);
 		}
 	}
 }

@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -30,19 +31,18 @@ import net.pzdcrp.Hyperborea.data.Vector2I;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.data.Vector3I;
 import net.pzdcrp.Hyperborea.multiplayer.ServerPlayer;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlayerConnectionPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlayerPositionPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientWorldSuccLoadPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerChatPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerChunkLightPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSetblockPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSpawnEntityPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSpawnPlayerPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSuccessConnectPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ClientPlayerConnectionPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientPlayerLocationDataPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.ServerSuccessConnectPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.entity.ServerSpawnEntityPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.inventory.ServerOpenInventoryPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.world.ServerChunkLightPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.world.ServerSetblockPacket;
 import net.pzdcrp.Hyperborea.player.Player;
 import net.pzdcrp.Hyperborea.utils.GameU;
 import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.utils.VectorU;
+import net.pzdcrp.Hyperborea.world.PlayerWorld;
 import net.pzdcrp.Hyperborea.world.World;
 import net.pzdcrp.Hyperborea.world.elements.Chunk;
 import net.pzdcrp.Hyperborea.world.elements.Column;
@@ -54,12 +54,13 @@ import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
 import net.pzdcrp.Hyperborea.world.elements.entities.ItemEntity;
 import net.pzdcrp.Hyperborea.world.elements.generators.DefaultWorldGenerator;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.DirtItem;
+import net.pzdcrp.Hyperborea.world.elements.inventory.items.Item;
+import net.pzdcrp.Hyperborea.world.elements.storages.ChestItemStorage;
 
 public class ServerWorld implements World {
 	public Map<Session, ServerPlayer> players = new ConcurrentHashMap<>();
 	public Map<Vector2I,Region> memoriedRegions = new ConcurrentHashMap<>();
 	public Map<Vector2I,Column> loadedColumns = new ConcurrentHashMap<>();
-	public List<Entity> shleduedSpawn = new CopyOnWriteArrayList<Entity>();
 	public int time = 0;
 	private static final int DAY_LENGTH = 60000;
 	private static final float DISTANCE_FROM_CENTER = 2000f;
@@ -74,7 +75,7 @@ public class ServerWorld implements World {
 	}
 	
 	public void packetReceived(Session s, Packet p) {
-		if (!(p instanceof ClientPlayerPositionPacket)) {
+		if (!(p instanceof ClientPlayerLocationDataPacket)) {
 			GameU.log("server got packet "+p.getClass().getSimpleName());
 		}
 		if (p instanceof ClientPlayerConnectionPacket) {
@@ -108,6 +109,7 @@ public class ServerWorld implements World {
 					GameU.end("cant found entity of player "+player.name+" in "+GameU.arrayString("players", c.unloadedPlayers));
 				}*/
 			}
+			player.playerEntity.serverProfile = player;
 			player.playerEntity.tick();
 			players.put(s, player);
 		} else {
@@ -117,7 +119,7 @@ public class ServerWorld implements World {
 			}
 			player.onPacket(p);
 		}
-		//on ClientDisconnectPacket -> write position in worlddata.players
+		//TODO on ClientDisconnectPacket -> write position in worlddata.players
 	}
 	
 	public ServerPlayer getPlayerByName(String name) {
@@ -159,6 +161,7 @@ public class ServerWorld implements World {
 		startTickLoop();
 		Thread chunkUpdateThread = new Thread(()->{
 			while (true) {
+				if (Hpb.exit) return;
 				updateChunkLights();
 				for (ServerPlayer sp : players.values()) {
 					sp.updateLoadedColumns();
@@ -178,6 +181,7 @@ public class ServerWorld implements World {
     public int skylight = 13;
 	
 	public void tick() {
+		if (Hpb.exit) return;
 		time++;
 		if (time > DAY_LENGTH) time = 0;
 		
@@ -241,7 +245,7 @@ public class ServerWorld implements World {
 						broadcastByColumn(col.pos, new ServerChunkLightPacket(chunk.getLightStorage(), chunk.getPos()));
 						isCycleFree = false;
 						chunk.outlightupd = false;
-						chunk.updateModel();
+						//chunk.updateModel();
 					}
 				}
 			}
@@ -254,8 +258,10 @@ public class ServerWorld implements World {
 		new Thread(() -> {
 			long timeone;
 			while (true) {
+				if (Hpb.exit) return;
 	        	timeone = System.nanoTime();
 	    	    tick();
+	    	    //PlayerWorld.deltaTime();
 	    	    long two = System.nanoTime();
 	    	    int elapsed = (int)(two - timeone);
 	    	    int normaled = elapsed/1_000_000;
@@ -286,7 +292,13 @@ public class ServerWorld implements World {
 		
 		Column col = getColumn(block.pos.x,block.pos.z);
 		col.setBlock(block);
-		this.broadcastByColumn(VectorU.posToColumn(block.pos), new ServerSetblockPacket(block.pos, block.getId(), author));
+		//broadcastByColumn(col.pos, new ServerSetblockPacket(block.pos, block.getId(), author));
+		for (ServerPlayer player : players.values()) {
+			if (player.columnsAroundPlayer.containsKey(col.pos)) {
+				player.session.send(new ServerSetblockPacket(block.pos, block.getId(), author));
+				player.chunkLightOrder.add(VectorU.posToChunk(block.pos));
+			}
+		}
 		for (Block block1 : block.getSides(this)) {
 			block1.onNeighUpdate(this);
 			block1.callChunkUpdate(this);
@@ -297,25 +309,24 @@ public class ServerWorld implements World {
 	@Override
 	public void spawnEntity(Entity entity) {
 		Vector2I pos = VectorU.posToColumn(entity.pos);
-		if (loadedColumns.containsKey(pos)) {
-			Column spawnin = getColumn(pos);
-			if (entity.isPlayer) {
-				GameU.err("игрока не спавним для других игроков");
-			} else {
-				this.broadcastByColumn(spawnin.pos, new ServerSpawnEntityPacket(entity));
-			}
-			spawnin.entites.add(entity);
+		//if (loadedColumns.containsKey(pos)) { //хз зачем эта проверка
+		Column spawnin = getColumn(pos);
+		if (entity.isPlayer) {
+			//TODO ServerSpawnUnplayablePlayerPacket xz
+			GameU.err("игрока не спавним для других игроков");
 		} else {
-			shleduedSpawn.add(entity);
+			this.broadcastByColumn(spawnin.pos, new ServerSpawnEntityPacket(entity));
 		}
+		spawnin.entites.add(entity);
+		//}
 	}
 
 	@Override
 	public void breakBlock(Vector3D pos) {
 		if (pos.y < 0 || pos.y >= buildheight) return;
 		Block before = getBlock(pos);
-		setBlock(new Air(pos), ActionAuthor.player);
 		before.onBreak(this);
+		setBlock(new Air(pos), ActionAuthor.player);
 	}
 	@Override
 	public Column getColumn(double x, double z) {
@@ -340,13 +351,15 @@ public class ServerWorld implements World {
 	public int getLight(int x, int y, int z) {
 		if (y < 0 || y >= maxheight) return 14;
 		Column col = loadedColumns.get(new Vector2I(x>>4, z>>4));
-		if (col == null) return 0;
+		if (col == null) return -1;
 		return col.chunks[y/16].rawGetLight(x&15, y&15, z&15);
 	}
 	@Override
 	public void setLight(int x, int y, int z, int num) {
 		if (y < 0 || y >= maxheight) return;
-		getColumn(x,z).chunks[y/16].rawSetLight(x&15, y&15, z&15, num);
+		Column col = loadedColumns.get(new Vector2I(x>>4, z>>4));
+		if (col == null) return;
+		col.chunks[y/16].rawSetLight(x&15, y&15, z&15, num);
 	}
 	@Override
 	public Block getBlock(double x, double y, double z) {
@@ -375,12 +388,6 @@ public class ServerWorld implements World {
     		}
     		DefaultWorldGenerator.toadd.remove(c.pos);
     	}
-		for (Entity entity : shleduedSpawn) {
-			if (entity.beforeechc.equals(c.pos)) {
-				shleduedSpawn.remove(entity);
-				this.spawnEntity(entity);
-			}
-		}
 	}
 	
 	public boolean save() {
@@ -403,7 +410,7 @@ public class ServerWorld implements World {
 					JsonObject jp = jppos.getAsJsonObject();
 					if (jp.get("name").getAsString().equals(name)) {
 						jp.remove("pos");
-						jp.addProperty("pos", player.playerEntity.echc.toString());
+						jp.addProperty("pos", player.playerEntity.curCol.pos.toString());
 						gotIt = true;
 						break;
 					}
@@ -547,7 +554,7 @@ public class ServerWorld implements World {
 			String entity = args[0];
 			Entity en = null;
 			if (entity.equals("item")) {
-				this.spawnEntity(en = new ItemEntity(player.playerEntity.pos.clone(), 1, new DirtItem(1), this, Entity.genLocalId()));
+				this.spawnEntity(en = new ItemEntity(player.playerEntity.pos.clone(), new DirtItem(1), this, Entity.genLocalId()));
 			} else {
 				player.sendmsg("не ебу что это "+entity);
 				return;
@@ -559,6 +566,45 @@ public class ServerWorld implements World {
 				i += c.entites.size();
 			}
 			player.sendmsg("there is "+i+" entities");
+		} else if (command.equals("kill")) {
+			player.playerEntity.setHp((byte)0);
+		} else if (command.equals("rsp")) {
+			player.playerEntity.respawn();
+		} else if (command.equals("give")) {
+			String item = args[0];
+			for (Item i : Item.items.values()) {
+				if (i.getName().toLowerCase().contains(item.toLowerCase())) {
+					Item cloned = i.clone(1);
+					this.spawnEntity(new ItemEntity(player.playerEntity.getEyeLocation(), cloned, this, Entity.genLocalId()));
+					player.sendmsg("gived 1 "+i.getName());
+					return;
+				}
+			}
+			player.sendmsg("unknown item "+item);
+		} else if (command.equals("razeb")) {
+			new Thread(()->{
+				Vector3D spawn = player.playerEntity.getEyeLocation().add(0, 1, 0);
+				while (true) {
+					int id = MathU.random(new ArrayList<Integer>() {{add(1);add(2);add(3);add(5);add(6);add(7);}});
+					Item item = Item.items.get(id).clone(MathU.rndi(1, 60));
+					ItemEntity e = new ItemEntity(spawn.clone(), item, this, Entity.genLocalId());
+					e.vel.setComponents(MathU.rndd(-0.6, 0.6),
+							MathU.rndd(0, 0.6),
+							MathU.rndd(-0.6, 0.6));
+					this.spawnEntity(e);
+					GameU.log("spawning");
+					GameU.sleep(50);
+				}
+			}).start();
+		} else if (command.equals("clone")) {
+			for (Column c : loadedColumns.values()) {
+				for (Entity e : c.entites) {
+					if (!(e instanceof Player))
+						spawnEntity(e.clone(e.pos.clone(), this, e.consumeData(), Entity.genLocalId()));
+				}
+			}
+		} else if (command.equals("istest")) {
+			player.playerEntity.castedInv.open(new ChestItemStorage());
 		} else {
 			player.sendmsg("unknown command \""+command+"\"");
 		}

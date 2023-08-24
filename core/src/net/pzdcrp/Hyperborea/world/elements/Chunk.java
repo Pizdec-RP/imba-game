@@ -20,9 +20,12 @@ import net.pzdcrp.Hyperborea.world.elements.blocks.Block.BlockType;
 public class Chunk {
 	//private Block[][][] blocks = new Block[16][16][16];
 	//private int[][][] blocks = new int[16][16][16];
+	
+	//хранимые данные
 	private BitStorage blocks;
 	
 	//не хранимые данные
+	private static final int maxheight = World.maxheight-16;
 	public ModelInstance allModels, transparent;
 	public Column column;
 	public int height;
@@ -104,6 +107,8 @@ public class Chunk {
 	private int normz(int ref) {
 		return column.pos.z*16+ref;
 	}
+	
+	public boolean updated = false;
 	public void updateLightFromOutbounds() {
 		if (!Thread.currentThread().getName().equals("server chunk update thread"))
 	    	GameU.end("метод не должен вызываться из мира сервера");
@@ -113,7 +118,7 @@ public class Chunk {
 	        for(int z = -1; z <= 16; z++) {
 	            for(int y = -1; y <= 16; y++) {
 	            	if (x < 0 || x > 15 || y < 0 || y > 15 || z < 0 || z > 15) {
-	            		if (rawGetLight(x,y,z) != 0) {
+	            		if (rawGetLight(x,y,z) != -1) {
 	            			stack.add(new Vector3I(x,y,z));
 	            		}
 	            	}
@@ -121,6 +126,7 @@ public class Chunk {
 	        }
 	    }
 	    updateLightStack(stack, false);
+	    updated = true;
 	    //System.out.println("updated 2");
 	}
 	
@@ -180,26 +186,35 @@ public class Chunk {
 	
 	private void updateLight(int x, int y, int z, int currentLight, List<Vector3I> stack) {
 	    //обновление стороны от блока который мб на координатах +-1 от 0 или 15
-		if (x < 0 || x > 15 || y < 0 || y > 15 || z < 0 || z > 15) return;
-		int neighborLight = rawGetLight(x, y, z);
+		//if (x < 0 || x > 15 || y < 0 || y > 15 || z < 0 || z > 15) return;
+		//currentLight - локальный источник света
+		int neighborLight = rawGetLight(x, y, z);//точка света которая подвергнется изменению
+		if (neighborLight == -1) return;//если точка света находится в непрогруженом чанке то ничо не делаем
 	    int newlight = currentLight - 1;
-	    Vector3I vec = new Vector3I(x, y, z);
-	    if (newlight > neighborLight) {
-	    	rawSetLight(x, y, z, currentLight - 1);
-	        stack.add(vec);
-			/*if (x < 0 || x > 15 || y < 0 || y > 15 || z < 0 || z > 15) {
-		    	if (regnewupd && newlight > 0 && rawGetLight(x,y,z) != newlight) {
-		    		for (Chunk c : this.norm(x, y, z).getSidesChunks()) {
-		    			if (c.updatePropogation.contains(c)) return;
-		    			c.updatePropogation.add(this);
-		    			c.inlightupd=true;
-		    			c.outlightupd=true;
-		    		}
-		    	}
-		    } else {
+	    if (x < 0 || x > 15 || y < 0 || y > 15 || z < 0 || z > 15) {
+	    	if ((y < 0 && height <= 0) || (y > 15 && height >= maxheight)) {
+	    		return; //ничо не делаем потомучто эта точка находится вне мира
+	    	} else {
+	    		
+	    	}
+	    } else {
+		    if (newlight > neighborLight) {
 		    	rawSetLight(x, y, z, currentLight - 1);
-		        stack.add(vec);
-		    }*/
+		        stack.add(new Vector3I(x, y, z));
+				/*if (x < 0 || x > 15 || y < 0 || y > 15 || z < 0 || z > 15) {
+			    	if (regnewupd && newlight > 0 && rawGetLight(x,y,z) != newlight) {
+			    		for (Chunk c : this.norm(x, y, z).getSidesChunks()) {
+			    			if (c.updatePropogation.contains(c)) return;
+			    			c.updatePropogation.add(this);
+			    			c.inlightupd=true;
+			    			c.outlightupd=true;
+			    		}
+			    	}
+			    } else {
+			    	rawSetLight(x, y, z, currentLight - 1);
+			        stack.add(vec);
+			    }*/
+		    }
 	    }
 	}
 	
@@ -304,7 +319,7 @@ public class Chunk {
 		if (height != 0) {
 			l.add(column.chunks[height/16-1]);
 		}
-		if (height != 240) {
+		if (height != maxheight) {
 			l.add(column.chunks[height/16+1]);
 		}
 		Column temp;

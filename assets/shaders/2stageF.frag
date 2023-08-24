@@ -7,6 +7,7 @@ uniform vec2 screensize;
 uniform float hurtlevel;
 uniform float isdead;
 uniform float random;
+uniform float deadshades;
 uniform sampler2D beforeframe;
 
 varying vec2 v_texCoord0;
@@ -26,8 +27,8 @@ void main() {
 	gl_FragColor.rgb = mix(gl_FragColor.rgb, gl_FragColor.rgb * vignette, 0.65);
 	//--------vignette------
 	
-	if (isdead == 1.0) {
-		gl_FragColor = vec4(0,0,0,1);
+	if (isdead != 0) {
+		gl_FragColor.a = deadshades;
 	}
 	
 	if (hurtlevel > 0) {

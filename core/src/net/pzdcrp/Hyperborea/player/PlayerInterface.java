@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 import net.pzdcrp.Hyperborea.Hpb;
+import net.pzdcrp.Hyperborea.utils.GameU;
 import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.world.PlayerWorld;
 import net.pzdcrp.Hyperborea.world.elements.inventory.PlayerInventory;
@@ -19,7 +20,6 @@ public class PlayerInterface {
 	private Texture hptex;
 	private Texture crosshair;
 	private final int crosshairsize = 30;
-	private int fullinvslideanimlvl = (int) -PlayerInventory.frameWidth;
 	
 	public PlayerInterface(Player p) {
 		this.p = p;
@@ -43,18 +43,8 @@ public class PlayerInterface {
 			if (!p.castedInv.isOpened) Hpb.spriteBatch.draw(crosshair, halfwidth-crosshairsize, halfheight-crosshairsize, crosshairsize, crosshairsize);
 		}
 		if (p.castedInv.isOpened) {
-			if (fullinvslideanimlvl < PlayerInventory.x) {
-				fullinvslideanimlvl+=40;
-				if (fullinvslideanimlvl > PlayerInventory.x) {
-					fullinvslideanimlvl = (int) PlayerInventory.x;
-				}
-			}
-			p.castedInv.renderFull(fullinvslideanimlvl);
+			p.castedInv.renderFull();
 		} else {
-			if (fullinvslideanimlvl > -PlayerInventory.frameWidth) {
-				fullinvslideanimlvl-=40;
-				p.castedInv.renderFull(fullinvslideanimlvl);
-			}
 			p.chat.render(halfwidth, halfheight);
 		}
 		
@@ -85,7 +75,7 @@ public class PlayerInterface {
 	}
 	
 	public void resize(int width, int height) {
-		System.out.println("RESIZE");
+		GameU.log("RESIZE");
 		PlayerInventory.x = width / 2 - PlayerInventory.frameWidth / 2;
 		hpx = PlayerInventory.x;
 		hpy = PlayerInventory.y + PlayerInventory.slotHeight + 5f;

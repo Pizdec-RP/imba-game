@@ -17,7 +17,6 @@ public class Vector3D {
 	public double x;
 	public double y;
 	public double z;
-	public int hasheddata = 0;
 	public static int test = 0;
 	
 	public Vector3D() {

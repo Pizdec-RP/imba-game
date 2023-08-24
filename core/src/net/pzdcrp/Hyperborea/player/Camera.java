@@ -7,6 +7,7 @@ import com.badlogic.gdx.math.Vector3;
 import net.pzdcrp.Hyperborea.Hpb;
 import net.pzdcrp.Hyperborea.data.Settings;
 import net.pzdcrp.Hyperborea.data.Vector3D;
+import net.pzdcrp.Hyperborea.utils.GameU;
 
 public class Camera {
 	public PerspectiveCamera cam;

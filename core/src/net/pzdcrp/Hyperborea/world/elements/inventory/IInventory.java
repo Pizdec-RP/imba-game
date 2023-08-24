@@ -8,8 +8,6 @@ import net.pzdcrp.Hyperborea.world.elements.inventory.items.Item;
 
 public interface IInventory {
 	public Item getSlot(int index);
-	
-	public void addItem(Item item, int index);
 
 	public void render();
 	

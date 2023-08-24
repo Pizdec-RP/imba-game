@@ -21,6 +21,7 @@ import net.pzdcrp.Hyperborea.data.MBIM;
 import net.pzdcrp.Hyperborea.data.Vector3D;
 import net.pzdcrp.Hyperborea.data.MBIM.offset;
 import net.pzdcrp.Hyperborea.extended.SexyMeshBuilder;
+import net.pzdcrp.Hyperborea.player.Player;
 import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.utils.ModelUtils;
 import net.pzdcrp.Hyperborea.utils.GameU;
@@ -62,6 +63,7 @@ public class Block {
 			put(21, new Water(new Vector3D(), 7));*/
 			put(22, new OakLeaves(new Vector3D()));
 			put(23, new Weed(new Vector3D()));
+			put(24, new Crate(new Vector3D()));
 		}};;
 	private static Map<Integer, Integer> BlockidToItemid = new ConcurrentHashMap<Integer, Integer>() {
 		private static final long serialVersionUID = 37079642665568945L;
@@ -82,7 +84,7 @@ public class Block {
 			put(14, 8);
 			put(23, 9);
 		}};
-	public static Map<Integer, ModelInstance> blockModels = new HashMap<>();
+	public static Map<Integer, ModelInstance> blockModels = new ConcurrentHashMap<>();
 	public enum BlockType {
 		air, solid, transparent, noncollideabe;
 	}
@@ -143,6 +145,10 @@ public class Block {
 	
 	public static Block getAbstractBlock(int id) {
 		return blocks.get(id);
+	}
+	
+	public boolean clickable() {
+		return false;
 	}
 	
 	public void onNeighUpdate(World world) {
@@ -220,8 +226,10 @@ public class Block {
 		return this.getClass().getName()+"[face:"+this.getFace()+", pos: "+this.pos.toStringInt()+"]";
 	}
 	
-	public boolean onClick(Entity actor) {
-		return false;
+	public void onClick(Player actor) {
+		GameU.err("click called on non clickable block");
+		GameU.tracer();
+		return;
 	}
 	
 	public boolean tickable() {
@@ -301,7 +309,7 @@ public class Block {
 			Item i = Block.itemByBlockId(this.getId());
 			i.count = 1;
 			//if (getId() == 0) GameU.end("pizdec");
-			world.spawnEntity(e = new ItemEntity(pos.add(0.5d), this.getId(), i, world, Entity.genLocalId()));
+			world.spawnEntity(e = new ItemEntity(pos.add(0.5d), i, world, Entity.genLocalId()));
 			e.vel.y = 0.01;
 			e.vel.x = MathU.rndd(-0.1, 0.1);
 			e.vel.z = MathU.rndd(-0.1, 0.1);

@@ -16,18 +16,29 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import net.pzdcrp.Hyperborea.Hpb;
+import net.pzdcrp.Hyperborea.data.BlockFace;
 import net.pzdcrp.Hyperborea.data.DamageSource;
 import net.pzdcrp.Hyperborea.data.Vector3D;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientInventoryActionPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSetSlotPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientClickBlockPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientPlaceBlockPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientSetHotbarSlotPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.inventory.ClientCloseInventoryPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.inventory.ClientInventoryActionPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.inventory.ServerSetSlotPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.inventory.ServerSetupInventoryPacket;
 import net.pzdcrp.Hyperborea.player.Player;
 import net.pzdcrp.Hyperborea.utils.GameU;
+import net.pzdcrp.Hyperborea.utils.MathU;
 import net.pzdcrp.Hyperborea.utils.VectorU;
+import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
+import net.pzdcrp.Hyperborea.world.elements.entities.ItemEntity;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.Item;
 import net.pzdcrp.Hyperborea.world.elements.inventory.items.NoItem;
+import net.pzdcrp.Hyperborea.world.elements.storages.ItemStorage;
 
 public class PlayerInventory implements IInventory {
 	private Map<Integer,Item> items = new ConcurrentHashMap<Integer,Item>();
+	private ItemStorage openedStorage; //link
 	private int chs = 0;//0-9
 	private Player owner;
 	public boolean isOpened = false;
@@ -35,7 +46,7 @@ public class PlayerInventory implements IInventory {
 	
 	public PlayerInventory(Player owner) {
 		for (int i = -1; i < 40; i++) {
-			addItem(EMPTY, i);
+			items.put(i, EMPTY);
 		}
 		this.owner = owner;
 		if (owner.world.isLocal()) {
@@ -47,32 +58,29 @@ public class PlayerInventory implements IInventory {
 		}
 	}
 	
-	//private MBIM m;
-	@Override
-    public void addItem(Item item, int index) {
-		if (item == null) GameU.end("nullitem");
-        if (items.containsKey(index)) {
-        	items.replace(index, item);
-        } else {
-        	items.put(index, item);
-        }
-    }
-	
 	/**client side*/
 	public void setSlotFromPacketOnClient(int index, Item item) {
-		items.replace(index, item);
+		if (index >= 60) {
+			openedStorage.setFromPacket(index, item);
+		} else {
+			items.replace(index, item);
+		}
 	}
 	
 	/**server side*/
 	public void setSlotOnServer(int index, Item item) {
-		items.replace(index, item);
+		if (index >= 60) {
+			openedStorage.setSlotSilentOnServer(index, item, owner.nickname);
+		} else {
+			items.replace(index, item);
+		}
 		owner.sendSelfPacket(new ServerSetSlotPacket(index, item));
 	}
 	
     @Override
 	public void onRClick() {
     	if (owner.currentAimEntity != null) {
-    		owner.currentAimEntity.onPlayerClick(owner);
+    		//owner.currentAimEntity.onPlayerClick(owner);
     		return;
     	}
 		if (owner.currentAimBlock == null) return;
@@ -80,23 +88,28 @@ public class PlayerInventory implements IInventory {
 				owner.currentAimBlock.pos,
 				owner.currentAimFace
 			);
-		if (owner.currentAimBlock.onClick(owner)) return;
-		getSlot(getCurrentSlotInt()).placeBlockAction(clickedPos, owner);
+		if (owner.currentAimBlock.clickable() && !owner.down) {
+			Hpb.session.send(new ClientClickBlockPacket(owner.currentAimBlock.pos));
+		} else {
+			Hpb.session.send(new ClientPlaceBlockPacket(clickedPos, owner.currentAimFace));
+		}
 	}
     
+    public void onRClick(Vector3D pos, BlockFace face) {
+    	getSlot(getCurrentSlotInt()).placeBlockAction(pos, face, owner);
+    }
+    
+    /**server side*/
     public void wasteHandItem() {
     	Item handitem = items.get(chs);
     	if (handitem.count == 1) {
-    		items.replace(chs, EMPTY);
+    		setSlotOnServer(chs, EMPTY);
     	} else {
     		handitem.count--;
+    		setSlotOnServer(chs, handitem);
     	}
     }
     
-    public void setHandItem(Item item) {
-    	items.replace(chs, item);
-    }
-	
 	@Override
 	@Deprecated
 	public void onLClick() {
@@ -110,16 +123,21 @@ public class PlayerInventory implements IInventory {
     
 	@Override
     public Item getSlot(int index) {
-    	return items.get(index);
+		if (index >= 60) {
+			return openedStorage.getslot(index);
+		} else {
+			return items.get(index);
+		}
     }
 	
 	private BitmapFont font;
 	private float fontheight;
-	private void displaySlot(int id, float x, float y, float width, float height) {
-		Item item = items.get(id);
+	public void displaySlot(int id, float x, float y, float width, float height) {
+		Item item = getSlot(id);
 		if (item instanceof NoItem) return;
 		Texture t = item.getTexture();
         Hpb.spriteBatch.draw(t, x, y, width, height);
+        if (item.count == 1) return;
         font.draw(Hpb.spriteBatch, Integer.toString(item.count), x, y+fontheight);
 	}
     
@@ -160,8 +178,18 @@ public class PlayerInventory implements IInventory {
 			}
 			slot++;
 		}
+		if (!finded && openedStorage != null) {
+			slot = 60;
+			for (float[] pos : openedStorage.getSlotmap()) {
+				if (x >= pos[0] && x <= pos[2] && y >= pos[1] && y <= pos[3]) {
+					finded = true;
+					break;
+				}
+				slot++;
+			}
+		}
 		//System.out.println(x+" "+y+" "+down+" "+button+" "+slot+" "+finded);
-		if (!finded || down) return;
+		if (!finded || !down) return;
 		GameU.log("sent inv action slot: "+slot+" down: "+down+" button: "+button);
 		Hpb.session.send(new ClientInventoryActionPacket(slot, down, button));
     }
@@ -171,47 +199,105 @@ public class PlayerInventory implements IInventory {
     	GameU.log("got inv action slot: "+slot+" down: "+down+" button: "+button);
     	Item cursoritem = items.get(-1);
     	boolean cursorIsEmpty = cursoritem.id == 0;
-    	Item islot = items.get(slot);
+    	Item islot = getSlot(slot);
     	if (down) {
     		if (button == Input.Buttons.LEFT) {
     			if (islot.id == 0) {
 	    			if (cursorIsEmpty) {//левый клик по пустому слоту с пустым курсором
-	    				GameU.log("1");
 	    				//ни к чему не приводит
 	    			} else {//левый клик по пустому слоту с заполненым курсором (ложим стак из курсора в слот)
-	    				GameU.log("2");//протестировано
+	    				//протестировано
 	    				this.setSlotOnServer(slot, cursoritem);//перекидываем item з курсора в нажатый слот
 	    				this.setSlotOnServer(-1, EMPTY);//очищаем курсор
 	    			}
     			} else {
     				if (cursorIsEmpty) {//левый клик по заполненому слоту с пустым курсором (берем стак в курсор)
-    					GameU.log("3");//протестировано
+    					//протестировано
     					setSlotOnServer(-1, islot);//ложим в курсор item
     					setSlotOnServer(slot, EMPTY);//очищаем нажатый слот
     				} else {//левый клик по заполненому слоту с заполненым курсором
     					if (cursoritem.id == islot.id) {//в слотах одинаковые ресурсы
-    						GameU.log("4.0");
     						int можноПоложить = islot.stackSize() - islot.count;
     						if (можноПоложить == 0) {//нельзя ничо положить (меняем местами ресурсы)
-    							GameU.log("4.1");
+    							//протестировано
     							setSlotOnServer(-1, islot);//в курсор ложим item из слота
         						setSlotOnServer(slot, cursoritem);//в слот ложим item из курсора
     						} else if (можноПоложить >= cursoritem.count) {//можно положить все что есть в курсоре
-    							GameU.log("4.2");
+    							//протестировано
     							islot.count += cursoritem.count;//прибавляем из курсора в слот
     							setSlotOnServer(slot, islot);///обновляем у клиента (если вызовет ошибку то юзать clone на islot)
     							setSlotOnServer(-1, EMPTY);//очищаем курсор так как все перемещено в слот
     						} else {//можно положить только часть из курсора
-    							GameU.log("4.3");
+    							//протестировано
     							cursoritem.count -= можноПоложить; //убираем эту часть из курсора
     							setSlotOnServer(-1, cursoritem);//обновляем у клиента
     							islot.count += можноПоложить;//добавляем эту часть в слот
     							setSlotOnServer(slot, islot);//обновляем у клиента
     						}
     					} else {//в слотах разные ресурсы (меняем местами ресурсы)
-    						GameU.log("5");//протестировано
+    						//протестировано
     						setSlotOnServer(-1, islot);//в курсор ложим item из слота
     						setSlotOnServer(slot, cursoritem);//в слот ложим item из курсора
+    					}
+    				}
+    			}
+    		} else if (button == Input.Buttons.RIGHT) {
+    			if (islot.id == 0) {
+	    			if (cursorIsEmpty) {//правый клик по пустому слоту с пустым курсором
+	    				//ни к чему не приводит
+	    				//протестировано
+	    			} else {//слот пустой, курсор-нет
+	    				if (cursoritem.count == 1) {//в курсоре 1 предмет, помещаем предмет из курсора в слот
+	    					//протестировано
+	    					setSlotOnServer(-1, EMPTY);
+							setSlotOnServer(slot, cursoritem);
+						} else {//добавляем в пустой слот 1 предмет из курсора
+							//протестировано
+							cursoritem.count--;
+							setSlotOnServer(-1, cursoritem);
+							setSlotOnServer(slot, cursoritem.clone(1));
+						}
+	    			}
+    			} else {
+    				if (cursorIsEmpty) {//берется в курсор пол стака, если предмет в слоте 1 то он тоже ложится в курсор, если кол-во в слоте не четное то большая часть идет в курсор
+    					if (islot.count == 1) {//1 предмет в слоте (меняем местами)
+    						//протестировано
+    						setSlotOnServer(slot, EMPTY);
+    						setSlotOnServer(-1, islot);
+    					} else if (islot.count % 2 == 1) {//нечет в слоте (делим по полам +1 в курсор)
+    						//протестировано
+    						int halfcount = (islot.count-1)/2;
+    						setSlotOnServer(slot, islot.clone(halfcount));
+    						setSlotOnServer(-1, islot.clone(halfcount+1));
+    					} else {//чет в слоте (делим по полам)
+    						//протестировано
+    						int halfcount = islot.count/2;
+    						setSlotOnServer(slot, islot.clone(halfcount));
+    						setSlotOnServer(-1, islot.clone(halfcount));
+    					}
+    				} else {
+    					if (cursoritem.id == islot.id) {//ресурсы одинаковые
+    						if (islot.count < islot.stackSize()) {//в слот еще еможно плоложить чтото
+    							if (cursoritem.count == 1) {//в курсоре 1 предмет
+    								//протестировано
+    								setSlotOnServer(-1, EMPTY);//
+    								islot.count++;
+    								setSlotOnServer(slot, islot);
+    							} else {
+    								//протестировано
+    								cursoritem.count--;
+    								setSlotOnServer(-1, cursoritem);
+    								islot.count++;
+    								setSlotOnServer(slot, islot);
+    							}
+    						} else {//слот забит
+    							//протестировано
+    							//ничего не происходит
+    						}
+    					} else {//в слотах разные предметы (меняем местами предметы)
+    						//протестировано
+    						setSlotOnServer(-1, islot);//в курсор ложим предмет из слота
+    						setSlotOnServer(slot, cursoritem);//в слот ложим предмет из курсора
     					}
     				}
     			}
@@ -236,18 +322,28 @@ public class PlayerInventory implements IInventory {
             float slotY = fullinvyalign + insideAlignedHeightIndex * (slotHeight + spacing);
             slotposmap.add(new float[] {slotX, slotY, slotX+slotWidth, slotY+slotHeight});
     	}
+    	if (openedStorage != null) {
+    		openedStorage.reloadBounds();
+    	}
     }
+    
+    //max slot index = 127
+    
     /**client side*/
-    public void renderFull(int animalign) {
+    public void renderFull() {
+    	if (openedStorage != null) {
+    		openedStorage.render();
+    	}
     	for (int i = 10; i < 40; i++) {
     		int insideAlignedIndex = i % 10;//0-9
     		int insideAlignedHeightIndex = i / 10;
-    		float slotX = animalign + insideAlignedIndex * (slotWidth + spacing);
+    		float slotX = x + insideAlignedIndex * (slotWidth + spacing);
             float slotY = fullinvyalign + insideAlignedHeightIndex * (slotHeight + spacing);
             
             Hpb.spriteBatch.draw(slot, slotX, slotY, slotWidth, slotHeight);
             displaySlot(i, slotX + spacing, slotY + spacing, slotWidth - spacing * 2, slotHeight - spacing * 2);
     	}
+    	
     	if (items.get(-1).id != 0) {
     		float sx = Gdx.input.getX() - slotWidth/2;
     		float sy = (Gdx.graphics.getHeight() - Gdx.input.getY()) - slotHeight/2;
@@ -259,8 +355,8 @@ public class PlayerInventory implements IInventory {
     	Item avableitem = null;
     	int nearestempty = -2;
     	for (int i = 0; i < 40; i++) {
-    		Item item = items.get(i);
-    		if (nearestempty == -1 && item instanceof NoItem) {
+    		Item item = getSlot(i);
+    		if (nearestempty == -2 && item instanceof NoItem) {
     			nearestempty = i;
     		}
     		if (item.id == ifrom.id && item.count < item.stackSize()) {
@@ -277,6 +373,7 @@ public class PlayerInventory implements IInventory {
     
     public boolean mergeFromItemEntity(Item ifrom) {
     	Item avableitem = null;
+    	int avableslot = -2;
     	int nearestempty = -2;
     	for (int i = 0; i < 40; i++) {
     		Item item = items.get(i);
@@ -285,6 +382,7 @@ public class PlayerInventory implements IInventory {
     		}
     		if (item.id == ifrom.id && item.count < item.stackSize()) {
     			avableitem = item;
+    			avableslot = i;
     		}
     	}
     	if (avableitem == null) {
@@ -300,6 +398,7 @@ public class PlayerInventory implements IInventory {
     			avableitem.count += canmerge;
     			ifrom.count -= canmerge;
     		}
+    		setSlotOnServer(avableslot, avableitem);
     	}
     	return true;
     }
@@ -309,112 +408,168 @@ public class PlayerInventory implements IInventory {
 		return chs;
 	}
     
-    @Override
-    public void setCurrentSlotInt(int i) {
-		chs = i;
-	}
+    public Item getHandItem() {
+    	return items.get(chs);
+    }
     
     @Override
+    public void setCurrentSlotInt(int i) {
+    	if (owner.world.isLocal()) {
+    		Hpb.session.send(new ClientSetHotbarSlotPacket((byte)i));
+    	}
+    	chs = i;
+	}
+    
+    public boolean correctSlot(int slot) {
+    	if (items.containsKey(slot)) return true;
+    	if (openedStorage != null) {
+    		if (openedStorage.items.containsKey(slot)) return true;
+    	}
+    	return false;
+    }
+    
+    public int getEmptySlot() {
+    	for (int i = 0; i < 40; i++) {
+    		Item item = items.get(i);
+    		if (item.id == 0) return i;
+    	}
+    	return -2;
+    }
+    
+    public void putInInventoryOrDrop(int slot) {
+    	if (slot < 0 || slot > 40 || items.get(slot).id == 0) {
+    		GameU.end("putInInventoryOrDrop called on wrong slot "+slot);
+    		return;
+    	}
+    	Item item = items.get(slot);
+    	int eslot = getEmptySlot();
+    	setSlotOnServer(slot, EMPTY);
+    	if (eslot != -2) {
+    		setSlotOnServer(eslot, item);
+    		return;
+    	}
+    	ItemEntity entity = new ItemEntity(owner.getEyeLocation(), item, owner.world, Entity.genLocalId());
+    	entity.vel.x += 0.3 * Math.sin(owner.yaw);
+    	entity.vel.z += 0 - 0.3 * Math.cos(owner.yaw);
+    	entity.vel.y = 0.08;
+    	owner.world.spawnEntity(entity);
+    }
+    
+    public void dropHandItem(boolean stack) {
+    	if (items.get(chs).id == 0) return;
+    	Item item;
+    	if (stack) {
+    		item = items.get(chs);
+    		setSlotOnServer(chs, EMPTY);
+    	} else {
+    		Item beforeitem = items.get(chs);
+    		if (beforeitem.count <= 1) {
+    			setSlotOnServer(chs, EMPTY);
+    		} else {
+    			beforeitem.count--;
+    			setSlotOnServer(chs, beforeitem);
+    		}
+    		item = beforeitem.clone(1);
+    	}
+    	ItemEntity entity = new ItemEntity(owner.getEyeLocation(), item, owner.world, Entity.genLocalId());
+    	entity.vel.x += 0.3 * Math.sin(owner.yaw);
+    	entity.vel.z += 0 - 0.3 * Math.cos(owner.yaw);
+    	entity.vel.y = 0.08;
+    	owner.world.spawnEntity(entity);
+    }
+    
+    @Override
+    /**server side*/
     public void dropAllItems() {
-		GameU.end("under construction");
+		for (Entry<Integer, Item> eitem : items.entrySet()) {
+			if (eitem.getValue().id != 0) {
+				ItemEntity entity;
+				owner.world.spawnEntity(entity = new ItemEntity(owner.pos.add(0, 0.2d, 0), eitem.getValue(), owner.world, Entity.genLocalId()));
+				entity.vel.y = 0.02;
+				entity.vel.x = MathU.rndd(-0.1, 0.1);
+				entity.vel.z = MathU.rndd(-0.1, 0.1);
+				items.replace(eitem.getKey(), EMPTY);
+			}
+		}
+		owner.sendSelfPacket(new ServerSetupInventoryPacket(owner.castedInv.getItems()));
 	}
 
 	@Override
 	public Player getOwner() {
 		return owner;
 	}
-	/**client side*/
+	/**both side*/
 	public void open() {
 		this.isOpened = true;
-		Gdx.input.setCursorCatched(false);
+		if (owner.world.isLocal())
+			Gdx.input.setCursorCatched(false);
 	}
-	/**client side*/
-	public void close() {
-		this.isOpened = false;
-		Gdx.input.setCursorCatched(true);
+	
+	/**both side*/
+	public void open(ItemStorage is) {
+		if (isOpened) {
+			close();
+		}
+		this.isOpened = true;
+		this.openedStorage = is;
+		if (owner.world.isLocal()) {
+			Gdx.input.setCursorCatched(false);
+			is.reloadBounds();
+		} else {
+			is.open(owner);
+		}
 	}
 
+	
+	/**both side*/
+	public void close() {
+		this.isOpened = false;
+		if (owner.world.isLocal()) {
+			if (openedStorage != null) {
+				Hpb.session.send(new ClientCloseInventoryPacket());
+			}
+			Gdx.input.setCursorCatched(true);
+		} else {
+			if (openedStorage != null) {
+				openedStorage.close(owner);
+			}
+		}
+		openedStorage = null;
+	}
+	
 	public JsonElement toJson() {
 		JsonObject jinv = new JsonObject();
-		JsonArray items = new JsonArray();
+		String items = "";
 		for (Entry<Integer, Item> item : this.items.entrySet()) {
 			if (item.getValue() instanceof NoItem) continue;
-			items.add(item.getValue().toString());
+			if (!items.equals("")) items += "_";
+			items += item.getKey()+"-"+item.getValue().toString();
 		}
-		jinv.add("items", items);
+		jinv.addProperty("items", items);
 		return jinv;
 	}
 
 	public void fromJson(JsonObject jinv) {
-		int i = 0;
-		for (JsonElement element : jinv.get("items").getAsJsonArray()) {
-			Item item = Item.fromString(element.getAsString());
-			System.out.println("added item "+item.toString());
-			//if (item instanceof NoItem) continue;//debug only
-			addItem(item, i);
-			i++;
+		String items = jinv.get("items").getAsString();
+		if (!items.equals("")) {
+			for (String substr : items.split("_")) {
+				GameU.log(substr);
+				String[] itempack = substr.split("-");
+				GameU.log(itempack.length);
+				GameU.arrayPrint(itempack);
+				this.items.put(Integer.parseInt(itempack[0]),
+						Item.fromString(itempack[1]));
+			}
 		}
 	}
 	
+	/**client side*/
 	public Map<Integer, Item> getItems() {
 		return items;
 	}
 	
 	/**client side*/
 	public void setItems(Map<Integer, Item> items) {
-		this.items = items;
+		this.items = items;//overwrite
 	}
 }
-
-/*
-    
-    public void mergeItems(int from, int to, int count) {
-    	Item ito = items.get(to);
-    	Item ifrom = items.get(from);
-    	if (ito instanceof NoItem) {
-    		items.replace(to, ifrom);
-    		items.replace(from, EMPTY);
-    	} else {
-    		if (ito.count >= ito.stackSize()) {
-    			//reset pickedSlot 
-    		} else {
-        		int canmerge = ito.stackSize()-ito.count;
-        		if (ifrom.count <= canmerge) {
-        			ito.count += ifrom.count;
-        			items.replace(from, EMPTY);
-        		} else {
-        			ito.count += canmerge;
-        			ifrom.count -= canmerge;
-        			if (ifrom.count < 1) items.replace(from, EMPTY);
-        		}
-    		}
-    	}
-    }
-    
-    public void transferSlotOnServerByPacket(int from, int to) {
-		if (from == to) GameU.end("same slots. from: "+from+" to: "+to);
-		Item ifrom = items.get(from);
-		if (ifrom.id == 0) return;//clicked in empty slot
-		Item ito = items.get(to);
-		setSlotOnServer(to, ifrom);
-		if (ito.id != 0) {
-			setSlotOnServer(from, ito);
-		} else {
-			setSlotOnServer(from, EMPTY);
-		}
-	}
-	
-	public void transferSlotOnClient(int from, int to) {
-		if (from == to) GameU.end("same slots. from: "+from+" to: "+to);
-		Item ifrom = items.get(from);
-		if (ifrom.id == 0) return;//clicked in empty slot
-		Item ito = items.get(to);
-		items.replace(to, ifrom);//посылать пакеты не нужноы
-		if (ito.id != 0) {
-			items.replace(from, ito);//посылать пакеты не нужно
-		} else {
-			items.replace(from, EMPTY);//посылать пакеты не нужно
-		}
-		Hpb.session.send(new ClientTransferSlotPacket(from, to));
-	}
- */

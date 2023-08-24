@@ -2,26 +2,34 @@ package net.pzdcrp.Hyperborea.multiplayer;
 
 import de.datasecs.hydra.shared.protocol.HydraProtocol;
 import de.datasecs.hydra.shared.protocol.packets.listener.HydraPacketListener;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientChatPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientInventoryActionPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlaceBlockPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlayerActionPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlayerConnectionPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientPlayerPositionPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ClientWorldSuccLoadPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerChatPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerChunkLightPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerEntityDespawnPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerEntityPositionVelocityPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerLoadColumnPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSetHealthPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSetSlotPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSetblockPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSetupInventoryPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSpawnEntityPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSpawnPlayerPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerSuccessConnectPacket;
-import net.pzdcrp.Hyperborea.multiplayer.packets.ServerUnloadColumnPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ClientPlayerConnectionPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ClientWorldSuccLoadPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientChatPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientClickBlockPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientPlaceBlockPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientPlayerActionPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientPlayerLocationDataPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientPlayerRespawnPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.ingame.ClientSetHotbarSlotPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.inventory.ClientCloseInventoryPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.inventory.ClientInventoryActionPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.client.inventory.ClientPlayerInventoryActionPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.ServerSuccessConnectPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.entity.ServerEntityDespawnPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.entity.ServerEntityPositionVelocityPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.entity.ServerSpawnEntityPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.ingame.ServerChatPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.ingame.ServerPlayerRespawnPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.ingame.ServerSetHealthPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.ingame.ServerSpawnPlayerPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.inventory.ServerCloseInventoryPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.inventory.ServerOpenInventoryPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.inventory.ServerSetSlotPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.inventory.ServerSetupInventoryPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.world.ServerChunkLightPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.world.ServerLoadColumnPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.world.ServerSetblockPacket;
+import net.pzdcrp.Hyperborea.multiplayer.packets.server.world.ServerUnloadColumnPacket;
 import net.pzdcrp.Hyperborea.server.InternalServer;
 
 public class HpbProtocol extends HydraProtocol {
@@ -32,7 +40,7 @@ public class HpbProtocol extends HydraProtocol {
 		registerPacket(ServerChatPacket.class);//2
 		registerPacket(ClientWorldSuccLoadPacket.class);//3
 		registerPacket(ServerSpawnPlayerPacket.class);//4
-		registerPacket(ClientPlayerPositionPacket.class);//5
+		registerPacket(ClientPlayerLocationDataPacket.class);//5
 		registerPacket(ServerLoadColumnPacket.class);//6
 		registerPacket(ServerUnloadColumnPacket.class);//7
 		registerPacket(ClientPlayerActionPacket.class);//8
@@ -48,5 +56,13 @@ public class HpbProtocol extends HydraProtocol {
 		//registerPacket(ClientTransferSlotPacket.class);//18
 		registerPacket(ServerSetSlotPacket.class);//19
 		registerPacket(ClientInventoryActionPacket.class);//20
+		registerPacket(ClientSetHotbarSlotPacket.class);//21
+		registerPacket(ClientPlayerRespawnPacket.class);//22
+		registerPacket(ServerPlayerRespawnPacket.class);//23
+		registerPacket(ClientPlayerInventoryActionPacket.class);//24
+		registerPacket(ServerCloseInventoryPacket.class);//25
+		registerPacket(ServerOpenInventoryPacket.class);//26
+		registerPacket(ClientCloseInventoryPacket.class);//27
+		registerPacket(ClientClickBlockPacket.class);//28
 	}
 }

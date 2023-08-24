@@ -1,6 +1,9 @@
 package net.pzdcrp.Hyperborea.world.elements;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.badlogic.gdx.math.Vector3;
@@ -22,10 +25,12 @@ import net.pzdcrp.Hyperborea.world.elements.entities.Entity;
 import net.pzdcrp.Hyperborea.world.elements.entities.ItemEntity;
 import net.pzdcrp.Hyperborea.world.elements.generators.DefaultWorldGenerator;
 import net.pzdcrp.Hyperborea.world.elements.generators.Noise;
+import net.pzdcrp.Hyperborea.world.elements.storages.ItemStorage;
 
 public class Column {
 	public List<Entity> entites = new CopyOnWriteArrayList<>();
 	public List<Player> unloadedPlayers = new CopyOnWriteArrayList<>();
+	public Map<Vector3D, ItemStorage> blockData = new LinkedHashMap<>();
 	public Vector2I pos;
 	public Chunk[] chunks = new Chunk[PlayerWorld.chunks];
 	private Vector3 center;
@@ -42,7 +47,7 @@ public class Column {
 		if (world == null) GameU.end("null world");
 		this.pos = cords;
 		this.world = world;
-		//System.out.println("new col: "+cords.toString());
+		System.out.println("new col: "+cords.toString());
 		skylightlenght = new int[16][16];
 		
 		center = new Vector3(pos.x*16+8,PlayerWorld.maxheight/2,pos.z*16+8);
@@ -176,6 +181,16 @@ public class Column {
 		JsonObject jcol = new JsonObject();
 		//pos
 		jcol.addProperty("pos", pos.toString());
+		//blockdata
+		JsonArray jblockdata = new JsonArray();
+		for (Entry<Vector3D, ItemStorage> entry : blockData.entrySet()) {
+			JsonObject jobj = new JsonObject();
+			jobj.addProperty("p", entry.getKey().toString());
+			jobj.addProperty("id", ItemStorage.toId(entry.getValue()));
+			jobj.addProperty("data", entry.getValue().toJson());
+			jblockdata.add(jobj);
+		}
+		jcol.add("blockData", jblockdata);
 		//blocks
 		JsonArray blocks = new JsonArray();
 		for (int px = 0; px < 16; px++) {
@@ -240,7 +255,15 @@ public class Column {
 		if (!this.pos.equals(cc)) {
 			GameU.end("корды не сходятся удаляй регион");
 		}
-		
+		JsonArray jblockdata = jcol.get("blockData").getAsJsonArray();
+		for (JsonElement el : jblockdata) {
+			JsonObject jobj = el.getAsJsonObject();
+			Vector3D pos = Vector3D.fromString(jobj.get("p").getAsString());
+			byte storageid = jobj.get("id").getAsByte();
+			ItemStorage storage = ItemStorage.storageTable.get(storageid).sclone();
+			storage.fromJson(jobj.get("data").getAsString());
+			blockData.put(pos, storage);
+		}
 		//blocks
 		int i = 0;
 		JsonArray blocks = jcol.get("blocks").getAsJsonArray();
@@ -268,7 +291,8 @@ public class Column {
 					entity = Entity.entities.get(type).cloneOnColumnLoad(pos, world, Entity.genLocalId());
 					entity.fromJson(jen);
 				}
-				world.spawnEntity(entity);
+				//world.spawnEntity(entity);
+				entites.add(entity);
 			} catch (Exception e) {
 				e.printStackTrace();
 				System.out.println("ignoring entity error");

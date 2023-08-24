@@ -5,24 +5,17 @@ import net.pzdcrp.Hyperborea.data.objects.ObjectData;
 import net.pzdcrp.Hyperborea.utils.GameU;
 
 public class ItemEntityData implements ObjectData {
-	
-	public int blockIdModel;
+	public int item, count;
 
 	@Override
 	public void fromBuff(ByteBuf buff) {
-		blockIdModel = buff.readInt();
-		if (blockIdModel == 0) {
-			GameU.end("zero id readed");
-		}
+		item = buff.readInt();
+		count = buff.readInt();
 	}
 
 	@Override
 	public void toBuff(ByteBuf buff) {
-		buff.writeInt(blockIdModel);
-		if (blockIdModel == 0) {
-			GameU.end("zero id writed");
-		}
-		//GameU.tracer();
+		buff.writeInt(item);
+		buff.writeInt(count);
 	}
-	
 }
