@@ -7,7 +7,7 @@ import de.datasecs.hydra.shared.protocol.packets.PacketId;
 import de.datasecs.hydra.shared.protocol.packets.StandardPacket;
 import de.datasecs.hydra.shared.protocol.packets.listener.HydraPacketListener;
 import de.datasecs.hydra.shared.protocol.packets.listener.PacketHandler;
-import net.pzdcrp.Hyperborea.utils.GameU;
+import net.pzdcrp.Aselia.utils.GameU;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

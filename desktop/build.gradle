@@ -2,7 +2,7 @@ sourceCompatibility = 17
 sourceSets.main.java.srcDirs = [ "src/" ]
 sourceSets.main.resources.srcDirs = ["../assets"]
 
-project.ext.mainClassName = "net.pzdcrp.Hyperborea.DesktopLauncher"
+project.ext.mainClassName = "net.pzdcrp.Aseliastarter.DesktopLauncher"
 project.ext.assetsDir = new File("../assets")
 
 import org.gradle.internal.os.OperatingSystem

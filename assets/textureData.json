@@ -1,28 +1,4 @@
 {
-    "blocks": {
-        "dirt": "dirt.png",
-        "stone": "stone.png",
-        "glass": "glass.png",
-        "grassblock": "grass.png",
-        "oaklog": "oaklog.png",
-        "oakleaves": "oakleaves.png",
-        "planks": "planks.png",
-        "tntcrate": "tntcrate.png",
-        "water": "water.png",
-        "firebase": "firebase.png",
-        "weed": "weed.png",
-        "ds0": "ds0.png",
-        "ds1": "ds1.png",
-        "ds2": "ds2.png",
-        "ds3": "ds3.png",
-        "ds4": "ds4.png",
-        "ds5": "ds5.png",
-        "ds6": "ds6.png",
-        "ds7": "ds7.png",
-        "ds8": "ds8.png",
-        "ds9": "ds9.png",
-        "crate": "crate.png"
-    },
     "other": {
         "sun": "sun.png",
         "slot": "slot.png",
