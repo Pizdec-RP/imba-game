@@ -93,14 +93,14 @@ public class DefaultWorldGenerator {
     public static Set<Block> getBlocksInRadius(Vector3D center, int radius, Block block) {
         Set<Block> blocks = new HashSet<>();
 
-        double minX = center.getX() - radius;
-        double maxX = center.getX() + radius;
-        double minZ = center.getZ() - radius;
-        double maxZ = center.getZ() + radius;
-        double y = center.getY();
+        float minX = center.getX() - radius;
+        float maxX = center.getX() + radius;
+        float minZ = center.getZ() - radius;
+        float maxZ = center.getZ() + radius;
+        float y = center.getY();
 
-        for (double x = minX; x <= maxX; x++) {
-            for (double z = minZ; z <= maxZ; z++) {
+        for (float x = minX; x <= maxX; x++) {
+            for (float z = minZ; z <= maxZ; z++) {
                 Vector3D bp = new Vector3D(x, y, z);
                 if (bp.distanceSq(center) <= radius) blocks.add(block.clone(bp));
             }

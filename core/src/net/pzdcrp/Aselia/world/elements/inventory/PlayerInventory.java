@@ -547,10 +547,10 @@ public class PlayerInventory implements IInventory {
 		for (Entry<Integer, Item> eitem : items.entrySet()) {
 			if (eitem.getValue().id != 0) {
 				ItemEntity entity;
-				owner.world.spawnEntity(entity = new ItemEntity(owner.pos.add(0, 0.2d, 0), eitem.getValue(), owner.world, Entity.genLocalId()));
-				entity.vel.y = 0.02;
-				entity.vel.x = MathU.rndd(-0.1, 0.1);
-				entity.vel.z = MathU.rndd(-0.1, 0.1);
+				owner.world.spawnEntity(entity = new ItemEntity(owner.pos.add(0, 0.2f, 0), eitem.getValue(), owner.world, Entity.genLocalId()));
+				entity.vel.y = 0.02f;
+				entity.vel.x = MathU.rndf(-0.1f, 0.1f);
+				entity.vel.z = MathU.rndf(-0.1f, 0.1f);
 				items.replace(eitem.getKey(), EMPTY);
 			}
 		}

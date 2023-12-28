@@ -34,6 +34,7 @@ import net.pzdcrp.Aselia.multiplayer.packets.server.entity.ServerEntityPositionV
 import net.pzdcrp.Aselia.multiplayer.packets.server.entity.ServerSpawnEntityPacket;
 import net.pzdcrp.Aselia.player.Player;
 import net.pzdcrp.Aselia.utils.GameU;
+import net.pzdcrp.Aselia.utils.MathU;
 import net.pzdcrp.Aselia.utils.VectorU;
 import net.pzdcrp.Aselia.world.World;
 import net.pzdcrp.Aselia.world.elements.Column;
@@ -219,7 +220,7 @@ public class Entity {
 
 	public List<AABB> getNearBlocks() {
 		AABB cube = getHitbox();
-		cube = cube.grow(Math.max(vel.x,1),Math.max(vel.y,1),Math.max(vel.z,1));
+		cube = cube.grow(MathU.max(vel.x,1f),MathU.max(vel.y,1f),MathU.max(vel.z,1f));
 		List<AABB> b = new ArrayList<>();
 
 		for (int tx = (int)Math.floor(Math.min(cube.maxX, cube.minX)); tx < Math.max(cube.maxX, cube.minX); tx++) {
@@ -359,7 +360,7 @@ public class Entity {
 	}
 
 	public Vector3D getEyeLocation() {
-		return new Vector3D(pos.x, pos.y+hitbox.maxY*0.9, pos.z);
+		return new Vector3D(pos.x, pos.y+hitbox.maxY*0.9f, pos.z);
 	}
 
 	public void setYaw(float yaw) {

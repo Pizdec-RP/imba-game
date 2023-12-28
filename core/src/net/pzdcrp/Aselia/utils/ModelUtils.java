@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.shapebuilders.BaseShapeBuilder;
 import com.badlogic.gdx.math.Vector3;
 
+import net.pzdcrp.Aselia.data.AABB;
 import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.extended.SexyMeshBuilder;
 
@@ -98,6 +99,16 @@ public class ModelUtils extends BaseShapeBuilder {
 
 	public static Vector3 sp = new Vector3();
 	private static float blockScale = 1f;
+	private static AABB modelBounds;
+	private static final AABB defaultBounds = new AABB(0,0,0,1,1,1);
+	
+	public static void setModelSizes(AABB modelBound) {
+		modelBounds = modelBound;
+	}
+	
+	public static void resetModelSizes() {
+		modelBounds = defaultBounds;
+	}
 
 	public static void setScale(float scl) {
 		blockScale = scl;
@@ -107,11 +118,12 @@ public class ModelUtils extends BaseShapeBuilder {
 		sp.x = (float)pos.x;
 		sp.y = (float)pos.y;
 		sp.z = (float)pos.z;
+		resetModelSizes();
 	}
 
 	public static void buildTopZ(SexyMeshBuilder mpb) {
 		mpb.rect(
-		sp.x, sp.y+blockScale, sp.z,
+		sp.x+modelBounds.minX, sp.y+blockScale, sp.z,
 		sp.x+blockScale, sp.y+blockScale, sp.z,
 		sp.x+blockScale, sp.y+blockScale, sp.z+blockScale,
 		sp.x, sp.y+blockScale, sp.z+blockScale,

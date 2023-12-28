@@ -7,15 +7,14 @@ import com.badlogic.gdx.math.Vector3;
 
 import io.netty.buffer.ByteBuf;
 import net.pzdcrp.Aselia.Hpb;
+import net.pzdcrp.Aselia.utils.MathU;
 import net.pzdcrp.Aselia.world.World;
 import net.pzdcrp.Aselia.world.elements.Chunk;
 import net.pzdcrp.Aselia.world.elements.Column;
 
 public class Vector3D {
 	public static final Vector3D ZERO = new Vector3D();
-	public double x;
-	public double y;
-	public double z;
+	public float x, y, z;
 	public static int test = 0;
 
 	public Vector3D() {
@@ -26,13 +25,13 @@ public class Vector3D {
 	}
 
 	public Vector3D(ByteBuf byteBuf) {
-		this.x = byteBuf.readDouble();
-		this.y = byteBuf.readDouble();
-		this.z = byteBuf.readDouble();
+		this.x = byteBuf.readFloat();
+		this.y = byteBuf.readFloat();
+		this.z = byteBuf.readFloat();
 		test++;
 	}
 
-	public Vector3D(double x, double y, double z) {
+	public Vector3D(float x, float y, float z) {
 		this.x = x;
 		this.y = y;
 		this.z = z;
@@ -72,7 +71,7 @@ public class Vector3D {
 		return new Vector3D(x,y+1,z);
 	}
 
-	public Vector3D up(double d) {
+	public Vector3D up(float d) {
 		return new Vector3D(x,y+d,z);
 	}
 
@@ -81,74 +80,74 @@ public class Vector3D {
 	}
 
 	public void setZero() {
-		this.x = 0d;
-		this.y = 0d;
-		this.z = 0d;
+		this.x = 0f;
+		this.y = 0f;
+		this.z = 0f;
 	}
 
-	public double getX() {
+	public float getX() {
 		return this.x;
 	}
 
-	public double getY() {
+	public float getY() {
 		return this.y;
 	}
 
-	public double getZ() {
+	public float getZ() {
 		return this.z;
 	}
 
-	public double getPosX() {
+	public float getPosX() {
 		return this.x;
 	}
 
-	public double getPosY() {
+	public float getPosY() {
 		return this.y;
 	}
 
-	public double getPosZ() {
+	public float getPosZ() {
 		return this.z;
 	}
 
-	public double getBlockX() {
+	public float getBlockX() {
 		return this.x;
 	}
 
-	public double getBlockY() {
+	public float getBlockY() {
 		return this.y;
 	}
 
-	public double getBlockZ() {
+	public float getBlockZ() {
 		return this.z;
 	}
 
-	public void setX(double x) {
+	public void setX(float x) {
 		this.x = x;
 	}
 
-	public void setY(double y) {
+	public void setY(float y) {
 		this.y = y;
 	}
 
-	public void setZ(double z) {
+	public void setZ(float z) {
 		this.z = z;
 	}
 
-	public void addX(double i) {
+	public void addX(float i) {
 		this.x +=i;
 	}
 
-	public void addY(double i) {
+	public void addY(float i) {
 		this.y +=i;
 	}
 
-	public void addZ(double i) {
+	public void addZ(float i) {
 		this.z +=i;
 	}
 
 	public Vector3D floorXZ() {
-		this.x = Math.floor(x);
-		this.z = Math.floor(z);
+		this.x = MathU.floor(x);
+		this.z = MathU.floor(z);
 		return this;
 	}
 
@@ -159,9 +158,9 @@ public class Vector3D {
 	}
 
 	public Vector3D func_vf() {
-		this.x = Math.floor(x);
-		this.y = Math.floor(y);
-		this.z = Math.floor(z);
+		this.x = MathU.floor(x);
+		this.y = MathU.floor(y);
+		this.z = MathU.floor(z);
 		return this;
 	}
 
@@ -183,11 +182,11 @@ public class Vector3D {
 		return new Vector3D(x + other.x, y + other.y, z + other.z);
 	}
 
-	public Vector3D add(double x, double y, double z) {
+	public Vector3D add(float x, float y, float z) {
 		return new Vector3D(this.x + x, this.y + y, this.z + z);
 	}
 
-	public Vector3D add(double s) {
+	public Vector3D add(float s) {
 		return new Vector3D(this.x + s, this.y + s, this.z + s);
 	}
 
@@ -196,7 +195,7 @@ public class Vector3D {
 		return new Vector3D(x - other.x, y - other.y, z - other.z);
 	}
 
-	public Vector3D subtract(double x, double y, double z) {
+	public Vector3D subtract(float x, float y, float z) {
 		return new Vector3D(this.x - x, this.y - y, this.z - z);
 	}
 
@@ -204,7 +203,7 @@ public class Vector3D {
 		return new Vector3D(x * factor, y * factor, z * factor);
 	}
 
-	public Vector3D multiply(double factor) {
+	public Vector3D multiply(float factor) {
 		return new Vector3D(x * factor, y * factor, z * factor);
 	}
 
@@ -213,7 +212,7 @@ public class Vector3D {
 		return new Vector3D(x / divisor, y / divisor, z / divisor);
 	}
 
-	public Vector3D divide(double divisor) {
+	public Vector3D divide(float divisor) {
 		if (divisor == 0) throw new IllegalArgumentException("Cannot divide by null.");
 		return new Vector3D(x / divisor, y / divisor, z / divisor);
 	}
@@ -233,7 +232,7 @@ public class Vector3D {
 	}
 
 	public List<Vector3D> sides() {
-		Vector3D target = this.floor().add(0.5, 0.5, 0.5);
+		Vector3D target = this.floor().add(0.5f, 0.5f, 0.5f);
 		List<Vector3D> sides = new ArrayList<>() {{
 			add(target.add(1, 0, 0));
 			add(target.add(0, 0, 1));
@@ -265,17 +264,17 @@ public class Vector3D {
 		if (s.startsWith("Vec3D [") && s.endsWith("]")) {
 			s = s.replace("Vec3D [", "");
 			s = s.replace("]", "");
-			double X=0,Y=0,Z=0;
+			float X=0,Y=0,Z=0;
 			for (String a : s.split(" ")) {
 				if (a.contains("x:")) {
 					a = a.replace("x:", "");
-					X = Double.parseDouble(a);
+					X = Float.parseFloat(a);
 				} else if (a.contains("y:")) {
 					a = a.replace("y:", "");
-					Y = Double.parseDouble(a);
+					Y = Float.parseFloat(a);
 				} else if (a.contains("z:")) {
 					a = a.replace("z:", "");
-					Z = Double.parseDouble(a);
+					Z = Float.parseFloat(a);
 				}
 			}
 			return new Vector3D(X,Y,Z);
@@ -296,27 +295,27 @@ public class Vector3D {
 		return x+" "+y+" "+z;
 	}
 
-	public double distanceSq(double toX, double toY, double toZ) {
-        double var7 = this.getX() - toX;
-        double var9 = this.getY() - toY;
-        double var11 = this.getZ() - toZ;
-        return Math.sqrt(var7 * var7 + var9 * var9 + var11 * var11);
+	public float distanceSq(float toX, float toY, float toZ) {
+        float var7 = this.getX() - toX;
+        float var9 = this.getY() - toY;
+        float var11 = this.getZ() - toZ;
+        return MathU.sqrt(var7 * var7 + var9 * var9 + var11 * var11);
     }
 
-	public double distanceSq(Vector3D to) {
+	public float distanceSq(Vector3D to) {
         return this.distanceSq(to.getX(), to.getY(), to.getZ());
     }
 
 	public Vector3D normalize() {
-        double length = this.length();
+        float length = this.length();
         this.x /= length;
         this.y /= length;
         this.z /= length;
         return this;
     }
 
-	public double length() {
-        return Math.sqrt(this.lengthSquared());
+	public float length() {
+        return MathU.sqrt(this.lengthSquared());
     }
 
 	@Override
@@ -324,25 +323,25 @@ public class Vector3D {
 		return new Vector3D(x,y,z);
 	}
 
-	/*public double heuristic(int x, int y, int z) {
+	/*public float heuristic(int x, int y, int z) {
         int xDiff = (int) (x - this.x);
         int yDiff = (int) (y - this.y);
         int zDiff = (int) (z - this.z);
         return calculate(xDiff, yDiff, zDiff);
     }
 
-	public static double calculate(double xDiff, int yDiff, double zDiff) {
-        double heuristic = 0;
+	public static float calculate(float xDiff, int yDiff, float zDiff) {
+        float heuristic = 0;
         heuristic += gylcalculate(yDiff, 0);
         heuristic += xzcalculate(xDiff, zDiff);
         return heuristic;
     }*/
 
-	public static double xzcalculate(double xDiff, double zDiff) {
-        double x = Math.abs(xDiff);
-        double z = Math.abs(zDiff);
-        double straight;
-        double diagonal;
+	public static float xzcalculate(float xDiff, float zDiff) {
+        float x = Math.abs(xDiff);
+        float z = Math.abs(zDiff);
+        float straight;
+        float diagonal;
         if (x < z) {
             straight = z - x;
             diagonal = x;
@@ -351,7 +350,7 @@ public class Vector3D {
             diagonal = z;
         }
         diagonal *= Math.sqrt(2);
-        return (diagonal + straight) * 3.5D;
+        return (diagonal + straight) * 3.5f;
     }
 
 	public static Vector3D translate(Vector3 p) {
@@ -362,7 +361,7 @@ public class Vector3D {
 		return new Vector3((float)x, (float)y, (float)z);
 	}
 
-	public void setComponents(double x, double y, double z) {
+	public void setComponents(float x, float y, float z) {
 		this.x=x;
 		this.y=y;
 		this.z=z;
@@ -374,7 +373,7 @@ public class Vector3D {
 		this.z=a.z;
 	}
 
-	public void addComponents(double x, double y, double z) {
+	public void addComponents(float x, float y, float z) {
 		this.x+=x;
 		this.y+=y;
 		this.z+=z;
@@ -386,7 +385,7 @@ public class Vector3D {
 		this.z+=l.z;
 	}
 
-	public double lengthSquared() {
+	public float lengthSquared() {
         return this.x * this.x + this.y * this.y + this.z * this.z;
     }
 
@@ -402,9 +401,9 @@ public class Vector3D {
 	}
 
 	public void writeBuffer(ByteBuf byteBuf) {
-		byteBuf.writeDouble(x);
-		byteBuf.writeDouble(y);
-		byteBuf.writeDouble(z);
+		byteBuf.writeFloat(x);
+		byteBuf.writeFloat(y);
+		byteBuf.writeFloat(z);
 	}
 
 	public void callChunkUpdate(World world) {

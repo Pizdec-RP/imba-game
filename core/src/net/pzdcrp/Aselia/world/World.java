@@ -21,7 +21,7 @@ public interface World {
 
 	Block getBlock(Vector3D v);
 
-	Block getBlock(double x, double y, double z);
+	Block getBlock(float x, float y, float z);
 
 	void setLight(int x, int y, int z, int num);
 
@@ -47,9 +47,9 @@ public interface World {
 
 	boolean posDostupna(int x, int y, int z);
 
-	List<Entity> getEntities(Vector3D pos, double radius);
+	List<Entity> getEntities(Vector3D pos, float radius);
 
-	List<Player> getPlayers(Vector3D pos, double radius);
+	List<Player> getPlayers(Vector3D pos, float radius);
 
 	boolean isLocal();
 

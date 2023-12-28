@@ -24,6 +24,7 @@ public class Item {
 		put(7, new PlanksItem(0));
 		put(2, new StoneItem(0));
 		put(10, new CrateItem(0));
+		put(11, new OakSlabItem(0));
 		/*put(8, new TntCrateItem(0));
 		put(4, new WaterBucketItem());*/
 	}};

@@ -28,9 +28,9 @@ public class MathU {
         return n >= i ? i : i - 1;
     }
 
-    public static int floorFloat(float n) {
-        int i = (int) n;
-        return n >= i ? i : i - 1;
+    public static int floor(float value) {
+        int i = (int)value;
+        return value < (float)i ? i - 1 : i;
     }
 
     public static int ceilFloat(float n) {
@@ -236,6 +236,10 @@ public class MathU {
             return Math.floor(value);
         }
     }
+    
+    public static float max(float a, float b) {
+		return a > b ? a : b;
+	}
 
 	public static int max(int[] arr) {
 		int max = Integer.MIN_VALUE;
@@ -305,5 +309,19 @@ public class MathU {
 	public static boolean isPowerOfTwoSquare(int n) {
 	    int sqrt = (int) Math.sqrt(n);
 	    return sqrt * sqrt == n;
+	}
+
+
+	public static float sqrt(float f) {
+		return f*f;
+	}
+
+
+	public static float pow(final float base, final int power) {
+	    float result = 1;
+	    for( int i = 0; i < power; i++ ) {
+	        result *= base;
+	    }
+	    return result;
 	}
 }

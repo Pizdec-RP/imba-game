@@ -76,6 +76,6 @@ public class Crate extends Block {
 		super.onBreak(world);
 		Column c = world.getColumn(pos.x, pos.z);
 		ItemStorage is = c.blockData.remove(pos);
-		is.onbreak(pos.add(0.5d));
+		is.onbreak(pos.add(0.5f));
 	}
 }

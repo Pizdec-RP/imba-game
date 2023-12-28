@@ -94,7 +94,7 @@ public class ItemEntity extends Entity {
 				return false;
 			}
 			if (lifetime > 5990) return true;
-			List<Player> nearPlayers = world.getPlayers(pos, 1.3d);
+			List<Player> nearPlayers = world.getPlayers(pos, 1.3f);
 
 			@SuppressWarnings("unchecked")
 			List<Player> nearestPlayers = (List<Player>) VectorU.sortNearest(nearPlayers, pos);

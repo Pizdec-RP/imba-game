@@ -161,9 +161,9 @@ public class ItemStorage {
 		for (Entry<Integer, Item> eitem : items.entrySet()) {
 			if (eitem.getValue().getId() != 0) {
 				ItemEntity entity = new ItemEntity(pos, eitem.getValue(), InternalServer.world, Entity.genLocalId());
-				entity.vel.y = 0.02;
-				entity.vel.x = MathU.rndd(-0.1, 0.1);
-				entity.vel.z = MathU.rndd(-0.1, 0.1);
+				entity.vel.y = 0.02f;
+				entity.vel.x = MathU.rndf(-0.1f, 0.1f);
+				entity.vel.z = MathU.rndf(-0.1f, 0.1f);
 				InternalServer.world.spawnEntity(entity);
 				items.replace(eitem.getKey(), PlayerInventory.EMPTY);
 			}

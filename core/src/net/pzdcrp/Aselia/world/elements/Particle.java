@@ -95,7 +95,7 @@ public class Particle {
 		for (int tx = (int) (pos.x-1); tx <= pos.x+1; tx++) {
 			for (int tz = (int) (pos.z-1); tz <= pos.z+1; tz++) {
 				for (int ty = (int) (pos.y-1); ty <= pos.y+1; ty++) {
-					Block bl = Hpb.world.getBlock(Math.floor(tx), Math.floor(ty), Math.floor(tz));
+					Block bl = Hpb.world.getBlock(MathU.floor(tx), MathU.floor(ty), MathU.floor(tz));
 					if (bl.isCollide()) {
 						for (AABB t : bl.getHitbox().get()) {
 							b.add(t);

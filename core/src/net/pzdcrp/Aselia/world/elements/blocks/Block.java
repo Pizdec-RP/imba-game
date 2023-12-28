@@ -62,6 +62,8 @@ public class Block {
 			put(22, new OakLeaves(new Vector3D()));
 			put(23, new Weed(new Vector3D()));
 			put(24, new Crate(new Vector3D()));
+			put(25, new OakSlab(new Vector3D(), true));
+			put(26, new OakSlab(new Vector3D(), false));
 		}};
 	private static Map<Integer, Integer> BlockidToItemid = new ConcurrentHashMap<>() {
 		private static final long serialVersionUID = 37079642665568945L;
@@ -82,6 +84,8 @@ public class Block {
 			//put(22, 8); weed
 			//put(23, 9); weed
 			put(24, 10);
+			put(25, 11);
+			put(26, 11);
 		}};
 	public static Map<Integer, ModelInstance> blockModels = new ConcurrentHashMap<>();
 	public enum BlockType {
@@ -309,10 +313,10 @@ public class Block {
 			Item i = Block.itemByBlockId(this.getId());
 			i.count = 1;
 			//if (getId() == 0) GameU.end("pizdec");
-			world.spawnEntity(e = new ItemEntity(pos.add(0.5d), i, world, Entity.genLocalId()));
-			e.vel.y = 0.01;
-			e.vel.x = MathU.rndd(-0.1, 0.1);
-			e.vel.z = MathU.rndd(-0.1, 0.1);
+			world.spawnEntity(e = new ItemEntity(pos.add(0.5f), i, world, Entity.genLocalId()));
+			e.vel.y = 0.01f;
+			e.vel.x = MathU.rndf(-0.1f, 0.1f);
+			e.vel.z = MathU.rndf(-0.1f, 0.1f);
 		}
 	}
 }

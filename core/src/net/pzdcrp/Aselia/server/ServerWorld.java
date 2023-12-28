@@ -356,7 +356,7 @@ public class ServerWorld implements World {
 		col.chunks[y/16].rawSetLight(x&15, y&15, z&15, num);
 	}
 	@Override
-	public Block getBlock(double x, double y, double z) {
+	public Block getBlock(float x, float y, float z) {
 		if (y < 0 || y >= maxheight) return new Voed(new Vector3D(x,y,z));
 		Column col = getColumn(x,z);
 		if (col == null) return new Voed(new Vector3D(x,y,z));
@@ -489,7 +489,7 @@ public class ServerWorld implements World {
 	}
 
 	@Override
-	public List<Entity> getEntities(Vector3D pos, double radius) {
+	public List<Entity> getEntities(Vector3D pos, float radius) {
 		ArrayList<Entity> e = new ArrayList<>();
 		for (Column column : loadedColumns.values()) {
 			for (Entity en : column.entites) {
@@ -584,9 +584,9 @@ public class ServerWorld implements World {
 					int id = MathU.random(new ArrayList<Integer>() {{add(1);add(2);add(3);add(5);add(6);add(7);}});
 					Item item = Item.items.get(id).clone(MathU.rndi(1, 60));
 					ItemEntity e = new ItemEntity(spawn.clone(), item, this, Entity.genLocalId());
-					e.vel.setComponents(MathU.rndd(-0.6, 0.6),
-							MathU.rndd(0, 0.6),
-							MathU.rndd(-0.6, 0.6));
+					e.vel.setComponents(MathU.rndf(-0.6f, 0.6f),
+							MathU.rndf(0f, 0.6f),
+							MathU.rndf(-0.6f, 0.6f));
 					this.spawnEntity(e);
 					GameU.log("spawning");
 					GameU.sleep(50);
@@ -607,7 +607,7 @@ public class ServerWorld implements World {
 	}
 
 	@Override
-	public List<Player> getPlayers(Vector3D pos, double radius) {
+	public List<Player> getPlayers(Vector3D pos, float radius) {
 		ArrayList<Player> e = new ArrayList<>();
 		for (ServerPlayer spl : players.values()) {
 			Player entity = spl.playerEntity;

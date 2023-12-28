@@ -19,12 +19,12 @@ import net.pzdcrp.Aselia.world.elements.entities.Entity;
 
 public class VectorU {
 	public static double sqrt(Vector3D one, Vector3D two) {
-		double distance = Math.sqrt(Math.pow(one.getX() - two.getX(), 2) + Math.pow(one.getY() - two.getY(), 2) + Math.pow(one.getZ() - two.getZ(), 2));
+		float distance = MathU.sqrt(MathU.pow(one.getX() - two.getX(), 2) + MathU.pow(one.getY() - two.getY(), 2) + MathU.pow(one.getZ() - two.getZ(), 2));
 		return distance;
 	}
 
 	public static double sqrt(Vector3D one, Vector3 two) {
-		double distance = Math.sqrt(Math.pow(one.getX() - two.x, 2) + Math.pow(one.getY() - two.y, 2) + Math.pow(one.getZ() - two.y, 2));
+		float distance = MathU.sqrt(MathU.pow(one.getX() - two.x, 2) + MathU.pow(one.getY() - two.y, 2) + MathU.pow(one.getZ() - two.y, 2));
 		System.out.println(one.toString()+" "+two.toString());
 		return distance;
 	}
@@ -72,7 +72,7 @@ public class VectorU {
 
 	public static List<Vector3D> ray(Vector3D pos, Vector3 direction) {
 		List<Vector3D> l = new ArrayList<>();
-		Vector3D dir = Vector3D.translate(direction.cpy().nor()).multiply(0.05);
+		Vector3D dir = Vector3D.translate(direction.cpy().nor()).multiply(0.05f);
 		Vector3D point = pos.clone();
 		for (int i = 0; i < 120; i++) {
 			l.add(point);

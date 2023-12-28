@@ -77,7 +77,7 @@ public class Player extends Entity {
 	public ServerPlayer serverProfile;
 
 
-	public Player(double tx, double ty, double tz, String name, World world, int lid) {
+	public Player(float tx, float ty, float tz, String name, World world, int lid) {
 		super(new Vector3D(tx,ty,tz),new AABB(-0.3, 0, -0.3, 0.3, 1.7, 0.3), EntityType.player, world, lid);
 		this.nickname = name;
 		if (world.isLocal()) {
@@ -218,7 +218,7 @@ public class Player extends Entity {
 
 	public void movement() {
 		Vector3D velocityGoal = new Vector3D(0,0,0);
-		double speed = 0d, ospeed = 0d;
+		float speed = 0f, ospeed = 0f;
 		if (down) {
 			speed = DM.walkSpeed/3;
 			ospeed = speed;

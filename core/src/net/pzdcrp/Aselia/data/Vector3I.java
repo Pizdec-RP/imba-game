@@ -81,24 +81,24 @@ public class Vector3I {
 		return "Vec3I [x:"+x+" y:"+y+" z:"+z+"]";
 	}
 
-	public static Vector3D fromString(String s) {
+	public static Vector3I fromString(String s) {
 		if (s.startsWith("Vec3I [") && s.endsWith("]")) {
 			s = s.replace("Vec3I [", "");
 			s = s.replace("]", "");
-			double X=0,Y=0,Z=0;
+			int X=0,Y=0,Z=0;
 			for (String a : s.split(" ")) {
 				if (a.contains("x:")) {
 					a = a.replace("x:", "");
-					X = Double.parseDouble(a);
+					X = Integer.parseInt(a);
 				} else if (a.contains("y:")) {
 					a = a.replace("y:", "");
-					Y = Double.parseDouble(a);
+					Y = Integer.parseInt(a);
 				} else if (a.contains("z:")) {
 					a = a.replace("z:", "");
-					Z = Double.parseDouble(a);
+					Z = Integer.parseInt(a);
 				}
 			}
-			return new Vector3D(X,Y,Z);
+			return new Vector3I(X,Y,Z);
 		} else {
 			return null;
 		}

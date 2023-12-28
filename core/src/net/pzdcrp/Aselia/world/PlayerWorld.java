@@ -98,7 +98,7 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 	}
 
 	@Override
-	public List<Entity> getEntities(Vector3D pos, double radius) {
+	public List<Entity> getEntities(Vector3D pos, float radius) {
 		ArrayList<Entity> e = new ArrayList<>();
 		for (Column column : Hpb.world.loadedColumns.values()) {
 			for (Entity en : column.entites) {
@@ -215,7 +215,7 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 		getColumn(x,z).chunks[y/16].rawSetLight(x&15, y&15, z&15, num);
 	}
 	@Override
-	public Block getBlock(double x, double y, double z) {
+	public Block getBlock(float x, float y, float z) {
 		if (y < 0 || y >= maxheight) return new Voed(new Vector3D(x,y,z));
 		Column col = getColumn(x,z);
 		if (col == null) return new Voed(new Vector3D(x,y,z));
@@ -373,7 +373,7 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 	}
 
 	@Override
-	public List<Player> getPlayers(Vector3D pos, double radius) {
+	public List<Player> getPlayers(Vector3D pos, float radius) {
 		GameU.end("не должно использоваться");
 		return null;
 	}

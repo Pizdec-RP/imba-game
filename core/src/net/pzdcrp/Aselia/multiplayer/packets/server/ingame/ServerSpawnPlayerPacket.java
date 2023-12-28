@@ -8,14 +8,14 @@ import net.pzdcrp.Aselia.data.Vector3D;
 @PacketId(4)
 public class ServerSpawnPlayerPacket extends Packet {
 
-	public double x,y,z;
+	public float x,y,z;
 	public int lid;
 
 	public ServerSpawnPlayerPacket() {
 
 	}
 
-	public ServerSpawnPlayerPacket(double x, double y, double z, int lid) {
+	public ServerSpawnPlayerPacket(float x, float y, float z, int lid) {
 		this.x=x;
 		this.y=y;
 		this.z=z;
@@ -31,17 +31,17 @@ public class ServerSpawnPlayerPacket extends Packet {
 
 	@Override
 	public void read(ByteBuf byteBuf) {
-		x = byteBuf.readDouble();
-		y = byteBuf.readDouble();
-		z = byteBuf.readDouble();
+		x = byteBuf.readFloat();
+		y = byteBuf.readFloat();
+		z = byteBuf.readFloat();
 		lid = byteBuf.readInt();
 	}
 
 	@Override
 	public void write(ByteBuf byteBuf) {
-		byteBuf.writeDouble(x);
-		byteBuf.writeDouble(y);
-		byteBuf.writeDouble(z);
+		byteBuf.writeFloat(x);
+		byteBuf.writeFloat(y);
+		byteBuf.writeFloat(z);
 		byteBuf.writeInt(lid);
 	}
 
