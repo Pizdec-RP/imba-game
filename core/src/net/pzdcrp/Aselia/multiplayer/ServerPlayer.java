@@ -30,6 +30,7 @@ import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientPlayerRespawnPa
 import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientSetHotbarSlotPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientPlayerActionPacket.PlayerAction;
 import net.pzdcrp.Aselia.multiplayer.packets.client.inventory.ClientCloseInventoryPacket;
+import net.pzdcrp.Aselia.multiplayer.packets.client.inventory.ClientCraftRequestPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.client.inventory.ClientInventoryActionPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.client.inventory.ClientOpenPlayerInventoryPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.entity.ServerSpawnEntityPacket;
@@ -138,7 +139,7 @@ public class ServerPlayer {
 				}
 				playerEntity.castedInv.setCurrentSlotInt(packet.slot);
 			} else if (p instanceof ClientPlayerRespawnPacket) {
-				if (playerEntity.hp != 0) {
+				if (playerEntity.hp > 0) {
 					disconnect("respawn with "+playerEntity.hp+" hp?");
 				}
 				playerEntity.respawn();
@@ -154,6 +155,12 @@ public class ServerPlayer {
 			} else if (p instanceof ClientClickBlockPacket) {
 				ClientClickBlockPacket packet = (ClientClickBlockPacket)p;
 				world.getBlock(packet.pos).onClick(playerEntity);
+			} else if (p instanceof ClientCraftRequestPacket) {
+				ClientCraftRequestPacket packet = (ClientCraftRequestPacket) p;
+				if (!playerEntity.castedInv.isOpened) {
+					disconnect("nigga, even you inv is closed");
+				}
+				playerEntity.castedInv.craftboard.onActionOnServer(packet.recid);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

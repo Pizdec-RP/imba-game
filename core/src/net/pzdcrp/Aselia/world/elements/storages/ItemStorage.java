@@ -50,18 +50,18 @@ public class ItemStorage {
     		int insideAlignedIndex = i % 10;
     		int insideAlignedHeightIndex = i / 10;
     		float slotX = PlayerInventory.x + insideAlignedIndex * (PlayerInventory.slotWidth + PlayerInventory.spacing);
-            float slotY = insideAlignedHeightIndex * (PlayerInventory.slotHeight + PlayerInventory.spacing);
+            float slotY = insideAlignedHeightIndex * (PlayerInventory.slotWidth + PlayerInventory.spacing);
             
             Hpb.spriteBatch.draw(PlayerInventory.slot, 
             		slotX, 
             		slotY, 
             		PlayerInventory.slotWidth, 
-            		PlayerInventory.slotHeight);
+            		PlayerInventory.slotWidth);
             Hpb.world.player.castedInv.displaySlot(i, 
             		slotX + PlayerInventory.spacing, 
             		slotY + PlayerInventory.spacing, 
             		PlayerInventory.slotWidth - PlayerInventory.spacing * 2, 
-            		PlayerInventory.slotHeight - PlayerInventory.spacing * 2);
+            		PlayerInventory.slotWidth - PlayerInventory.spacing * 2);
     	}
 	}
 
@@ -91,8 +91,8 @@ public class ItemStorage {
     		int insideAlignedIndex = i % 10;
     		int insideAlignedHeightIndex = i / 10;
     		float slotX = PlayerInventory.x + insideAlignedIndex * (PlayerInventory.slotWidth + PlayerInventory.spacing);
-            float slotY = insideAlignedHeightIndex * (PlayerInventory.slotHeight + PlayerInventory.spacing);
-            slotposmap.add(new float[] {slotX, slotY, slotX+PlayerInventory.slotWidth, slotY+PlayerInventory.slotHeight});
+            float slotY = insideAlignedHeightIndex * (PlayerInventory.slotWidth + PlayerInventory.spacing);
+            slotposmap.add(new float[] {slotX, slotY, slotX+PlayerInventory.slotWidth, slotY+PlayerInventory.slotWidth});
     	}
 	}
 

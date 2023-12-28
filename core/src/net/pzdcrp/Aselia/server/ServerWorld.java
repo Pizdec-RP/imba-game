@@ -391,6 +391,7 @@ public class ServerWorld implements World {
 	}
 	
 	public boolean save() {
+		//return true;
 		try {
 			Hpb.exit = true;
 			System.out.println("saving");

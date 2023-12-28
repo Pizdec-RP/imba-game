@@ -3,6 +3,7 @@ package net.pzdcrp.Aselia.world.elements.blocks;
 import com.badlogic.gdx.graphics.Texture;
 
 import net.pzdcrp.Aselia.data.AABB;
+import net.pzdcrp.Aselia.data.AABBList;
 import net.pzdcrp.Aselia.data.BlockFace;
 import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.world.elements.blocks.Block.BlockType;
@@ -23,7 +24,7 @@ public class Air extends Block {
 	}
 	
 	@Override
-	public AABB getHitbox() {
+	public AABBList getHitbox() {
 		return null;
 	}
 	

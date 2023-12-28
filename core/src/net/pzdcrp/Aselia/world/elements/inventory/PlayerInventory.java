@@ -18,6 +18,7 @@ import com.google.gson.JsonObject;
 import net.pzdcrp.Aselia.Hpb;
 import net.pzdcrp.Aselia.data.BlockFace;
 import net.pzdcrp.Aselia.data.DamageSource;
+import net.pzdcrp.Aselia.data.TextField;
 import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientClickBlockPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientPlaceBlockPacket;
@@ -40,19 +41,22 @@ import net.pzdcrp.Aselia.world.elements.storages.ItemStorage;
 
 public class PlayerInventory implements IInventory {
 	private Map<Integer,Item> items = new ConcurrentHashMap<Integer,Item>();
-	private ItemStorage openedStorage; //link
+	public ItemStorage openedStorage; //link
 	private int chs = 0;//0-9
 	private Player owner;
 	public boolean isOpened = false;
 	public static final Item EMPTY = new NoItem();
+	public CraftBoard craftboard;
 	
 	public PlayerInventory(Player owner) {
 		for (int i = -1; i < 40; i++) {
 			items.put(i, EMPTY);
 		}
 		this.owner = owner;
+		craftboard = new CraftBoard(this);
 		if (owner.world.isLocal()) {
 			font = Hpb.mutex.getFont(20);
+			currentText = new TextField(font);
 			GlyphLayout g = new GlyphLayout();
 			g.setText(font, "1234567890");
 			fontheight = g.height;
@@ -101,13 +105,6 @@ public class PlayerInventory implements IInventory {
     	getSlot(getCurrentSlotInt()).placeBlockAction(pos, face, owner);
     }
     
-    public void updateHandCrafting() {
-    	//42 43
-    	//40 41
-    	int s0 = getSlot(40).id, s1 = getSlot(41).id, s2 = getSlot(42).id, s3 = getSlot(43).id;
-    	
-    }
-    
     /**server side*/
     public void wasteHandItem() {
     	Item handitem = items.get(chs);
@@ -139,8 +136,8 @@ public class PlayerInventory implements IInventory {
 		}
     }
 	
-	private BitmapFont font;
-	private float fontheight;
+	public static BitmapFont font;
+	public static float fontheight;
 	public void displaySlot(int id, float x, float y, float width, float height) {
 		Item item = getSlot(id);
 		if (item instanceof NoItem) return;
@@ -156,10 +153,9 @@ public class PlayerInventory implements IInventory {
     		x = 0,
     		y = 30,
     		slotWidth = 64f,
-    		slotHeight = 64f,
     		spacing = 3f,
     		frameWidth = 10 * (slotWidth + spacing),
-    		fullinvyalign = y+slotHeight+5f;
+    		fullinvyalign = y+slotWidth+5f;
     @Override
     public void render() {
     	for (int i = 0; i < 10; i++) {
@@ -167,12 +163,44 @@ public class PlayerInventory implements IInventory {
             float slotY = y;
 
             if (this.chs == i) {
-                Hpb.spriteBatch.draw(selectedSlot, slotX, slotY, slotWidth, slotHeight);
+                Hpb.spriteBatch.draw(selectedSlot, slotX, slotY, slotWidth, slotWidth);
             } else {
-                Hpb.spriteBatch.draw(slot, slotX, slotY, slotWidth, slotHeight);
+                Hpb.spriteBatch.draw(slot, slotX, slotY, slotWidth, slotWidth);
             }
-            displaySlot(i, slotX + spacing, slotY + spacing, slotWidth - spacing * 2, slotHeight - spacing * 2);
+            displaySlot(i, slotX + spacing, slotY + spacing, slotWidth - spacing * 2, slotWidth - spacing * 2);
         }
+    }
+    
+    public int getCursoredSlot() {
+    	int x = Gdx.input.getX();
+		int y = Gdx.graphics.getHeight() - Gdx.input.getY();
+		
+    	int slot = 0;
+    	boolean finded = false;
+		for (float[] pos : slotposmap) {
+			if (x >= pos[0] && x <= pos[2] && y >= pos[1] && y <= pos[3]) {
+				finded = true;
+				break;
+			}
+			slot++;
+		}
+		if (!finded) {
+			if (openedStorage != null) {
+				slot = 60;
+				for (float[] pos : openedStorage.getSlotmap()) {
+					if (x >= pos[0] && x <= pos[2] && y >= pos[1] && y <= pos[3]) {
+						finded = true;
+						break;
+					}
+					slot++;
+				}
+			}
+		}
+		if (finded) {
+			return slot;
+		} else {
+			return -2;
+		}
     }
     
     public void onMouseClick(int x, int y, boolean down, int button) {
@@ -189,14 +217,7 @@ public class PlayerInventory implements IInventory {
 		}
 		if (!finded) {
 			if (openedStorage == null) {
-				slot = 40;
-				for (float[] pos : nostorageopenslotsmap) {
-					if (x >= pos[0] && x <= pos[2] && y >= pos[1] && y <= pos[3]) {
-						finded = true;
-						break;
-					}
-					slot++;
-				}
+				craftboard.onActionOnClient(x,y, button);
 			} else {
 				slot = 60;
 				for (float[] pos : openedStorage.getSlotmap()) {
@@ -327,41 +348,44 @@ public class PlayerInventory implements IInventory {
     
     
     List<float[]> slotposmap = new ArrayList<>();
-    List<float[]> nostorageopenslotsmap = new ArrayList<>();
     /**client side*/
     public void onResize() {
     	slotposmap.clear();
     	for (int i = 0; i < 10; i++) {
             float slotX = x + i * (slotWidth + spacing);
             float slotY = y;
-            slotposmap.add(new float[] {slotX, slotY, slotX+slotWidth, slotY+slotHeight});
+            slotposmap.add(new float[] {slotX, slotY, slotX+slotWidth, slotY+slotWidth});
     	}
     	for (int i = 10; i < 40; i++) {
     		int insideAlignedIndex = i % 10;//0-9
     		int insideAlignedHeightIndex = i / 10;
     		float slotX = x + insideAlignedIndex * (slotWidth + spacing);
-            float slotY = fullinvyalign + insideAlignedHeightIndex * (slotHeight + spacing);
-            slotposmap.add(new float[] {slotX, slotY, slotX+slotWidth, slotY+slotHeight});
+            float slotY = fullinvyalign + insideAlignedHeightIndex * (slotWidth + spacing);
+            slotposmap.add(new float[] {slotX, slotY, slotX+slotWidth, slotY+slotWidth});
     	}
-    	
-    	float slotY = 0, slotX = 0;
-		for (int i = 40; i < 44; i++) {
-			int insideAlignedIndex = i % 2;
-    		int insideAlignedHeightIndex = i / 6;
-    		slotX = x + insideAlignedIndex * (slotWidth + spacing) + (slotWidth + spacing);
-            slotY = insideAlignedHeightIndex * (slotHeight + spacing);
-            
-            nostorageopenslotsmap.add(new float[] {slotX, slotY, slotX+slotWidth, slotY+slotHeight});
-		}
-		
-		slotY -= (slotHeight + spacing) / 2;
-		slotX += (slotWidth + spacing) * 2;
-		
-		nostorageopenslotsmap.add(new float[] {slotX, slotY, slotX+slotWidth, slotY+slotHeight});
     	
         if (openedStorage != null) {
     		openedStorage.reloadBounds();
     	}
+        
+        craftboard.onResize();
+    }
+    
+    private TextField currentText;
+    private int marginx = 6, marginy = 3;
+    public void renderItemInfobar(Item item, int x, int y) {
+    	if (item.getDescription() == null) {
+    		currentText.setText(item.getName());
+    	} else {
+    		currentText.setText(item.getName()+"\n"+item.getDescription());
+    	}
+    	float width = marginx * 2 + currentText.width;
+    	float height = marginy * 2 + currentText.height;
+    	
+    	Texture t = Hpb.mutex.getOTexture("hrzbtn");
+    	
+    	Hpb.spriteBatch.draw(t, x-width, y-height, width, height);
+    	currentText.render(Hpb.spriteBatch, x+marginx-width, y-marginy);
     }
     
     //max slot index = 127
@@ -371,37 +395,27 @@ public class PlayerInventory implements IInventory {
     	if (openedStorage != null) {
     		openedStorage.render();
     	} else {
-    		float slotY = 0, slotX = 0;
-    		for (int i = 40; i < 44; i++) {
-    			int insideAlignedIndex = i % 2;
-        		int insideAlignedHeightIndex = i / 6;
-        		slotX = x + insideAlignedIndex * (slotWidth + spacing) + (slotWidth + spacing);
-                slotY = insideAlignedHeightIndex * (slotHeight + spacing);
-                
-                Hpb.spriteBatch.draw(slot, slotX, slotY, slotWidth, slotHeight);
-                displaySlot(i, slotX + spacing, slotY + spacing, slotWidth - spacing * 2, slotHeight - spacing * 2);
-    		}
-    		
-    		slotY -= (slotHeight + spacing) / 2;
-    		slotX += (slotWidth + spacing) * 2;
-    		
-    		Hpb.spriteBatch.draw(slot, slotX, slotY, slotWidth, slotHeight);
-            displaySlot(44, slotX + spacing, slotY + spacing, slotWidth - spacing * 2, slotHeight - spacing * 2);
+    		//render crafting
+    		this.craftboard.render();
     	}
     	for (int i = 10; i < 40; i++) {
     		int insideAlignedIndex = i % 10;//0-9
     		int insideAlignedHeightIndex = i / 10;
     		float slotX = x + insideAlignedIndex * (slotWidth + spacing);
-            float slotY = fullinvyalign + insideAlignedHeightIndex * (slotHeight + spacing);
+            float slotY = fullinvyalign + insideAlignedHeightIndex * (slotWidth + spacing);
             
-            Hpb.spriteBatch.draw(slot, slotX, slotY, slotWidth, slotHeight);
-            displaySlot(i, slotX + spacing, slotY + spacing, slotWidth - spacing * 2, slotHeight - spacing * 2);
+            Hpb.spriteBatch.draw(slot, slotX, slotY, slotWidth, slotWidth);
+            displaySlot(i, slotX + spacing, slotY + spacing, slotWidth - spacing * 2, slotWidth - spacing * 2);
     	}
-    	
+    	int sx = Gdx.input.getX();
+    	int sy = Gdx.graphics.getHeight() - Gdx.input.getY();
     	if (items.get(-1).id != 0) {
-    		float sx = Gdx.input.getX() - slotWidth/2;
-    		float sy = (Gdx.graphics.getHeight() - Gdx.input.getY()) - slotHeight/2;
-    		displaySlot(-1, sx + spacing, sy + spacing, slotWidth - spacing * 2, slotHeight - spacing * 2);
+    		displaySlot(-1, sx - slotWidth/2 + spacing, sy - slotWidth/2 + spacing, slotWidth - spacing * 2, slotWidth - spacing * 2);
+    	} else {
+    		int slotundercursor = getCursoredSlot();
+    		if (slotundercursor != -2 && getSlot(slotundercursor).id != 0) {
+    			renderItemInfobar(getSlot(slotundercursor), sx, sy);
+    		}
     	}
     }
     

@@ -1,6 +1,7 @@
 package net.pzdcrp.Aselia.world.elements.blocks;
 
 import net.pzdcrp.Aselia.data.AABB;
+import net.pzdcrp.Aselia.data.AABBList;
 import net.pzdcrp.Aselia.data.BlockFace;
 import net.pzdcrp.Aselia.data.Vector3D;
 
@@ -20,7 +21,7 @@ public class Voed extends Block {
 	}
 	
 	@Override
-	public AABB getHitbox() {
+	public AABBList getHitbox() {
 		return null;
 	}
 	

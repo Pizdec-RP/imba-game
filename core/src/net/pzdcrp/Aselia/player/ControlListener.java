@@ -14,6 +14,7 @@ import net.pzdcrp.Aselia.server.InternalServer;
 import net.pzdcrp.Aselia.utils.GameU;
 import net.pzdcrp.Aselia.world.elements.Particle;
 import net.pzdcrp.Aselia.world.elements.generators.DefaultWorldGenerator;
+import net.pzdcrp.Aselia.world.elements.inventory.CraftBoard;
 
 public class ControlListener implements InputProcessor {
 	private Player p;
@@ -114,11 +115,10 @@ public class ControlListener implements InputProcessor {
 			if (p.castedInv.isOpened) {
 				p.castedInv.close();
 			} else {
-				//System.out.println("выходим без сохранения потмоучто оно не предусмотерно!!!!");
 				if (InternalServer.world.save())
 					System.exit(0);
 				else
-					p.chat.send("error while saving world");
+					p.chat.debug("error while saving world");
 			}
 		}
 		return true;
@@ -160,8 +160,12 @@ public class ControlListener implements InputProcessor {
 
 	@Override
 	public boolean scrolled(float ax, float ay) {
-		if (p.chat.isOpened() || p.castedInv.isOpened) return true;
-		//System.out.println(ax+" "+ay);
+		if (p.chat.isOpened()) return true;
+		if (p.castedInv.isOpened && p.castedInv.openedStorage == null) {
+			CraftBoard.scroll(ay);
+			return true;
+		}
+		
 		int cur = p.castedInv.getCurrentSlotInt();
 		cur+=ay;
 		

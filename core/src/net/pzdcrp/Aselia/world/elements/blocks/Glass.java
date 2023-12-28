@@ -3,6 +3,8 @@ package net.pzdcrp.Aselia.world.elements.blocks;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 
 import net.pzdcrp.Aselia.Hpb;
+import net.pzdcrp.Aselia.data.AABB;
+import net.pzdcrp.Aselia.data.AABBList;
 import net.pzdcrp.Aselia.data.BlockFace;
 import net.pzdcrp.Aselia.data.BlockModelBuilder;
 import net.pzdcrp.Aselia.data.Vector3D;
@@ -14,6 +16,7 @@ public class Glass extends Block {
 	public static String tname = "glass";
 	public Glass(Vector3D pos) {
 		super(pos, tname);
+		hitbox = new AABBList(new AABB(pos.x,pos.y,pos.z,pos.x+1,pos.y+1,pos.z+1));
 	}
 	
 	@Override

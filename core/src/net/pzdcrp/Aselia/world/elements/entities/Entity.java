@@ -233,12 +233,13 @@ public class Entity {
 		for (int tx = (int)Math.floor(Math.min(cube.maxX, cube.minX)); tx < Math.max(cube.maxX, cube.minX); tx++) {
 			for (int tz = (int)Math.floor(Math.min(cube.maxZ, cube.minZ)); tz < Math.max(cube.maxZ, cube.minZ); tz++) {
 				for (int ty = (int)Math.floor(Math.min(cube.maxY, cube.minY)); ty < Math.max(cube.maxY, cube.minY); ty++) {
-					Block bl = world.getBlock(new Vector3D(tx, ty, tz));//FIXME оптимизировать
+					Block bl = world.getBlock(new Vector3D(tx, ty, tz));//TODO оптимизировать
 					if (bl != null) {
 						if (bl.isCollide()) {
-							b.add(bl.getHitbox());
+							for (AABB t : bl.getHitbox().get()) {
+								b.add(t);
+							}
 						}
-						
 					}
 				}
 			}

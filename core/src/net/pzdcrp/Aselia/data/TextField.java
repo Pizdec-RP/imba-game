@@ -11,9 +11,6 @@ public class TextField {
 	public float width = 0, height = 0;
 	public String text;
 	
-	/**
-	 * GlyphLayout inside :D
-	 */
 	public TextField(BitmapFont font) {
 		this.font = font;
 	}

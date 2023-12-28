@@ -12,6 +12,8 @@ import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 
 import net.pzdcrp.Aselia.Hpb;
+import net.pzdcrp.Aselia.data.AABB;
+import net.pzdcrp.Aselia.data.AABBList;
 import net.pzdcrp.Aselia.data.BlockFace;
 import net.pzdcrp.Aselia.data.BlockModelBuilder;
 import net.pzdcrp.Aselia.data.Pair;
@@ -24,6 +26,7 @@ public class OakLog extends FacingBlock {
 	public static String tname = "oaklog";
 	public OakLog(Vector3D pos, BlockFace blockface) {
 		super(pos, tname, blockface);
+		hitbox = new AABBList(new AABB(pos.x,pos.y,pos.z,pos.x+1,pos.y+1,pos.z+1));
 	}
 	
 	@Override

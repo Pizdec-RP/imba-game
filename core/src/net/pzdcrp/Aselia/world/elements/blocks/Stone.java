@@ -11,6 +11,8 @@ import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Matrix4;
 
 import net.pzdcrp.Aselia.Hpb;
+import net.pzdcrp.Aselia.data.AABB;
+import net.pzdcrp.Aselia.data.AABBList;
 import net.pzdcrp.Aselia.data.BlockFace;
 import net.pzdcrp.Aselia.data.BlockModelBuilder;
 import net.pzdcrp.Aselia.data.Vector3D;
@@ -23,6 +25,7 @@ public class Stone extends Block {
 	public static String tname = "stone";
 	public Stone(Vector3D pos) {
 		super(pos, tname);
+		hitbox = new AABBList(new AABB(pos.x,pos.y,pos.z,pos.x+1,pos.y+1,pos.z+1));
 	}
 	
 	@Override

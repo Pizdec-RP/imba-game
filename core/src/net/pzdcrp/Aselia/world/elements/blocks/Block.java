@@ -14,6 +14,7 @@ import com.google.gson.JsonObject;
 
 import net.pzdcrp.Aselia.Hpb;
 import net.pzdcrp.Aselia.data.AABB;
+import net.pzdcrp.Aselia.data.AABBList;
 import net.pzdcrp.Aselia.data.BlockFace;
 import net.pzdcrp.Aselia.data.BlockModelBuilder;
 import net.pzdcrp.Aselia.data.DM;
@@ -90,19 +91,20 @@ public class Block {
 		air, solid, transparent, noncollideabe;
 	}
 	public String texture;
-	protected AABB hitbox;
+	protected AABBList hitbox;
 	private int id = -1;
 	
 	public static int count = 0;
 	
-	public Block(Vector3D pos, String texture, AABB hitbox) {
+	/*public Block(Vector3D pos, String texture, AABB hitbox) {
 		this.pos = pos;//.VecToInt();
 		this.texture = texture;
 		this.hitbox = hitbox;
 		count++;
-	}
+	}*/
 	public Block(Vector3D pos, String texture) {
-		this(pos, texture, new AABB(pos.x,pos.y,pos.z,pos.x+1,pos.y+1,pos.z+1));
+		this.pos = pos;//.VecToInt();
+		this.texture = texture;
 		count++;
 	}
 	
@@ -184,7 +186,7 @@ public class Block {
 		return hitbox.collide(with);
 	}
 	
-	public AABB getHitbox() {
+	public AABBList getHitbox() {
 		return hitbox;
 	}
 	
@@ -209,7 +211,7 @@ public class Block {
 	@Override
 	public Block clone() {
 		GameU.end("не юзай этот мтеод");
-		return new Block(pos, texture, hitbox);
+		return new Block(pos, texture);
 	}
 	
 	@Override

@@ -4,7 +4,12 @@
         "slot": "slot.png",
         "sslot": "selectedslot.png",
         "crosshair": "crosshair.png",
-        "cloud": "cloud.png"
+        "cloud": "cloud.png",
+        "hpf": "hpheartfull.png",
+        "hph": "hphearthalf.png",
+        "hpz": "hpheart.png",
+        "hrzbtn": "horizontalbuttonbkg.png"
+
     },
     "items": {
         "bucket": "bucket.png",

@@ -28,6 +28,11 @@ public class CrateItem extends Item {
 	}
 	
 	@Override
+	public String getDescription() {
+		return "simple storge for\nyou items";
+	}
+	
+	@Override
 	public Item clone(int count) {
 		return new CrateItem(count);
 	}

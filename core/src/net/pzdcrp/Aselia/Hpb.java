@@ -96,6 +96,8 @@ public class Hpb extends ApplicationAdapter {
 	private static HydraClient client;
 	public static UUID playerId;
 	
+	public static Texture backgroundOfEverything;
+	
 	public Hpb() {
 		
 	}
@@ -132,6 +134,11 @@ public class Hpb extends ApplicationAdapter {
 
 	@Override
 	public void create() {
+		Pixmap pmp = new Pixmap(1,1,Pixmap.Format.RGBA4444);
+		pmp.setColor(Color.DARK_GRAY);
+		pmp.fill();
+		backgroundOfEverything = new Texture(pmp);
+		
 		Thread.currentThread().setName("main thd");
 		mutex = new Mutex();
 		System.out.println("loading textures");

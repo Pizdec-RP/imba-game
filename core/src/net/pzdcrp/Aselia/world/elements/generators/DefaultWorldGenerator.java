@@ -42,8 +42,12 @@ public class DefaultWorldGenerator {
         			double noise = Noise.get(x*sharpness, z*sharpness);
         			int maxy = MathU.diap(fieldMinHeight, fieldMaxHeight, noise);
         			for (int y = 0; y < PlayerWorld.maxheight; y++) {
-        				if (y < maxy) {
+        				if (y <= maxy-3) {
+        					c.fastSetBlock(px,y,pz, 2);
+        				} else if (y == maxy-1) {
         					c.fastSetBlock(px,y,pz, 6);
+        				} else if (y < maxy && y > maxy-3) {
+        					c.fastSetBlock(px,y,pz, 1);
         				} else if (y == maxy && Double.toString(noise).contains("34")) {
         					c.fastSetBlock(px,y,pz, 23);
         				} else {

@@ -27,6 +27,7 @@ import net.pzdcrp.Aselia.multiplayer.packets.server.entity.ServerEntityDespawnPa
 import net.pzdcrp.Aselia.multiplayer.packets.server.entity.ServerEntityPositionVelocityPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.entity.ServerSpawnEntityPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.ingame.ServerChatPacket;
+import net.pzdcrp.Aselia.multiplayer.packets.server.ingame.ServerNotificationPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.ingame.ServerPlayerRespawnPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.ingame.ServerSetHealthPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.inventory.ServerCloseInventoryPacket;
@@ -68,7 +69,7 @@ public class Player extends Entity {
 			up=false,down=false,
 			rmb = false, lmb = false,
 			run = false;
-	private static final float mouseSensitivity = 0.1f;
+	private static final float mouseSensitivity = 0.25f;
 	public float camHeight = 1.6f;
 	public int actcd = 0;//15 ticks
 	public Chat2 chat = new Chat2();
@@ -560,6 +561,10 @@ public class Player extends Entity {
 			ItemStorage is = ItemStorage.storageTable.get(packet.id);
 			is.setItems(packet.items);
 			castedInv.open(is);
+		} else if (p instanceof ServerNotificationPacket) {
+			ServerNotificationPacket packet = (ServerNotificationPacket)p;
+			GameU.log(packet.text);
+			Hpb.displayInfo(packet.text);
 		}
 	}
 

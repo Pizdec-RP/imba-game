@@ -12,6 +12,7 @@ import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientPlayerLocationD
 import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientPlayerRespawnPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientSetHotbarSlotPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.client.inventory.ClientCloseInventoryPacket;
+import net.pzdcrp.Aselia.multiplayer.packets.client.inventory.ClientCraftRequestPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.client.inventory.ClientInventoryActionPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.client.inventory.ClientOpenPlayerInventoryPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.ServerSuccessConnectPacket;
@@ -19,6 +20,7 @@ import net.pzdcrp.Aselia.multiplayer.packets.server.entity.ServerEntityDespawnPa
 import net.pzdcrp.Aselia.multiplayer.packets.server.entity.ServerEntityPositionVelocityPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.entity.ServerSpawnEntityPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.ingame.ServerChatPacket;
+import net.pzdcrp.Aselia.multiplayer.packets.server.ingame.ServerNotificationPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.ingame.ServerPlayerRespawnPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.ingame.ServerSetHealthPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.ingame.ServerSpawnPlayerPacket;
@@ -64,5 +66,7 @@ public class HpbProtocol extends HydraProtocol {
 		registerPacket(ServerOpenInventoryPacket.class);//26
 		registerPacket(ClientCloseInventoryPacket.class);//27
 		registerPacket(ClientClickBlockPacket.class);//28
+		registerPacket(ClientCraftRequestPacket.class);//29
+		registerPacket(ServerNotificationPacket.class);//30
 	}
 }

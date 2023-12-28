@@ -156,7 +156,7 @@ public class MathU {
     }
 	
 	public static int rndi(int min, int max) {
-	    return (int) (rndnrm() * (max - min) + min);
+	    return rnd.nextInt(max - min + 1) + min;
 	}
 	
 	public static float rndf(float min, float max) {
