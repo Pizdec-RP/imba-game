@@ -4,8 +4,8 @@ import net.pzdcrp.Aselia.Hpb;
 import net.pzdcrp.Aselia.data.AABB;
 import net.pzdcrp.Aselia.data.AABBList;
 import net.pzdcrp.Aselia.data.BlockModelBuilder;
-import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.data.MBIM.offset;
+import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.extended.SexyMeshBuilder;
 import net.pzdcrp.Aselia.player.Player;
 import net.pzdcrp.Aselia.utils.ModelUtils;
@@ -20,28 +20,28 @@ public class Crate extends Block {
 		super(pos, tname);
 		hitbox = new AABBList(new AABB(pos.x,pos.y,pos.z,pos.x+1,pos.y+1,pos.z+1));
 	}
-	
+
 	@Override
 	public boolean clickable() {
 		return true;
 	}
-	
+
 	@Override
 	public BlockType getType() {
 		return BlockType.solid;
 	}
-	
+
 	@Override
 	public Block clone(Vector3D poss) {
 		return new Crate(poss);
 	}
-	
+
 	@Override
 	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, BlockModelBuilder mbim) {
 		SexyMeshBuilder a = mbim.obtain(pos, this.isTransparent());
 		ModelUtils.setTransform(pos);
 		Hpb.mutex.hookuvr(a, tname, 0, 0, 1, 1);
-		
+
 		mbim.setCuroffset(offset.py);
     	if (!py) ModelUtils.buildTopX(a);//PY
     	mbim.setCuroffset(offset.nx);
@@ -55,7 +55,7 @@ public class Crate extends Block {
 	    mbim.setCuroffset(offset.ny);
 	    if (!ny) ModelUtils.buildBottomX(a);//NY
 	}
-	
+
 	@Override
 	public void onClick(Player actor) {
 		Column c = actor.world.getColumn(pos.x, pos.z);
@@ -65,12 +65,12 @@ public class Crate extends Block {
 		}
 		actor.castedInv.open(is);
 	}
-	
+
 	@Override
 	public float getResistance() {
 		return 2.5f;
 	}
-	
+
 	@Override
 	public void onBreak(World world) {
 		super.onBreak(world);

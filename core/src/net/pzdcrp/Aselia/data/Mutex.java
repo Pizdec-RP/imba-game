@@ -1,27 +1,21 @@
 package net.pzdcrp.Aselia.data;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Pixmap.Format;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.TextureData;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
 import com.badlogic.gdx.graphics.g3d.Environment;
@@ -32,7 +26,6 @@ import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.PixmapTextureData;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 import net.pzdcrp.Aselia.Hpb;
@@ -45,8 +38,6 @@ import net.pzdcrp.Aselia.world.elements.blocks.Block;
 import net.pzdcrp.Aselia.world.elements.inventory.items.Item;
 import net.pzdcrp.Aselia.world.elements.inventory.items.NoItem;
 
-import com.badlogic.gdx.graphics.Texture;
-
 public class Mutex {
 	private Texture comp;
 	private Map<String, Texture> ar;
@@ -55,20 +46,20 @@ public class Mutex {
 	private Map<String, Texture> otherTextures = new HashMap<>();
 	private FreeTypeFontGenerator generator;
 	private Map<Integer, BitmapFont> fonts = new ConcurrentHashMap<>();
-	
+
 	public Mutex() {
 		this.generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/Underdog.ttf"));
 	}
-	
+
 	public Texture getComplex() {
 		return comp;
 	}
-	
+
 	public void begin() {
 		ar = new HashMap<>();
 		razmetka = new HashMap<>();
 	}
-	
+
 	public void end() {
 		int height = 0;
 		int width = 0;
@@ -100,26 +91,26 @@ public class Mutex {
 			razmetka.put(tex.getKey(), razm);
 		}
 		comp = new Texture(new PixmapTextureData(pixmap, Format.RGBA8888, false, false));
-		comp.setAnisotropicFilter(GL30.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT);
+		comp.setAnisotropicFilter(GL20.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT);
 		comp.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
 	}
-	
+
 	public void addOtherTexture(Texture t, String name) {
 		otherTextures.put(name, t);
 	}
-	
+
 	public Texture getOTexture(String name) {
 		return otherTextures.get(name);
 	}
-	
+
 	public void addTexture(Texture t, String name) {
 		ar.put(name,t);
 	}
-	
+
 	public Texture getBlockTexture(String name) {
 		return ar.get(name);
 	}
-	
+
 	public void hookuvr(SexyMeshBuilder mpb, String name, float u1, float v1, float u2, float v2) {
 		float[] r = razmetka.get(name);
 		if (r == null) {
@@ -127,12 +118,12 @@ public class Mutex {
 		}
 		float width = r[2] - r[0];
 		float height = r[3] - r[1];
-		
+
 		float nu1 = r[0]+width*u1, nv1 = r[1]+height*v1, nu2 = r[0]+width*u2, nv2 = r[1]+height*v2;
-		
+
 		mpb.setUVRange(nu1, nv1,nu2,nv2);
 	}
-	
+
 	public static Texture getBlockTexture(Model model) {
 	    int width = 500, height = 500;
 
@@ -171,25 +162,25 @@ public class Mutex {
 
 	    return texture;
 	}
-	
+
 	ModelBatch batch;
 	private Camera camera;
 	private FrameBuffer fbo;
 	private SpriteBatch sbatch;
-	
+
 	public void prepare() {
     	batch = new ModelBatch();
-    	
+
     	camera = new OrthographicCamera(2*0.75f, 2.3f*0.75f);
 		camera.far = 500;
 		camera.near = 0.1f;
 	    camera.position.set(-4.28f, 6.18f, 0.96f);
 	    camera.direction.set(0.54f,-0.646f,0.52f);
-	    
+
 	    fbo = new FrameBuffer(Format.RGBA8888, 500, 500, true);
-	    
+
 	    Hpb.loadTextures();
-	    
+
 	    sbatch = new SpriteBatch();
     }
 
@@ -207,25 +198,25 @@ public class Mutex {
 	    		    m.sortTransparent(camera.position);
 	    		} else
 	    			model = m.endSolid();
-	    	    
+
 	    	    fbo.begin();
 	            Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 	            Gdx.gl.glClearColor(0, 0, 0, 0);
 	            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-	            
+
 	            camera.update();
-	            
+
 	            batch.begin(camera);
 	            batch.render(model);
 	            batch.end();
-	            
+
 	            Pixmap pixmap = Pixmap.createFromFrameBuffer(0, 0, fbo.getWidth(), fbo.getHeight());
-	            
+
 	            Texture texture = new Texture(pixmap);
 	            itemtextures.put(item.getName(), RenderaU.flip(texture, false, true));
-	            
+
 	            fbo.end();
-	            
+
 	            sbatch.begin();
 	            sbatch.draw(texture, 0, 0);
 	            sbatch.end();
@@ -249,7 +240,7 @@ public class Mutex {
     	}
     	ModelUtils.setScale(1f);
     }
-    
+
     public Texture getItemTexture(String key) {
     	Texture tex = this.itemtextures.get(key);
     	if (tex == null) {
@@ -257,18 +248,18 @@ public class Mutex {
     	}
     	return tex;
     }
-    
+
     public void addItemTexture(Texture t, String key) {
     	itemtextures.put(key, t);
     }
-    
+
     public void endrender() {
     	batch.dispose();
     	camera = null;
     	fbo.dispose();
     	sbatch.dispose();
     }
-    
+
 	public BitmapFont getFont(int i) {
 		if (fonts.containsKey(i)) {
 			return fonts.get(i);

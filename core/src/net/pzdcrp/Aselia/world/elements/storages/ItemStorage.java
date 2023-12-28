@@ -7,10 +7,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-
 import de.datasecs.hydra.shared.protocol.packets.Packet;
 import net.pzdcrp.Aselia.Hpb;
 import net.pzdcrp.Aselia.data.Vector3D;
@@ -20,7 +16,6 @@ import net.pzdcrp.Aselia.player.Player;
 import net.pzdcrp.Aselia.server.InternalServer;
 import net.pzdcrp.Aselia.utils.GameU;
 import net.pzdcrp.Aselia.utils.MathU;
-import net.pzdcrp.Aselia.world.elements.blocks.Block;
 import net.pzdcrp.Aselia.world.elements.entities.Entity;
 import net.pzdcrp.Aselia.world.elements.entities.ItemEntity;
 import net.pzdcrp.Aselia.world.elements.inventory.PlayerInventory;
@@ -31,14 +26,14 @@ public class ItemStorage {
 	public static Map<Byte, ItemStorage> storageTable = new HashMap<>() {{
 		put((byte) 0, new ChestItemStorage(false));
 	}};
-	
+
 	public Map<Integer, Item> items = new HashMap<>();
 	protected List<Player> viewers = new CopyOnWriteArrayList<>();
 	protected boolean onserver;
 	private List<float[]> slotposmap = new ArrayList<>();
-	
+
 	public ItemStorage() {
-		
+
 	}
 
 	public void setItems(Map<Integer, Item> items) {
@@ -51,16 +46,16 @@ public class ItemStorage {
     		int insideAlignedHeightIndex = i / 10;
     		float slotX = PlayerInventory.x + insideAlignedIndex * (PlayerInventory.slotWidth + PlayerInventory.spacing);
             float slotY = insideAlignedHeightIndex * (PlayerInventory.slotWidth + PlayerInventory.spacing);
-            
-            Hpb.spriteBatch.draw(PlayerInventory.slot, 
-            		slotX, 
-            		slotY, 
-            		PlayerInventory.slotWidth, 
+
+            Hpb.spriteBatch.draw(PlayerInventory.slot,
+            		slotX,
+            		slotY,
+            		PlayerInventory.slotWidth,
             		PlayerInventory.slotWidth);
-            Hpb.world.player.castedInv.displaySlot(i, 
-            		slotX + PlayerInventory.spacing, 
-            		slotY + PlayerInventory.spacing, 
-            		PlayerInventory.slotWidth - PlayerInventory.spacing * 2, 
+            Hpb.world.player.castedInv.displaySlot(i,
+            		slotX + PlayerInventory.spacing,
+            		slotY + PlayerInventory.spacing,
+            		PlayerInventory.slotWidth - PlayerInventory.spacing * 2,
             		PlayerInventory.slotWidth - PlayerInventory.spacing * 2);
     	}
 	}
@@ -80,7 +75,7 @@ public class ItemStorage {
 	public Item getslot(int index) {
 		return items.get(index);
 	}
-	
+
 	public int slotcount() {
 		return 10;
 	}
@@ -116,19 +111,19 @@ public class ItemStorage {
 			}
 		}
 	}
-	
+
 	@Override
 	@Deprecated
 	public ItemStorage clone() {
 		GameU.end("do not use");
 		return null;
 	}
-	
+
 	public ItemStorage sclone() {
 		GameU.end("unsetted method clien in class "+this.getClass().getName());
 		return null;
 	}
-	
+
 	public String toJson() {
 		String items = "";
 		for (Entry<Integer, Item> item : this.items.entrySet()) {
@@ -148,7 +143,7 @@ public class ItemStorage {
 			}
 		}
 	}
-	
+
 	public static byte toId(ItemStorage is) {
 		for (Entry<Byte, ItemStorage> entry : storageTable.entrySet()) {
 			if (entry.getValue().getClass() == is.getClass()) {

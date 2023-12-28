@@ -86,7 +86,7 @@ public class BitStorage {
 
         int cellIndex = cellIndex(index);
         int bitIndex = bitIndex(index, cellIndex);
-        this.data[cellIndex] = this.data[cellIndex] & ~(this.maxValue << bitIndex) | ((long) value & this.maxValue) << bitIndex;
+        this.data[cellIndex] = this.data[cellIndex] & ~(this.maxValue << bitIndex) | (value & this.maxValue) << bitIndex;
     }
 
     public int[] toIntArray() {
@@ -113,7 +113,7 @@ public class BitStorage {
     private int bitIndex(int index, int cellIndex) {
         return (index - cellIndex * this.valuesPerLong) * this.bitsPerEntry;
     }
-    
+
     public long[] getData() {
 		return data;
 	}

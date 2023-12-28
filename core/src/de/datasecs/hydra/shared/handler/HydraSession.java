@@ -1,5 +1,8 @@
 package de.datasecs.hydra.shared.handler;
 
+import java.io.Serializable;
+import java.net.SocketAddress;
+
 import de.datasecs.hydra.shared.protocol.HydraProtocol;
 import de.datasecs.hydra.shared.protocol.packets.Packet;
 import de.datasecs.hydra.shared.protocol.packets.StandardPacket;
@@ -7,9 +10,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 //import net.pzdcrp.Hyperborea.utils.GameU;
-
-import java.io.Serializable;
-import java.net.SocketAddress;
 
 /**
  * Created with love by DataSecs on 29.09.2017.

@@ -1,14 +1,11 @@
 package net.pzdcrp.Aselia.world.elements.blocks;
 
-import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
-
 import net.pzdcrp.Aselia.Hpb;
 import net.pzdcrp.Aselia.data.AABB;
 import net.pzdcrp.Aselia.data.AABBList;
-import net.pzdcrp.Aselia.data.BlockFace;
 import net.pzdcrp.Aselia.data.BlockModelBuilder;
-import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.data.MBIM.offset;
+import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.extended.SexyMeshBuilder;
 import net.pzdcrp.Aselia.utils.ModelUtils;
 
@@ -18,17 +15,17 @@ public class Glass extends Block {
 		super(pos, tname);
 		hitbox = new AABBList(new AABB(pos.x,pos.y,pos.z,pos.x+1,pos.y+1,pos.z+1));
 	}
-	
+
 	@Override
 	public BlockType getType() {
 		return BlockType.transparent;
 	}
-	
+
 	@Override
 	public Block clone(Vector3D poss) {
 		return new Glass(poss);
 	}
-	
+
 	@Override
 	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, BlockModelBuilder mbim) {
 		SexyMeshBuilder a = mbim.obtain(pos, this.isTransparent());
@@ -47,12 +44,12 @@ public class Glass extends Block {
 	    mbim.setCuroffset(offset.ny);
 	    if (!ny) ModelUtils.buildBottomX(a);//NY
 	}
-	
+
 	@Override
 	public boolean isTransparent() {
 		return true;
 	}
-	
+
 	@Override
 	public float getResistance() {
 		return 0.5f;

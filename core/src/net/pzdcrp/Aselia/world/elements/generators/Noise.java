@@ -1,12 +1,11 @@
 package net.pzdcrp.Aselia.world.elements.generators;
 
 import kenperlin.PerlinNoise;
-import net.pzdcrp.Aselia.Hpb;
 import net.pzdcrp.Aselia.world.PlayerWorld;
 
 public class Noise { // Classic Perlin noise in 3D, for comparison
 	public static PerlinNoise p = new PerlinNoise(PlayerWorld.seed);
-	
+
 	/**
 	 * @return double (0 - 1)
 	 **/

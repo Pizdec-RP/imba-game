@@ -6,13 +6,13 @@ import io.netty.buffer.ByteBuf;
 @PacketId(16)
 public class ServerSetHealthPacket extends Packet {
 	public byte hp;
-	
+
 	public ServerSetHealthPacket() {}
-	
+
 	public ServerSetHealthPacket(byte hp) {
 		this.hp=hp;
 	}
-	
+
 	@Override
 	public void read(ByteBuf byteBuf) {
 		hp=byteBuf.readByte();

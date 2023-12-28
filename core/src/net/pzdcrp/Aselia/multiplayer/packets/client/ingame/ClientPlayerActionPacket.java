@@ -11,14 +11,14 @@ public class ClientPlayerActionPacket extends Packet {
 	public enum PlayerAction {
 		StartBreakingBlock, EndBreakingBlock, ResetBreakingBlock, DropItem, DropItemStack
 	}
-	
+
 	public PlayerAction action;
 	public Vector3D pos;
-	
+
 	public ClientPlayerActionPacket() {
-		
+
 	}
-	
+
 	public ClientPlayerActionPacket(PlayerAction action, Vector3D pos) {
 		this.action = action;
 		this.pos = pos;

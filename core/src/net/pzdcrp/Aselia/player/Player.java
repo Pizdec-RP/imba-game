@@ -9,7 +9,6 @@ import com.google.gson.JsonObject;
 import de.datasecs.hydra.shared.handler.Session;
 import de.datasecs.hydra.shared.protocol.packets.Packet;
 import net.pzdcrp.Aselia.Hpb;
-import net.pzdcrp.Aselia.Hpb.State;
 import net.pzdcrp.Aselia.data.AABB;
 import net.pzdcrp.Aselia.data.ActionAuthor;
 import net.pzdcrp.Aselia.data.DM;
@@ -20,9 +19,9 @@ import net.pzdcrp.Aselia.data.Vector2I;
 import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.multiplayer.ServerPlayer;
 import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientPlayerActionPacket;
+import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientPlayerActionPacket.PlayerAction;
 import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientPlayerLocationDataPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientPlayerRespawnPacket;
-import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientPlayerActionPacket.PlayerAction;
 import net.pzdcrp.Aselia.multiplayer.packets.server.entity.ServerEntityDespawnPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.entity.ServerEntityPositionVelocityPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.entity.ServerSpawnEntityPacket;
@@ -42,30 +41,21 @@ import net.pzdcrp.Aselia.server.InternalServer;
 import net.pzdcrp.Aselia.server.ServerWorld;
 import net.pzdcrp.Aselia.utils.GameU;
 import net.pzdcrp.Aselia.utils.MathU;
-import net.pzdcrp.Aselia.utils.VectorU;
 import net.pzdcrp.Aselia.world.World;
 import net.pzdcrp.Aselia.world.elements.Chunk;
 import net.pzdcrp.Aselia.world.elements.Column;
 import net.pzdcrp.Aselia.world.elements.blocks.Air;
 import net.pzdcrp.Aselia.world.elements.blocks.Block;
-import net.pzdcrp.Aselia.world.elements.chat.Chat;
 import net.pzdcrp.Aselia.world.elements.chat.Chat2;
 import net.pzdcrp.Aselia.world.elements.entities.Entity;
 import net.pzdcrp.Aselia.world.elements.inventory.PlayerInventory;
-import net.pzdcrp.Aselia.world.elements.inventory.items.DirtItem;
-import net.pzdcrp.Aselia.world.elements.inventory.items.GlassItem;
-import net.pzdcrp.Aselia.world.elements.inventory.items.GrassItem;
-import net.pzdcrp.Aselia.world.elements.inventory.items.OakLogItem;
-import net.pzdcrp.Aselia.world.elements.inventory.items.PlanksItem;
-import net.pzdcrp.Aselia.world.elements.inventory.items.StoneItem;
-import net.pzdcrp.Aselia.world.elements.inventory.items.WeedItem;
 import net.pzdcrp.Aselia.world.elements.storages.ItemStorage;
 
 public class Player extends Entity {
 	//public float pitch, yaw;//yaw left-right
 	public Camera cam;
 	public boolean forward = false, reverse = false,
-			left = false, right = false, 
+			left = false, right = false,
 			up=false,down=false,
 			rmb = false, lmb = false,
 			run = false;
@@ -74,19 +64,19 @@ public class Player extends Entity {
 	public int actcd = 0;//15 ticks
 	public Chat2 chat = new Chat2();
 	public PlayerInterface pinterface;
-	
+
 	private int breakingticks = 0;
 	private Block beforeAimBlock = new Air(new Vector3D());
 	private Chunk bbchunk;
 	private boolean isMining = false;
 	public PlayerInventory castedInv;
-	
-	
+
+
 	//server
 	public String nickname;
 	public ServerPlayer serverProfile;
-	
-	
+
+
 	public Player(double tx, double ty, double tz, String name, World world, int lid) {
 		super(new Vector3D(tx,ty,tz),new AABB(-0.3, 0, -0.3, 0.3, 1.7, 0.3), EntityType.player, world, lid);
 		this.nickname = name;
@@ -107,7 +97,8 @@ public class Player extends Entity {
 		this.inventory.addItem(new WaterBucketItem(1), 7);
 		this.inventory.addItem(new WeedItem(99), 8);*/
 	}
-	
+
+	@Override
 	public boolean tick() {
 		boolean continuee = super.tick();
 		if (!this.world.isLocal()) {
@@ -138,10 +129,10 @@ public class Player extends Entity {
 		if (world.isLocal()) {
 			cam.setpos(getEyeLocation());
 		}
-		
+
 		return true;
 	}
-	
+
 	@Override
 	public void setHp(byte i) {
 		if (this.hp != i) {
@@ -154,7 +145,7 @@ public class Player extends Entity {
 			}
 		}
 	}
-	
+
 	private Session session;
 	public void sendSelfPacket(Packet p) {
 		if (session == null) {
@@ -188,7 +179,7 @@ public class Player extends Entity {
 			breakingticks = 0;
 			isMining = false;
 		}
-		
+
 		if (isMining) {
 			int miningTicks = (int) (beforeAimBlock.getResistance() * 20);
 			if (miningTicks == 0) {
@@ -224,7 +215,7 @@ public class Player extends Entity {
 		}
 		beforeAimBlock = currentAimBlock;
 	}
-	
+
 	public void movement() {
 		Vector3D velocityGoal = new Vector3D(0,0,0);
 		double speed = 0d, ospeed = 0d;
@@ -257,7 +248,7 @@ public class Player extends Entity {
 			this.onGround = false;
 		}
 	}
-	
+
 	/*public void updatePlayerActions() {
 		if (rmb && Gdx.input.isCursorCatched()) {
 			if (actcd <= 0) {
@@ -276,7 +267,7 @@ public class Player extends Entity {
 			}
 		}
 	}*/
-	
+
 	int healcd = 0;
 	@Override
 	public void hit(DamageSource src, byte damage) {
@@ -291,7 +282,7 @@ public class Player extends Entity {
 			Hpb.world.player.chat.send(this.getClass().getName()+" died of "+src.toString());
 		}
 	}
-	
+
 	/**multi side*/
 	public void onDeath() {
 		if (world.isLocal()) {
@@ -303,7 +294,7 @@ public class Player extends Entity {
 		}
 		//this.inventory.dropAllItems();
 	}
-	
+
 	public void respawn() {
 		if (world.isLocal()) {
 			Hpb.session.send(new ClientPlayerRespawnPacket());
@@ -315,7 +306,7 @@ public class Player extends Entity {
 			echc = new Vector2I(pos.x,pos.z);
 		}
 	}
-	
+
 	@Override
 	public void teleport(Vector3D pos1) {
 		super.teleport(pos1);
@@ -326,26 +317,26 @@ public class Player extends Entity {
 				sendSelfPacket(new ServerLoadColumnPacket(world.getColumn(echc)));
 		}*/
 	}
-	
+
 	@Override
 	public void getJson(JsonObject jen) {
 		super.getJson(jen);
 		jen.add("inventory", castedInv.toJson());
 		jen.addProperty("name", nickname);
 	}
-	
+
 	@Override
 	public void fromJson(JsonObject jen) {
 		super.fromJson(jen);
 		this.castedInv.fromJson(jen.get("inventory").getAsJsonObject());
 		this.nickname = jen.get("name").getAsString();
 	}
-	
+
 	@Override
 	public byte maxhp() {
 		return 25;
 	}
-	
+
 	public void updateControls() {
 		if (chat.isOpened() || castedInv.isOpened) return;
 		if (Gdx.input.isKeyPressed(Input.Keys.W)) {
@@ -378,7 +369,7 @@ public class Player extends Entity {
 		if (Gdx.input.isKeyPressed(Input.Keys.R)) {
 			Hpb.world.time += 1000;
 		}
-		
+
 		if (down) {
 			this.camHeight = 1.4f;
 			this.hitbox.maxY = 1.49f;
@@ -387,9 +378,10 @@ public class Player extends Entity {
 			this.hitbox.maxY = 1.69f;
 		}
 	}
-	
-	
-	
+
+
+
+	@Override
 	public void render() {
 		super.render();
 		if (Gdx.input.isKeyPressed(Input.Keys.W)) {
@@ -407,16 +399,16 @@ public class Player extends Entity {
 		}
 		cam.render();
 	}
-	
+
 	@Override
 	public Vector3D getEyeLocation() {
 		return new Vector3D(pos.x, pos.y+camHeight, pos.z);
 	}
-	
+
 	public float getEyeHeight() {
 		return (float) (pos.y+camHeight);
 	}
-	
+
 	public float getYaw() {
 		return this.yaw;
     }
@@ -424,10 +416,10 @@ public class Player extends Entity {
     public float getPitch() {
     	return this.pitch;
     }
-    
+
     private int lastCursorX = Gdx.graphics.getWidth() / 2;
     private int lastCursorY = Gdx.graphics.getHeight() / 2;
-	
+
 	public void handleMM(int screenX, int screenY) {
 		if (chat.isOpened() || castedInv.isOpened) {
 			lastCursorX = screenX;
@@ -440,14 +432,14 @@ public class Player extends Entity {
 
         cam.cam.rotate(Vector3.Y,dx * mouseSensitivity);
         rotatePitch(dy * mouseSensitivity);
-        
+
         lastCursorX = screenX;
         lastCursorY = screenY;
-        
+
         pitch = MathUtils.atan2(cam.cam.direction.y, (float)Math.sqrt(cam.cam.direction.x * cam.cam.direction.x + cam.cam.direction.z * cam.cam.direction.z));
         yaw = MathUtils.atan2(cam.cam.direction.x, -cam.cam.direction.z);
 	}
-	
+
 	public void updateCamRotation() {
 		float directionX = -MathUtils.sin(yaw) * MathUtils.cos(pitch);
 		float directionY = -MathUtils.sin(pitch);
@@ -455,7 +447,7 @@ public class Player extends Entity {
 		cam.cam.direction.set(directionX, directionY, directionZ).nor();
 		cam.cam.update();
 	}
-	
+
 	@Override
 	public void setYaw(float yaw) {
 		super.setYaw(yaw);
@@ -463,7 +455,7 @@ public class Player extends Entity {
 			updateCamRotation();
 		}
 	}
-	
+
 	@Override
 	public void setPitch(float pitch) {
 		super.setPitch(pitch);
@@ -471,9 +463,9 @@ public class Player extends Entity {
 			updateCamRotation();
 		}
 	}
-	
+
 	private final Vector3 tmp = new Vector3();
-	
+
 	public void rotatePitch(float step){
         tmp.set(cam.cam.direction).crs(cam.cam.up).nor();
 
@@ -485,12 +477,12 @@ public class Player extends Entity {
         cam.cam.direction.rotate(tmp, step).nor();
         cam.cam.up.rotate(tmp, step).nor();
     }
-	
+
 	@Override
 	public int getType() {
 		return 1;
 	}
-	
+
 	//client only
 	public void onPacket(Packet p) {
 		if (p instanceof ServerChatPacket) {
@@ -509,7 +501,7 @@ public class Player extends Entity {
 			.chunks[packet.chunkPos.y];
 			c.setLightStorage(packet.light);
 			c.updateModel();//TODO сделать метод который будет обновлять не всю модель а только свет
-			
+
 		} else if (p instanceof ServerSetblockPacket) {
 			ServerSetblockPacket packet = (ServerSetblockPacket) p;
 			if (packet.author == ActionAuthor.player && packet.id == 0) {

@@ -1,12 +1,22 @@
 package de.datasecs.hydra.shared.protocol.packets;
 
-import de.datasecs.hydra.shared.serialization.IgnoreSerialization;
-import io.netty.buffer.ByteBuf;
-
-import java.io.*;
-import java.lang.reflect.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import de.datasecs.hydra.shared.serialization.IgnoreSerialization;
+import io.netty.buffer.ByteBuf;
 
 /**
  * Created with love by DataSecs on 29.09.2017.

@@ -8,9 +8,9 @@ import io.netty.buffer.ByteBuf;
 public class ClientCraftRequestPacket extends Packet {
 	public int recid;
 	public ClientCraftRequestPacket() {
-		
+
 	}
-	
+
 	public ClientCraftRequestPacket(int recid) {
 		this.recid = recid;
 	}
@@ -24,5 +24,5 @@ public class ClientCraftRequestPacket extends Packet {
 	public void write(ByteBuf byteBuf) {
 		this.writeInt(byteBuf, recid);
 	}
-	
+
 }

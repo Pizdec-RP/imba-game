@@ -6,25 +6,20 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.Map.Entry;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
-import com.badlogic.gdx.math.Vector3;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 
-import de.datasecs.hydra.server.Server;
 import de.datasecs.hydra.shared.handler.Session;
 import de.datasecs.hydra.shared.protocol.packets.Packet;
-import io.netty.channel.ChannelHandlerContext;
 import net.pzdcrp.Aselia.Hpb;
 import net.pzdcrp.Aselia.data.ActionAuthor;
 import net.pzdcrp.Aselia.data.Vector2I;
@@ -35,14 +30,12 @@ import net.pzdcrp.Aselia.multiplayer.packets.client.ClientPlayerConnectionPacket
 import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientPlayerLocationDataPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.ServerSuccessConnectPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.entity.ServerSpawnEntityPacket;
-import net.pzdcrp.Aselia.multiplayer.packets.server.inventory.ServerOpenInventoryPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.world.ServerChunkLightPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.world.ServerSetblockPacket;
 import net.pzdcrp.Aselia.player.Player;
 import net.pzdcrp.Aselia.utils.GameU;
 import net.pzdcrp.Aselia.utils.MathU;
 import net.pzdcrp.Aselia.utils.VectorU;
-import net.pzdcrp.Aselia.world.PlayerWorld;
 import net.pzdcrp.Aselia.world.World;
 import net.pzdcrp.Aselia.world.elements.Chunk;
 import net.pzdcrp.Aselia.world.elements.Column;
@@ -66,14 +59,14 @@ public class ServerWorld implements World {
 	private static final float DISTANCE_FROM_CENTER = 2000f;
 	private JsonObject worlddata;
 	private String save;
-	
+
 	/**
 	 * @param savefolder ("saves/save1" or "save1")
 	 */
 	public ServerWorld(String savefolder) {
 		this.save = savefolder;
 	}
-	
+
 	public void packetReceived(Session s, Packet p) {
 		if (!(p instanceof ClientPlayerLocationDataPacket)) {
 			GameU.log("server got packet "+p.getClass().getSimpleName());
@@ -121,7 +114,7 @@ public class ServerWorld implements World {
 		}
 		//TODO on ClientDisconnectPacket -> write position in worlddata.players
 	}
-	
+
 	public ServerPlayer getPlayerByName(String name) {
 		for (ServerPlayer p : players.values()) {
 			if (p.name.equals(name)) return p;
@@ -129,25 +122,25 @@ public class ServerWorld implements World {
 		GameU.end("unknown player");
 		return null;
 	}
-	
+
 	public void broadcast(String text) {
 		for (ServerPlayer player : players.values()) {
 			player.sendmsg(text);
 		}
 	}
-	
+
 	public Vector3D randomSpawnPoint() {
 		Vector3I pos = new Vector3I(MathU.rndi(-100, 100), 0, MathU.rndi(-100, 100));
-		
+
 		Column c = getColumn(VectorU.posToColumn(pos));
 		int nx = pos.x&15, nz = pos.z&15;
 		//GameU.log(nx+" - "+nz);
 		c.recalculateSLMD(nx,nz);
 		pos.y = c.getSLMD(nx,nz) + 1;
-		
+
 		return new Vector3D(pos.x,pos.y,pos.z);
 	}
-	
+
 	public void start() {
 		try {
 			JsonReader reader = new JsonReader(new FileReader(save+"/wdata.dat"));
@@ -171,23 +164,24 @@ public class ServerWorld implements World {
 		}, "server chunk update thread");
 		chunkUpdateThread.start();
 	}
-	
+
 	public int calculateSkylight(float abstracty) {
 	    return 13;
 	}
-	
+
 	final int minSkylight = 1;
     final int maxSkylight = 13;
     public int skylight = 13;
-	
+
+	@Override
 	public void tick() {
 		if (Hpb.exit) return;
 		time++;
 		if (time > DAY_LENGTH) time = 0;
-		
+
 		float angle = 2f * (float) Math.PI * time / DAY_LENGTH;
 		float y = (DISTANCE_FROM_CENTER * MathU.sin(angle)) * 2;
-	    
+
 	    //System.out.println("suny: "+y);
 	    int newSkylight = calculateSkylight(y);
 	    if (newSkylight != skylight) {
@@ -205,7 +199,7 @@ public class ServerWorld implements World {
 			column.getValue().tick();
 		}
 	}
-	
+
 	public Vector2I readPlayerPos(String name) {
 		for (JsonElement el : worlddata.get("players").getAsJsonArray()) {
 			JsonObject opl = el.getAsJsonObject();
@@ -215,7 +209,7 @@ public class ServerWorld implements World {
 		}
 		return null;
 	}
-	
+
 	@Override
 	public void broadcastByColumn(Vector2I pos, Packet p) {
 		for (ServerPlayer player : players.values()) {
@@ -224,7 +218,7 @@ public class ServerWorld implements World {
 			}
 		}
 	}
-	
+
 	public boolean isCycleFree = true;
 	public void updateChunkLights() {
 		for (Column col : loadedColumns.values()) {
@@ -252,7 +246,7 @@ public class ServerWorld implements World {
 		}
 		isCycleFree = true;
 	}
-	
+
 	static final int tickrate = 50;
 	public void startTickLoop() {
 		new Thread(() -> {
@@ -281,7 +275,7 @@ public class ServerWorld implements World {
 			Hpb.displayInfo("build limit reached");//TODO изменить на ServerInfoBarPacket
 			return false;
 		}
-		
+
 		if (author == ActionAuthor.player) {
 			for (Entry<Vector2I, Column> tcol : loadedColumns.entrySet()) {
 				for (Entity en : tcol.getValue().entites) {
@@ -289,7 +283,7 @@ public class ServerWorld implements World {
 				}
 			}
 		}
-		
+
 		Column col = getColumn(block.pos.x,block.pos.z);
 		col.setBlock(block);
 		//broadcastByColumn(col.pos, new ServerSetblockPacket(block.pos, block.getId(), author));
@@ -305,7 +299,7 @@ public class ServerWorld implements World {
 		}
 		return true;
 	}
-	
+
 	@Override
 	public void spawnEntity(Entity entity) {
 		Vector2I pos = VectorU.posToColumn(entity.pos);
@@ -379,7 +373,7 @@ public class ServerWorld implements World {
 		if (c == null) return new Voed(v);
 		return c;
 	}
-	
+
 	public void addLC(Column c) {
 		loadedColumns.put(c.pos, c);
 		if (DefaultWorldGenerator.toadd.containsKey(c.pos)) {
@@ -389,9 +383,10 @@ public class ServerWorld implements World {
     		DefaultWorldGenerator.toadd.remove(c.pos);
     	}
 	}
-	
+
+	private static final boolean saveit = false;
 	public boolean save() {
-		//return true;
+		if (!saveit) return true;
 		try {
 			Hpb.exit = true;
 			System.out.println("saving");
@@ -433,7 +428,7 @@ public class ServerWorld implements World {
 			return false;
 		}
 	}
-	
+
 	public Region genOrLoadRegion(Vector2I regpos) {
 		if (memoriedRegions.containsKey(regpos)) {
 			return memoriedRegions.get(regpos);
@@ -459,13 +454,13 @@ public class ServerWorld implements World {
 		memoriedRegions.put(regpos, reg);
 		return reg;
 	}
-	
+
 	public void writeRegion(Region reg) throws IOException {
 		FileWriter writer = new FileWriter(save+"/"+reg.pos.x+"_"+reg.pos.z+".reg");
 		writer.write(reg.toJson().toString());
 		writer.close();
 	}
-	
+
 	public Region readRegion(Vector2I regpos) {
 		JsonReader reader;
 		try {
@@ -495,7 +490,7 @@ public class ServerWorld implements World {
 
 	@Override
 	public List<Entity> getEntities(Vector3D pos, double radius) {
-		ArrayList<Entity> e = new ArrayList<Entity>();
+		ArrayList<Entity> e = new ArrayList<>();
 		for (Column column : loadedColumns.values()) {
 			for (Entity en : column.entites) {
 				if (VectorU.sqrt(en.pos, pos) <= radius) {
@@ -505,7 +500,7 @@ public class ServerWorld implements World {
 		}
 		return e;
 	}
-	
+
 	@Override
 	public boolean posDostupna(int x, int y, int z) {
 		if (y < 0 || y > maxheight-1) {
@@ -523,7 +518,7 @@ public class ServerWorld implements World {
 	public Column getWithoutLoad(Vector2I cc) {
 		return loadedColumns.get(cc);
 	}
-	
+
 	@Override
 	public Map<Vector2I, Column> getLoadedColumns() {
 		return this.loadedColumns;
@@ -539,7 +534,7 @@ public class ServerWorld implements World {
 		GameU.end("under construction");
 		return true;
 	}
-	
+
 	@Override
 	public Entity getEntity(int id) {
 		GameU.end("under construction");
@@ -613,7 +608,7 @@ public class ServerWorld implements World {
 
 	@Override
 	public List<Player> getPlayers(Vector3D pos, double radius) {
-		ArrayList<Player> e = new ArrayList<Player>();
+		ArrayList<Player> e = new ArrayList<>();
 		for (ServerPlayer spl : players.values()) {
 			Player entity = spl.playerEntity;
 			if (VectorU.sqrt(entity.getCenterPoint(), pos) <= radius) {

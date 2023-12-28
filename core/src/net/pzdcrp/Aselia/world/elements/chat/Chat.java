@@ -3,7 +3,6 @@ package net.pzdcrp.Aselia.world.elements.chat;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Color;
@@ -11,8 +10,6 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
-import com.badlogic.gdx.utils.Align;
-import com.badlogic.gdx.utils.Array;
 
 import net.pzdcrp.Aselia.Hpb;
 
@@ -33,19 +30,19 @@ public class Chat {
         this.table.setFillParent(true);
         this.messages = new LinkedList<>();
         this.font = Hpb.mutex.getFont(15);
-        
+
         TextField.TextFieldStyle style = new TextField.TextFieldStyle();
         style.font = this.font;
         style.fontColor = Color.WHITE;
         this.inputField = new TextField("", style);
-        
+
         Hpb.stage.addActor(this.table);
 	}
-	
+
 	public boolean isOpened() {
 		return this.opened;
 	}
-	
+
 	public void openChat() {
 		this.opened=true;
 		Hpb.multiplexer.addProcessor(lst);
@@ -65,7 +62,7 @@ public class Chat {
         this.table.row();
         this.table.add(message);
     }
-    
+
 	public void closeAndSend() {
 		System.out.println("closing");
 		addMessage(inputField.getText());
@@ -73,7 +70,7 @@ public class Chat {
 		inputField.setText("");
 		Hpb.multiplexer.removeProcessor(lst);
 	}
-	
+
 	public void close() {
 		System.out.println("closing");
 		opened = false;

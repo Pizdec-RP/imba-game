@@ -1,10 +1,10 @@
 package de.datasecs.hydra.shared.handler;
 
-import de.datasecs.hydra.shared.protocol.packets.Packet;
-import io.netty.channel.Channel;
-
 import java.io.Serializable;
 import java.net.SocketAddress;
+
+import de.datasecs.hydra.shared.protocol.packets.Packet;
+import io.netty.channel.Channel;
 
 /**
  * Created with love by DataSecs on 01.10.2017.

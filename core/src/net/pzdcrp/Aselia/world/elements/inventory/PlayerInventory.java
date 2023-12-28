@@ -11,7 +11,6 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
@@ -34,20 +33,19 @@ import net.pzdcrp.Aselia.utils.MathU;
 import net.pzdcrp.Aselia.utils.VectorU;
 import net.pzdcrp.Aselia.world.elements.entities.Entity;
 import net.pzdcrp.Aselia.world.elements.entities.ItemEntity;
-import net.pzdcrp.Aselia.world.elements.inventory.items.GlassItem;
 import net.pzdcrp.Aselia.world.elements.inventory.items.Item;
 import net.pzdcrp.Aselia.world.elements.inventory.items.NoItem;
 import net.pzdcrp.Aselia.world.elements.storages.ItemStorage;
 
 public class PlayerInventory implements IInventory {
-	private Map<Integer,Item> items = new ConcurrentHashMap<Integer,Item>();
+	private Map<Integer,Item> items = new ConcurrentHashMap<>();
 	public ItemStorage openedStorage; //link
 	private int chs = 0;//0-9
 	private Player owner;
 	public boolean isOpened = false;
 	public static final Item EMPTY = new NoItem();
 	public CraftBoard craftboard;
-	
+
 	public PlayerInventory(Player owner) {
 		for (int i = -1; i < 40; i++) {
 			items.put(i, EMPTY);
@@ -63,7 +61,7 @@ public class PlayerInventory implements IInventory {
 			onResize();
 		}
 	}
-	
+
 	/**client side*/
 	public void setSlotFromPacketOnClient(int index, Item item) {
 		if (index >= 60) {
@@ -72,7 +70,7 @@ public class PlayerInventory implements IInventory {
 			items.replace(index, item);
 		}
 	}
-	
+
 	/**server side*/
 	public void setSlotOnServer(int index, Item item) {
 		if (index >= 60) {
@@ -82,14 +80,10 @@ public class PlayerInventory implements IInventory {
 		}
 		owner.sendSelfPacket(new ServerSetSlotPacket(index, item));
 	}
-	
+
     @Override
 	public void onRClick() {
-    	if (owner.currentAimEntity != null) {
-    		//owner.currentAimEntity.onPlayerClick(owner);
-    		return;
-    	}
-		if (owner.currentAimBlock == null) return;
+    	if ((owner.currentAimEntity != null) || (owner.currentAimBlock == null)) return;
 		Vector3D clickedPos = VectorU.fromFace(
 				owner.currentAimBlock.pos,
 				owner.currentAimFace
@@ -100,11 +94,11 @@ public class PlayerInventory implements IInventory {
 			Hpb.session.send(new ClientPlaceBlockPacket(clickedPos, owner.currentAimFace));
 		}
 	}
-    
+
     public void onRClick(Vector3D pos, BlockFace face) {
     	getSlot(getCurrentSlotInt()).placeBlockAction(pos, face, owner);
     }
-    
+
     /**server side*/
     public void wasteHandItem() {
     	Item handitem = items.get(chs);
@@ -115,7 +109,7 @@ public class PlayerInventory implements IInventory {
     		setSlotOnServer(chs, handitem);
     	}
     }
-    
+
 	@Override
 	@Deprecated
 	public void onLClick() {
@@ -126,7 +120,7 @@ public class PlayerInventory implements IInventory {
 			Hpb.world.breakBlock(owner.currentAimBlock.pos);
 		}
 	}
-    
+
 	@Override
     public Item getSlot(int index) {
 		if (index >= 60) {
@@ -135,7 +129,7 @@ public class PlayerInventory implements IInventory {
 			return items.get(index);
 		}
     }
-	
+
 	public static BitmapFont font;
 	public static float fontheight;
 	public void displaySlot(int id, float x, float y, float width, float height) {
@@ -146,10 +140,10 @@ public class PlayerInventory implements IInventory {
         if (item.count == 1) return;
         font.draw(Hpb.spriteBatch, Integer.toString(item.count), x, y+fontheight);
 	}
-    
+
     public static final Texture slot = Hpb.mutex.getOTexture("slot");
     public static final Texture selectedSlot = Hpb.mutex.getOTexture("sslot");
-    public static float 
+    public static float
     		x = 0,
     		y = 30,
     		slotWidth = 64f,
@@ -170,11 +164,11 @@ public class PlayerInventory implements IInventory {
             displaySlot(i, slotX + spacing, slotY + spacing, slotWidth - spacing * 2, slotWidth - spacing * 2);
         }
     }
-    
+
     public int getCursoredSlot() {
     	int x = Gdx.input.getX();
 		int y = Gdx.graphics.getHeight() - Gdx.input.getY();
-		
+
     	int slot = 0;
     	boolean finded = false;
 		for (float[] pos : slotposmap) {
@@ -202,7 +196,7 @@ public class PlayerInventory implements IInventory {
 			return -2;
 		}
     }
-    
+
     public void onMouseClick(int x, int y, boolean down, int button) {
     	if (!isOpened) return;
     	y = Gdx.graphics.getHeight() - y;
@@ -234,7 +228,7 @@ public class PlayerInventory implements IInventory {
 		GameU.log("sent inv action slot: "+slot+" down: "+down+" button: "+button);
 		Hpb.session.send(new ClientInventoryActionPacket(slot, down, button));
     }
-    
+
     /**server side*/
     public void doActionByPacketOnServer(int slot, boolean down, int button) {
     	GameU.log("got inv action slot: "+slot+" down: "+down+" button: "+button);
@@ -345,8 +339,8 @@ public class PlayerInventory implements IInventory {
     		}
     	}
 	}
-    
-    
+
+
     List<float[]> slotposmap = new ArrayList<>();
     /**client side*/
     public void onResize() {
@@ -363,14 +357,14 @@ public class PlayerInventory implements IInventory {
             float slotY = fullinvyalign + insideAlignedHeightIndex * (slotWidth + spacing);
             slotposmap.add(new float[] {slotX, slotY, slotX+slotWidth, slotY+slotWidth});
     	}
-    	
+
         if (openedStorage != null) {
     		openedStorage.reloadBounds();
     	}
-        
+
         craftboard.onResize();
     }
-    
+
     private TextField currentText;
     private int marginx = 6, marginy = 3;
     public void renderItemInfobar(Item item, int x, int y) {
@@ -381,15 +375,15 @@ public class PlayerInventory implements IInventory {
     	}
     	float width = marginx * 2 + currentText.width;
     	float height = marginy * 2 + currentText.height;
-    	
+
     	Texture t = Hpb.mutex.getOTexture("hrzbtn");
-    	
+
     	Hpb.spriteBatch.draw(t, x-width, y-height, width, height);
     	currentText.render(Hpb.spriteBatch, x+marginx-width, y-marginy);
     }
-    
+
     //max slot index = 127
-    
+
     /**client side*/
     public void renderFull() {
     	if (openedStorage != null) {
@@ -403,7 +397,7 @@ public class PlayerInventory implements IInventory {
     		int insideAlignedHeightIndex = i / 10;
     		float slotX = x + insideAlignedIndex * (slotWidth + spacing);
             float slotY = fullinvyalign + insideAlignedHeightIndex * (slotWidth + spacing);
-            
+
             Hpb.spriteBatch.draw(slot, slotX, slotY, slotWidth, slotWidth);
             displaySlot(i, slotX + spacing, slotY + spacing, slotWidth - spacing * 2, slotWidth - spacing * 2);
     	}
@@ -418,7 +412,7 @@ public class PlayerInventory implements IInventory {
     		}
     	}
     }
-    
+
     public boolean canMerge(Item ifrom) {
     	Item avableitem = null;
     	int nearestempty = -2;
@@ -438,7 +432,7 @@ public class PlayerInventory implements IInventory {
     		return true;
     	}
     }
-    
+
     public boolean mergeFromItemEntity(Item ifrom) {
     	Item avableitem = null;
     	int avableslot = -2;
@@ -470,16 +464,16 @@ public class PlayerInventory implements IInventory {
     	}
     	return true;
     }
-    
+
     @Override
     public int getCurrentSlotInt() {
 		return chs;
 	}
-    
+
     public Item getHandItem() {
     	return items.get(chs);
     }
-    
+
     @Override
     public void setCurrentSlotInt(int i) {
     	if (owner.world.isLocal()) {
@@ -487,7 +481,7 @@ public class PlayerInventory implements IInventory {
     	}
     	chs = i;
 	}
-    
+
     public boolean correctSlot(int slot) {
     	if (items.containsKey(slot)) return true;
     	if (openedStorage != null) {
@@ -495,7 +489,7 @@ public class PlayerInventory implements IInventory {
     	}
     	return false;
     }
-    
+
     public int getEmptySlot() {
     	for (int i = 0; i < 40; i++) {
     		Item item = items.get(i);
@@ -503,7 +497,7 @@ public class PlayerInventory implements IInventory {
     	}
     	return -2;
     }
-    
+
     public void putInInventoryOrDrop(int slot) {
     	if ((slot >= 0 && slot < 40) || items.get(slot).id == 0) {
     		GameU.end("putInInventoryOrDrop called on wrong slot "+slot);
@@ -522,7 +516,7 @@ public class PlayerInventory implements IInventory {
     	entity.vel.y += 0.6 * Math.sin(owner.pitch);
     	owner.world.spawnEntity(entity);
     }
-    
+
     public void dropHandItem(boolean stack) {
     	if (items.get(chs).id == 0) return;
     	Item item;
@@ -543,10 +537,10 @@ public class PlayerInventory implements IInventory {
     	entity.vel.x += 0.6 * Math.sin(owner.yaw) * Math.cos(owner.pitch);
     	entity.vel.z += 0.6 * -Math.cos(owner.yaw) * Math.cos(owner.pitch);
     	entity.vel.y += 0.6 * Math.sin(owner.pitch);
-    	
+
     	owner.world.spawnEntity(entity);
     }
-    
+
     @Override
     /**server side*/
     public void dropAllItems() {
@@ -574,7 +568,7 @@ public class PlayerInventory implements IInventory {
 			Hpb.session.send(new ClientOpenPlayerInventoryPacket());
 			Gdx.input.setCursorCatched(false);
 	}
-	
+
 	/**both side*/
 	public void open(ItemStorage is) {
 		if (isOpened) {
@@ -590,7 +584,7 @@ public class PlayerInventory implements IInventory {
 		}
 	}
 
-	
+
 	/**both side*/
 	public void close() {
 		this.isOpened = false;
@@ -607,7 +601,7 @@ public class PlayerInventory implements IInventory {
 		}
 		openedStorage = null;
 	}
-	
+
 	public JsonElement toJson() {
 		JsonObject jinv = new JsonObject();
 		String items = "";
@@ -633,12 +627,12 @@ public class PlayerInventory implements IInventory {
 			}
 		}
 	}
-	
+
 	/**client side*/
 	public Map<Integer, Item> getItems() {
 		return items;
 	}
-	
+
 	/**client side*/
 	public void setItems(Map<Integer, Item> items) {
 		this.items = items;//overwrite

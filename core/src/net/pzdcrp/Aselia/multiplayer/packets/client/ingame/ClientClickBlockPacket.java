@@ -9,7 +9,7 @@ import net.pzdcrp.Aselia.data.Vector3D;
 public class ClientClickBlockPacket extends Packet {
 	public Vector3D pos;
 	public ClientClickBlockPacket() {
-		
+
 	}
 
 	public ClientClickBlockPacket(Vector3D pos) {

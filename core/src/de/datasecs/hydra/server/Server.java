@@ -1,5 +1,8 @@
 package de.datasecs.hydra.server;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import de.datasecs.hydra.shared.handler.listener.HydraSessionListener;
 import de.datasecs.hydra.shared.initializer.HydraChannelInitializer;
 import de.datasecs.hydra.shared.protocol.HydraProtocol;
@@ -13,9 +16,6 @@ import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.AttributeKey;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Created with love by DataSecs on 29.11.17

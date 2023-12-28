@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.pzdcrp.Aselia.Hpb;
-import net.pzdcrp.Aselia.world.PlayerWorld;
+import net.pzdcrp.Aselia.world.World;
 import net.pzdcrp.Aselia.world.elements.Chunk;
 import net.pzdcrp.Aselia.world.elements.Column;
 
@@ -12,26 +12,26 @@ public class Vector3I {
 	public int x,y,z;
 	public Vector3I(int x, int y, int z) {
 		this.x = x;
-		this.y = y; 
+		this.y = y;
 		this.z = z;
 	}
-	
+
 	public Vector3I() {
 		this.x = 0;
-		this.y = 0; 
+		this.y = 0;
 		this.z = 0;
 	}
-	
+
 	public Vector3I(Vector3D pos) {
 		this.x = (int)pos.x;
-		this.y = (int)pos.y; 
+		this.y = (int)pos.y;
 		this.z = (int)pos.z;
 	}
-	
+
 	public Vector3I addd(int x, int y, int z) {
 		return new Vector3I(this.x + x, this.y + y, this.z + z);
 	}
-	
+
 	@Override
 	public boolean equals(Object anObject) {
 		if (anObject instanceof Vector3I) {
@@ -41,7 +41,7 @@ public class Vector3I {
 			return false;
 		}
 	}
-	
+
 	@Override
 	public int hashCode() {
 		int hash = 7;
@@ -50,9 +50,9 @@ public class Vector3I {
 		hash = 31 * hash + z;
 		return hash;
 	}
-	
+
 	public List<Vector3I> sides() {
-		List<Vector3I> sides = new ArrayList<Vector3I>() {{
+		List<Vector3I> sides = new ArrayList<>() {{
 			add(addd(1, 0, 0));
 			add(addd(0, 0, 1));
 			add(addd(-1, 0, 0));
@@ -67,7 +67,7 @@ public class Vector3I {
 		List<Chunk> chunks = new ArrayList<>();
 		Chunk thiss = Hpb.world.getColumn(x, z).chunks[y/16];
 		for (Vector3I side : sides()) {
-			if (side.y >= PlayerWorld.maxheight) continue;
+			if (side.y >= World.maxheight) continue;
 			Column col = Hpb.world.loadedColumns.get(new Vector2I(x >> 4, z >> 4));
 			if (col == null) continue;
 			Chunk c = Hpb.world.getColumn(side.x, side.z).chunks[side.y/16];
@@ -75,12 +75,12 @@ public class Vector3I {
 		}
 		return chunks;
 	}
-	
+
 	@Override
 	public String toString() {
 		return "Vec3I [x:"+x+" y:"+y+" z:"+z+"]";
 	}
-	
+
 	public static Vector3D fromString(String s) {
 		if (s.startsWith("Vec3I [") && s.endsWith("]")) {
 			s = s.replace("Vec3I [", "");

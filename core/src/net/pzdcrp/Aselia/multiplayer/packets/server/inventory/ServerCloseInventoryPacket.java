@@ -7,7 +7,7 @@ import io.netty.buffer.ByteBuf;
 @PacketId(25)
 public class ServerCloseInventoryPacket extends Packet {
 	public ServerCloseInventoryPacket() {
-		
+
 	}
 
 	@Override

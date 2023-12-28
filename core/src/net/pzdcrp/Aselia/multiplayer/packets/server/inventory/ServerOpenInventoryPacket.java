@@ -14,7 +14,7 @@ public class ServerOpenInventoryPacket extends Packet {
 	public byte id;
 	public Map<Integer, Item> items;
 	public ServerOpenInventoryPacket() {}
-	
+
 	public ServerOpenInventoryPacket(byte id, Map<Integer, Item> items) {
 		this.id = id;
 		this.items = items;
@@ -23,7 +23,7 @@ public class ServerOpenInventoryPacket extends Packet {
 	@Override
 	public void read(ByteBuf byteBuf) {
 		id = byteBuf.readByte();
-		
+
 		byte length = byteBuf.readByte();
 		items = new HashMap<>();
 		for (byte i = 0; i < length; i++) {
@@ -38,7 +38,7 @@ public class ServerOpenInventoryPacket extends Packet {
 	@Override
 	public void write(ByteBuf byteBuf) {
 		byteBuf.writeByte(id);
-		
+
 		byteBuf.writeByte((byte) items.size());
 		for (Entry<Integer, Item> item : items.entrySet()) {
 			byteBuf.writeByte(item.getKey().byteValue());

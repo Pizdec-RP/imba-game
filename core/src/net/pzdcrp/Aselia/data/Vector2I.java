@@ -1,18 +1,17 @@
 package net.pzdcrp.Aselia.data;
 
 import net.pzdcrp.Aselia.Hpb;
-import net.pzdcrp.Aselia.world.PlayerWorld;
 
 public class Vector2I {
 	public final int x;
 	public final int z;
 	public boolean updated = false;
-	
+
 	public Vector2I(int columnX, int columnZ) {
 		this.x = columnX;
 		this.z = columnZ;
 	}
-	
+
 	public Vector2I(double entityX, double entityZ) {
 		this.x = (int)Math.floor(entityX) >> 4;
 		this.z = (int)Math.floor(entityZ) >> 4;
@@ -25,11 +24,11 @@ public class Vector2I {
 	public int getcolumnZ() {
 		return z;
 	}
-	
+
 	public Vector3D toVec() {
 		return new Vector3D(x*16+16/2,Hpb.world.player.pos.y,z*16+16/2);
 	}
-	
+
 	@Override
 	public int hashCode() {
 		int hash = 7;
@@ -37,7 +36,7 @@ public class Vector2I {
 		hash = 31 * hash + z;
 		return hash;
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		if (!(obj instanceof Vector2I)) {
@@ -50,12 +49,12 @@ public class Vector2I {
 			return false;
 		}
 	}
-	
+
 	@Override
 	public String toString() {
 		return "CC[ x:"+x+", z:"+z+"]";
 	}
-	
+
 	public static Vector2I fromString(String s) {
 		if (s.startsWith("CC[ x:") && s.endsWith("]")) {
 			int x = 0;

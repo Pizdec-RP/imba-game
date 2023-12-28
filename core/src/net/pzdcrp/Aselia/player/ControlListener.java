@@ -165,13 +165,13 @@ public class ControlListener implements InputProcessor {
 			CraftBoard.scroll(ay);
 			return true;
 		}
-		
+
 		int cur = p.castedInv.getCurrentSlotInt();
 		cur+=ay;
-		
+
 		if (cur > 9) cur = 0;
 		else if (cur < 0) cur = 9;
-		
+
 		p.castedInv.setCurrentSlotInt(cur);
 		return true;
 	}

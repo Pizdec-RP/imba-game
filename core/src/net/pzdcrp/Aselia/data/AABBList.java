@@ -6,18 +6,18 @@ public class AABBList {
 	public AABBList(AABB... list) {
 		this.list = list;
 	}
-	
+
 	public AABB[] get() {
 		return list;
 	}
-	
+
 	public boolean collide(AABB other) {
 		for (AABB aabb : list) {
 			if (aabb.collide(other)) return true;
 		}
 		return false;
 	}
-	
+
 	public boolean collide(AABBList other) {
 		for (AABB aabb : list) {
 			for (AABB oaabb : other.get())

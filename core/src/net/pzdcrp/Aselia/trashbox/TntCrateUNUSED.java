@@ -1,27 +1,5 @@
 package net.pzdcrp.Aselia.trashbox;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
-
-import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
-import com.badlogic.gdx.math.Vector3;
-
-import net.pzdcrp.Aselia.Hpb;
-import net.pzdcrp.Aselia.data.ActionAuthor;
-import net.pzdcrp.Aselia.data.BlockFace;
-import net.pzdcrp.Aselia.data.BlockModelBuilder;
-import net.pzdcrp.Aselia.data.Vector3D;
-import net.pzdcrp.Aselia.data.MBIM.offset;
-import net.pzdcrp.Aselia.extended.SexyMeshBuilder;
-import net.pzdcrp.Aselia.player.Player;
-import net.pzdcrp.Aselia.utils.MathU;
-import net.pzdcrp.Aselia.utils.ModelUtils;
-import net.pzdcrp.Aselia.utils.VectorU;
-import net.pzdcrp.Aselia.world.elements.Particle;
-import net.pzdcrp.Aselia.world.elements.blocks.Block.BlockType;
-import net.pzdcrp.Aselia.world.elements.entities.Entity;
-
 public class TntCrateUNUSED /*extends Block*/ {
 	/*
 	public static String tname = "tntcrate";
@@ -31,7 +9,7 @@ public class TntCrateUNUSED /*extends Block*/ {
 	public TntCrate(Vector3D pos) {
 		super(pos,tname);
 	}
-	
+
 	@Override
 	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, BlockModelBuilder mbim) {
 		if (!py || !ny || !nx || !px || !nz || !pz) {
@@ -56,17 +34,17 @@ public class TntCrateUNUSED /*extends Block*/ {
 		    if (!ny) ModelUtils.buildBottomX(a);//NY
 		}
 	}
-	
+
 	@Override
 	public BlockType getType() {
 		return BlockType.solid;
 	}
-	
+
 	@Override
 	public Block clone(Vector3D poss) {
 		return new TntCrate(poss);
 	}
-	
+
 	private boolean fired = false;
 	private int timer = 90;//ticks
 	@Override
@@ -81,7 +59,7 @@ public class TntCrateUNUSED /*extends Block*/ {
 		world.setBlock(new Air(this.pos), ActionAuthor.world);
 		explode();
 	}
-	
+
 	@Override
 	public boolean onClick(Entity actor) {
 		if (actor instanceof Player) {
@@ -97,17 +75,17 @@ public class TntCrateUNUSED /*extends Block*/ {
 			return false;
 		}
 	}
-	
+
 	@Override
 	public boolean tickable() {
 		return fired;
 	}
-	
+
 	public void explode() {
 		List<Vector3D> affectedBlocks = new ArrayList<>();
 		Vector3D vector = new Vector3D(0, 0, 0);
         Vector3D vBlock = new Vector3D(0, 0, 0);
-        
+
 		int mRays = rays - 1;
         for (int i = 0; i < rays; ++i) {
             for (int j = 0; j < rays; ++j) {
@@ -148,7 +126,7 @@ public class TntCrateUNUSED /*extends Block*/ {
                 }
             }
         }
-        
+
         for (Vector3D block : affectedBlocks) {
         	Block b = world.getBlock(block);
         	if (b instanceof TntCrate) {
@@ -169,7 +147,7 @@ public class TntCrateUNUSED /*extends Block*/ {
         	e.vel.add(t);
         }*/
 	/*}
-	
+
 	@Override
 	public float getResistance() {
 		return 0.1f;

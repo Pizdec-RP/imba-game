@@ -7,9 +7,9 @@ import io.netty.buffer.ByteBuf;
 public class ServerEntityDespawnPacket extends Packet {
 	public int lid;
 	public ServerEntityDespawnPacket() {
-		
+
 	}
-	
+
 	public ServerEntityDespawnPacket(int lid) {
 		this.lid=lid;
 	}

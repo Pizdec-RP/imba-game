@@ -16,7 +16,11 @@ import net.pzdcrp.Aselia.data.TextField;
 import net.pzdcrp.Aselia.multiplayer.packets.client.inventory.ClientCraftRequestPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.ingame.ServerNotificationPacket;
 import net.pzdcrp.Aselia.utils.GameU;
-import net.pzdcrp.Aselia.world.elements.inventory.items.*;
+import net.pzdcrp.Aselia.world.elements.inventory.items.CrateItem;
+import net.pzdcrp.Aselia.world.elements.inventory.items.Item;
+import net.pzdcrp.Aselia.world.elements.inventory.items.NoItem;
+import net.pzdcrp.Aselia.world.elements.inventory.items.OakLogItem;
+import net.pzdcrp.Aselia.world.elements.inventory.items.PlanksItem;
 
 public class CraftBoard {
 	static int ri = 0;//im lazy. i just want to copy/paste code
@@ -28,16 +32,16 @@ public class CraftBoard {
 	private Texture background;
 	private float insideAlignedHeightIndex = 0, xPosOfRecipeInfo = 0, width = 0, height = 0, recipeInfoWidth = 0;
 	PlayerInventory host;
-	
-	
+
+
 	public CraftBoard(PlayerInventory host) {
 		this.host = host;
 	}
-	
+
 	public void onResize() {
 		needupdate = true;
 	}
-	
+
 	List<float[]> slotposmap = new ArrayList<>();
 	private void onResizeP() {
 		recname = new TextField(PlayerInventory.font);
@@ -50,12 +54,12 @@ public class CraftBoard {
 		pmp.fillRectangle(pmp.getWidth()-1, 0, 1, pmp.getHeight());
 		pmp.fillRectangle(0, pmp.getHeight()-1, pmp.getWidth(), 1);
 		background = new Texture(pmp);
-		
+
 		insideAlignedHeightIndex = PlayerInventory.fullinvyalign + 4 * (PlayerInventory.slotWidth + PlayerInventory.spacing) + PlayerInventory.spacing;
 		xPosOfRecipeInfo = PlayerInventory.x + swidth * (PlayerInventory.slotWidth + PlayerInventory.spacing);
 		recipeInfoWidth = PlayerInventory.x+width-xPosOfRecipeInfo;
 	}
-	
+
 	public void displaySlot(Item item, float x, float y) {
 		if (item instanceof NoItem) return;
 		Texture t = item.getTexture();
@@ -63,14 +67,14 @@ public class CraftBoard {
         if (item.count == 1) return;
         PlayerInventory.font.draw(Hpb.spriteBatch, Integer.toString(item.count), x, y+PlayerInventory.fontheight);
 	}
-	
+
 	public static void scroll(float ay) {
 		if (scrolled == 0 && ay <= 0) scrolled = 0;
 		else {
 			scrolled += ay;
 		}
 	}
-	
+
 	private static int layers = 5, swidth = 5, all = layers * swidth, scrolled = 0;
 	private TextField recname;
 	public void render() {
@@ -82,7 +86,7 @@ public class CraftBoard {
 		Hpb.spriteBatch.draw(Hpb.backgroundOfEverything, xPosOfRecipeInfo, insideAlignedHeightIndex, recipeInfoWidth, height);
 		int curwidth = 0;
 		int curlayer = 0;
-		
+
 		for (int i = scrolled*swidth; i < all; i++) {
 			if (x22.size() <= i) continue;
 			Recipe rec = x22.get(i);
@@ -92,10 +96,10 @@ public class CraftBoard {
 				curlayer++;
 				if (curlayer >= layers) break;
 			}
-			
+
 			float x = PlayerInventory.x + curwidth * (PlayerInventory.slotWidth + PlayerInventory.spacing);
 			float y = insideAlignedHeightIndex + PlayerInventory.spacing + (curlayer * (PlayerInventory.slotWidth + PlayerInventory.spacing));
-			
+
 			Hpb.spriteBatch.draw(PlayerInventory.slot, x, y, PlayerInventory.slotWidth, PlayerInventory.slotWidth);
 			displaySlot(rec.result, x,y);
 			curwidth++;
@@ -114,13 +118,13 @@ public class CraftBoard {
 				recname.setText(rec.result.getName());
 				recname.render(Hpb.spriteBatch, xPosOfRecipeInfo+10, w);
 				w -= recname.height;
-				
+
 				recname.setText("Needs:");
 				recname.render(Hpb.spriteBatch, xPosOfRecipeInfo+10, w-10);
 				w -= recname.height - 10;
-				
+
 				y = w - PlayerInventory.slotWidth - 25;
-				
+
 				int xx = 0;
 				for (Item item : rec.need) {
 					//Hpb.spriteBatch.draw(Hpb.mutex.getOTexture("sun"), xPosOfRecipeInfo+(xx*PlayerInventory.slotWidth+10), y, PlayerInventory.slotWidth, PlayerInventory.slotWidth);
@@ -129,16 +133,16 @@ public class CraftBoard {
 				}
 			}
 		}
-		
+
 		/*if (underCursor != null) {
 			//TODO
 			GameU.log("uc");
 			recname.setText(underCursor.result.getName());
 			recname.render(Hpb.spriteBatch, recipeInfoWidth, insideAlignedHeightIndex);
 		}*/
-		
+
 	}
-	
+
 	private int cx, cy, button;
 	private boolean upd = false;
 	//by click
@@ -148,7 +152,7 @@ public class CraftBoard {
 		this.button = button;
 		upd = true;
 	}
-	
+
 	//by packet
 	public void onActionOnServer(int recid) {
 		for (Recipe rec : x22) {
@@ -172,7 +176,7 @@ public class CraftBoard {
 					int neednow = needitem.count;
 					for (int index = 0; index < 40; index++) {
 						Item i = host.getSlot(index);
-						
+
 						if (i.id == needitem.id) {//айди сходятся
 							if (i.count > neednow) {//есть больше чем нужно
 								futureslots.put(index, i.clone(i.count-neednow));

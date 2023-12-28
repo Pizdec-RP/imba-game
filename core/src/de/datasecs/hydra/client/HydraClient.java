@@ -1,5 +1,8 @@
 package de.datasecs.hydra.client;
 
+import java.io.Serializable;
+import java.net.SocketAddress;
+
 import de.datasecs.hydra.shared.handler.HydraSession;
 import de.datasecs.hydra.shared.handler.Session;
 import de.datasecs.hydra.shared.initializer.HydraChannelInitializer;
@@ -8,9 +11,6 @@ import de.datasecs.hydra.shared.protocol.packets.Packet;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
-
-import java.io.Serializable;
-import java.net.SocketAddress;
 
 /**
  * Created with love by DataSecs on 29.09.2017.

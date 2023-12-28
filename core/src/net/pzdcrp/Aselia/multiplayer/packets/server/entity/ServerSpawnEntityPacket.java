@@ -12,11 +12,11 @@ import net.pzdcrp.Aselia.world.elements.entities.Entity;
 
 @PacketId(12)
 public class ServerSpawnEntityPacket extends Packet {
-	
+
 	public Entity entity;
-	
+
 	public ServerSpawnEntityPacket() {
-		
+
 	}
 
 	public ServerSpawnEntityPacket(Entity entity) {
@@ -32,7 +32,7 @@ public class ServerSpawnEntityPacket extends Packet {
 		ObjectData data = null;
 		if (id == 2) {//item entity
 			data = new ItemEntityData();
-		}// default entity, no slots entity 
+		}// default entity, no slots entity
 		else {
 			GameU.end("unregistered objectdata");
 		}

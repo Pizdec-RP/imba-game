@@ -7,21 +7,21 @@ import net.pzdcrp.Aselia.data.Vector3D;
 
 @PacketId(4)
 public class ServerSpawnPlayerPacket extends Packet {
-	
+
 	public double x,y,z;
 	public int lid;
 
 	public ServerSpawnPlayerPacket() {
-		
+
 	}
-	
+
 	public ServerSpawnPlayerPacket(double x, double y, double z, int lid) {
 		this.x=x;
 		this.y=y;
 		this.z=z;
 		this.lid = lid;
 	}
-	
+
 	public ServerSpawnPlayerPacket(Vector3D pos, int lid) {
 		this.x=pos.x;
 		this.y=pos.y;

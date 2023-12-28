@@ -1,31 +1,13 @@
 package net.pzdcrp.Aselia.trashbox;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
-import com.google.gson.JsonObject;
-
-import net.pzdcrp.Aselia.Hpb;
-import net.pzdcrp.Aselia.data.AABB;
-import net.pzdcrp.Aselia.data.BlockModelBuilder;
-import net.pzdcrp.Aselia.data.DM;
-import net.pzdcrp.Aselia.data.Vector3D;
-import net.pzdcrp.Aselia.data.MBIM.offset;
-import net.pzdcrp.Aselia.extended.SexyMeshBuilder;
-import net.pzdcrp.Aselia.utils.ModelUtils;
-
 public class WaterUNUSED /*extends Liquifyable*/ {
 	/*
 	public static String tname = "water";
-	
+
 	public Water(Vector3D pos, int liquidLevel) {
 		super(pos, tname, liquidLevel);
 	}
-	
+
 	int beforell = this.ll;
 	public boolean ableToTick = true;
 	private int tickcd = 20;
@@ -57,7 +39,7 @@ public class WaterUNUSED /*extends Liquifyable*/ {
 				for (Block temp : var) {
 					if (temp instanceof Water) {
 						Water tw = (Water) temp;
-						if (tw.ll == (this.ll+1)) {//источник найден и он на 1 лвл больше этого блока 
+						if (tw.ll == (this.ll+1)) {//источник найден и он на 1 лвл больше этого блока
 							b0 = true;
 							//ableToTick=false;//он должен растечься в этом тике а в следующем стать неактивным
 						} else if (tw.ll > (this.ll+1)) {//если лвл гораздо больше то сглаживаем этот блок относительно источника
@@ -110,12 +92,12 @@ public class WaterUNUSED /*extends Liquifyable*/ {
 			ableToTick=false;
 		}
 	}
-	
+
 	@Override
 	public void onNeighUpdate() {
 		this.ableToTick = true;
 	}
-	
+
 	@Override
 	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, BlockModelBuilder mbim) {
 		SexyMeshBuilder a = mbim.obtain(pos, this.isTransparent());
@@ -123,12 +105,12 @@ public class WaterUNUSED /*extends Liquifyable*/ {
 		float h = heightMap.get(ll).floatValue();
 		Hpb.mutex.hookuvr(a, tname, 0, 0, 1, 1);
 		Block temp;
-		
+
 		if (!ny) {
 			mbim.setCuroffset(offset.ny);
 			ModelUtils.buildBottomX(a);
 		}
-		
+
 		temp = world.getBlock(new Vector3D(pos.x,pos.y+1,pos.z));
 		if ((temp instanceof Water && ll != 4) || !py) {
 			if (h==1.0f) {
@@ -165,7 +147,7 @@ public class WaterUNUSED /*extends Liquifyable*/ {
 		        -1, 0, 0);
 			}
 		}
-		
+
 		temp = world.getBlock(new Vector3D(pos.x+1,pos.y,pos.z));
 		if (!px) {
 			mbim.setCuroffset(offset.px);
@@ -187,7 +169,7 @@ public class WaterUNUSED /*extends Liquifyable*/ {
 		         1, 0, 0);
 			}
 		}
-		
+
 		temp = world.getBlock(new Vector3D(pos.x,pos.y,pos.z-1));
 		if (!nz) {
 			mbim.setCuroffset(offset.nz);
@@ -209,7 +191,7 @@ public class WaterUNUSED /*extends Liquifyable*/ {
 		        0, 0, -1);
 			}
 		}
-		
+
 		temp = world.getBlock(new Vector3D(pos.x,pos.y,pos.z+1));
 		if (!pz) {
 			mbim.setCuroffset(offset.pz);
@@ -232,27 +214,27 @@ public class WaterUNUSED /*extends Liquifyable*/ {
 			}
 		}
 	}
-	
+
 	@Override
 	public Block clone(Vector3D poss) {
 		return new Water(poss,ll);
 	}
-	
+
 	@Override
 	public boolean isTransparent() {
 		return true;
 	}
-	
+
 	@Override
 	public BlockType getType() {
 		return BlockType.transparent;
 	}
-	
+
 	@Override
 	public boolean tickable() {
 		return ableToTick;
 	}
-	
+
 	@Override
 	public boolean equals(Object block) {
 		if (block instanceof Block) {
@@ -261,7 +243,7 @@ public class WaterUNUSED /*extends Liquifyable*/ {
 		}
 		return false;
 	}
-	
+
 	@Override
 	public JsonObject toJson() {
 		if (!ableToTick) return null;
@@ -270,7 +252,7 @@ public class WaterUNUSED /*extends Liquifyable*/ {
 		j.addProperty("a", this.ableToTick);
 		return j;
 	}
-	
+
 	@Override
 	public void fromJson(JsonObject data) {
 		this.ableToTick = data.get("a").getAsBoolean();

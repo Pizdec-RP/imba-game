@@ -4,7 +4,7 @@ import net.pzdcrp.Aselia.utils.GameU;
 
 public enum BlockFace {
 	PX,PY,PZ,NX,NY,NZ;
-	
+
 	public static BlockFace fromByte(byte b) {
 		switch (b) {
 			case 0:
@@ -24,7 +24,7 @@ public enum BlockFace {
 				return null;
 		}
 	}
-	
+
 	public static byte toByte(BlockFace a) {
 		switch (a) {
 			case PX:

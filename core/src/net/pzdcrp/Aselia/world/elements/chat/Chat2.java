@@ -1,10 +1,8 @@
 package net.pzdcrp.Aselia.world.elements.chat;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -12,7 +10,6 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 
 import net.pzdcrp.Aselia.Hpb;
 import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientChatPacket;
-import net.pzdcrp.Aselia.utils.GameU;
 
 public class Chat2 {
 	private List<Message> messages = new CopyOnWriteArrayList<>();
@@ -21,13 +18,13 @@ public class Chat2 {
 	private boolean isOpened = false;
 	public String inputField = "";
 	private InputProcessor lst;
-	
+
 	public Chat2() {
 		glyph = new GlyphLayout();
 		font = Hpb.mutex.getFont(25);
 		lst = new TypeListener2(this);
 	}
-	
+
 	public static float
 		x = 0, frameHeight = 200;
 	public void render(int halfwidth, int halfheight) {
@@ -43,15 +40,15 @@ public class Chat2 {
 			i++;
 		}
 	}
-	
+
 	public void debug(String text) {
 		send("[debug] "+text);
 	}
-	
+
 	public void fromServer(String text) {
 		messages.add(0, new Message(glyph, text, font));
 	}
-	
+
 	public void send(String text) {
 		if (text.length() <= 1) return;
 		Hpb.session.send(new ClientChatPacket(text.substring(1)));
@@ -63,11 +60,11 @@ public class Chat2 {
 		inputField = "";
 		close();
 	}
-	
+
 	public boolean isOpened() {
 		return isOpened;
 	}
-	
+
 	public void openChat() {
 		isOpened = true;
 		Hpb.multiplexer.addProcessor(0, lst);
@@ -77,7 +74,7 @@ public class Chat2 {
 		isOpened = false;
 		Hpb.multiplexer.removeProcessor(lst);
 	}
-	
+
 }
 
 class TypeListener2 implements InputProcessor {

@@ -2,8 +2,6 @@ package net.pzdcrp.Aselia.utils;
 
 import java.util.List;
 
-import net.pzdcrp.Aselia.player.Player;
-
 public class GameU {
 	public static boolean debug = true;
 	public static void sleep(long ms) {
@@ -13,7 +11,7 @@ public class GameU {
         	e.printStackTrace();
         }
     }
-	
+
 	public static void tracer() {
 		int i = 0;
 		System.out.println("tracing from thread: "+Thread.currentThread().getName());
@@ -24,13 +22,13 @@ public class GameU {
 		    i++;
 		}
 	}
-	
+
 	public static void end(String msg) {
 		System.out.println(msg+"\n    \\|/");
 		tracer();
 		System.exit(0);
 	}
-	
+
 	public static <T> void arrayPrint(T[] arr) {
 		String s = "";
 		for (T element : arr) {
@@ -38,7 +36,7 @@ public class GameU {
 		}
 		System.out.println(s);
 	}
-	
+
 	public static <T> void arrayPrint(String s, T[] arr) {
 		System.out.print(s);
 		for (T element : arr) {
@@ -46,20 +44,20 @@ public class GameU {
 		}
 		System.out.println();
 	}
-	
+
 	public static void log(Object o) {
 		System.out.println(o.toString());
 	}
-	
+
 	public static void log(String s) {
 		System.out.println(s);
 	}
-	
+
 	public static void d(Object o) {
 		if (debug)
 			System.out.println(o.toString());
 	}
-	
+
 	public static void d(String s) {
 		if (debug)
 			System.out.println(s);
@@ -68,7 +66,7 @@ public class GameU {
 	public static void err(String s) {
 		System.err.println(s);
 	}
-	
+
 	public static void err(int s) {
 		System.err.println(s);
 	}

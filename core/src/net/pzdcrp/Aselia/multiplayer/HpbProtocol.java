@@ -32,7 +32,6 @@ import net.pzdcrp.Aselia.multiplayer.packets.server.world.ServerChunkLightPacket
 import net.pzdcrp.Aselia.multiplayer.packets.server.world.ServerLoadColumnPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.world.ServerSetblockPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.world.ServerUnloadColumnPacket;
-import net.pzdcrp.Aselia.server.InternalServer;
 
 public class HpbProtocol extends HydraProtocol {
 	public HpbProtocol(HydraPacketListener l) {

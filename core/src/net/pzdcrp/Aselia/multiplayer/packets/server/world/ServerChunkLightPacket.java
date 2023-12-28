@@ -5,16 +5,15 @@ import de.datasecs.hydra.shared.protocol.packets.PacketId;
 import io.netty.buffer.ByteBuf;
 import net.pzdcrp.Aselia.data.BitStorage;
 import net.pzdcrp.Aselia.data.Vector3I;
-import net.pzdcrp.Aselia.utils.GameU;
 import net.pzdcrp.Aselia.world.elements.Chunk;
 
 @PacketId(9)
 public class ServerChunkLightPacket extends Packet {
 	public BitStorage light;
 	public Vector3I chunkPos;
-	
+
 	public ServerChunkLightPacket() {}
-	
+
 	public ServerChunkLightPacket(BitStorage light, Vector3I pos) {
 		this.light = light;
 		this.chunkPos = pos;
@@ -34,7 +33,7 @@ public class ServerChunkLightPacket extends Packet {
 	            }
 	        }
 	    }
-		
+
 	}
 
 	@Override

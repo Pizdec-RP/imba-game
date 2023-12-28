@@ -3,16 +3,6 @@ package net.pzdcrp.Aselia.data;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.VertexAttributes.Usage;
-import com.badlogic.gdx.graphics.g3d.Material;
-import com.badlogic.gdx.graphics.g3d.Model;
-import com.badlogic.gdx.graphics.g3d.ModelInstance;
-import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
-import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
-import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
-import com.badlogic.gdx.graphics.g3d.utils.shapebuilders.BoxShapeBuilder;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 
@@ -27,11 +17,12 @@ public class AABB {
 	    this.maxY = y1;
 	    this.maxZ = z1;
 	}
-	
+
+	@Override
 	public AABB clone() {
 	    return new AABB(this.minX, this.minY, this.minZ, this.maxX, this.maxY, this.maxZ);
 	}
-	
+
 	public AABB floor() {
 	    this.minX = Math.floor(this.minX);
 	    this.minY = Math.floor(this.minY);
@@ -41,26 +32,26 @@ public class AABB {
 	    this.maxZ = Math.floor(this.maxZ);
 	    return this;
 	}
-	
+
 	public AABB grow(double x, double y, double z) {
         return new AABB(this.getMinX() - x, this.getMinY() - y, this.getMinZ() - z, this.getMaxX() + x, this.getMaxY() + y, this.getMaxZ() + z);
     }
-	
+
 	public List<Vector3D> getCorners() {
 		List<Vector3D> c = new ArrayList<>();
-		
+
 		c.add(new Vector3D(minX,minY,minZ));
 		c.add(new Vector3D(minX,maxY,minZ));
 		c.add(new Vector3D(minX,minY,maxZ));
 		c.add(new Vector3D(minX,maxY,maxZ));
-		
+
 		c.add(new Vector3D(maxX,minY,minZ));
 		c.add(new Vector3D(maxX,maxY,minZ));
 		c.add(new Vector3D(maxX,minY,maxZ));
 		c.add(new Vector3D(maxX,maxY,maxZ));
 		return c;
 	}
-	
+
 	public AABB extend(double dx, double dy, double dz) {
 	    if (dx < 0) this.minX += dx;
 	    else this.maxX += dx;
@@ -73,7 +64,7 @@ public class AABB {
 
 	    return this;
 	}
-	
+
 	public AABB offset(Vector3D a) {
 		this.minX += a.x;
 	    this.minY += a.y;
@@ -83,11 +74,11 @@ public class AABB {
 	    this.maxZ += a.z;
 	    return this;
 	}
-	
+
 	public AABB noffset(Vector3D a) {
 		return new AABB(this.minX, this.minY, this.minZ, this.maxX, this.maxY, this.maxZ).offset(a);
 	}
-	
+
 	public AABB contract(double x, double y, double z) {
 	    this.minX += x;
 	    this.minY += y;
@@ -97,7 +88,7 @@ public class AABB {
 	    this.maxZ -= z;
 	    return this;
 	}
-	
+
 	public AABB expand(double x, double y, double z) {
 	    this.minX -= x;
 	    this.minY -= y;
@@ -107,7 +98,7 @@ public class AABB {
 	    this.maxZ += z;
 	    return this;
 	}
-	
+
 	public AABB offset(double x, double y, double z) {
 	    this.minX += x;
 	    this.minY += y;
@@ -117,7 +108,7 @@ public class AABB {
 	    this.maxZ += z;
 	    return this;
 	}
-	
+
 	public double computeOffsetX (AABB other, double offsetX) {
 	    if (other.maxY > this.minY && other.minY < this.maxY && other.maxZ > this.minZ && other.minZ < this.maxZ) {
 	      if (offsetX > 0.0 && other.maxX <= this.minX) {
@@ -128,7 +119,7 @@ public class AABB {
 	    }
 	    return offsetX;
 	}
-	
+
 	public double computeOffsetY (AABB other, double offsetY) {
 	    if (other.maxY > this.minY && other.minY < this.maxY && other.maxZ > this.minZ && other.minZ < this.maxZ) {
 	      if (offsetY > 0.0 && other.maxX <= this.minX) {
@@ -139,7 +130,7 @@ public class AABB {
 	    }
 	    return offsetY;
 	}
-	
+
 	public double computeOffsetZ (AABB other, double offsetZ) {
 	    if (other.maxY > this.minY && other.minY < this.maxY && other.maxZ > this.minZ && other.minZ < this.maxZ) {
 	      if (offsetZ > 0.0 && other.maxX <= this.minX) {
@@ -150,13 +141,13 @@ public class AABB {
 	    }
 	    return offsetZ;
 	}
-	
+
 	public boolean collide(AABB other) {
 	    return this.minX < other.maxX && this.maxX > other.minX &&
 	           this.minY < other.maxY && this.maxY > other.minY &&
 	           this.minZ < other.maxZ && this.maxZ > other.minZ;
 	}
-	
+
 	public boolean collide(Vector3D other) {
 	    return this.minX < other.x && this.maxX > other.x &&
 	           this.minY < other.y && this.maxY > other.y &&
@@ -210,7 +201,7 @@ public class AABB {
 	public void setMaxZ(double maxZ) {
 		this.maxZ = maxZ;
 	}
-	
+
 	public AABB setBB(AABB bb) {
         this.setMinX(bb.getMinX());
         this.setMinY(bb.getMinY());
@@ -220,12 +211,9 @@ public class AABB {
         this.setMaxZ(bb.getMaxZ());
         return this;
     }
-	
+
 	public double calculateXOffset(AABB bb, double x) {
-        if (bb.getMaxY() <= this.getMinY() || bb.getMinY() >= this.getMaxY()) {
-            return x;
-        }
-        if (bb.getMaxZ() <= this.getMinZ() || bb.getMinZ() >= this.getMaxZ()) {
+        if (bb.getMaxY() <= this.getMinY() || bb.getMinY() >= this.getMaxY() || bb.getMaxZ() <= this.getMinZ() || bb.getMinZ() >= this.getMaxZ()) {
             return x;
         }
         if (x > 0 && bb.getMaxX() <= this.getMinX()) {
@@ -245,10 +233,7 @@ public class AABB {
     }
 
     public double calculateYOffset(AABB bb, double y) {
-        if (bb.getMaxX() <= this.getMinX() || bb.getMinX() >= this.getMaxX()) {
-            return y;
-        }
-        if (bb.getMaxZ() <= this.getMinZ() || bb.getMinZ() >= this.getMaxZ()) {
+        if (bb.getMaxX() <= this.getMinX() || bb.getMinX() >= this.getMaxX() || bb.getMaxZ() <= this.getMinZ() || bb.getMinZ() >= this.getMaxZ()) {
             return y;
         }
         if (y > 0 && bb.getMaxY() <= this.getMinY()) {
@@ -268,10 +253,7 @@ public class AABB {
     }
 
     public double calculateZOffset(AABB bb, double z) {
-        if (bb.getMaxX() <= this.getMinX() || bb.getMinX() >= this.getMaxX()) {
-            return z;
-        }
-        if (bb.getMaxY() <= this.getMinY() || bb.getMinY() >= this.getMaxY()) {
+        if (bb.getMaxX() <= this.getMinX() || bb.getMinX() >= this.getMaxX() || bb.getMaxY() <= this.getMinY() || bb.getMinY() >= this.getMaxY()) {
             return z;
         }
         if (z > 0 && bb.getMaxZ() <= this.getMinZ()) {
@@ -294,7 +276,7 @@ public class AABB {
 	public String toString() {
 		return "AABB [minX=" + minX + ", minY=" + minY + ", minZ=" + minZ + ", maxX=" + maxX + ", maxY=" + maxY + ", maxZ=" + maxZ + "]";
 	}
-	
+
 	public static AABB fromString(String s) {
 		if (s.startsWith("AABB [") && s.endsWith("]")) {
 			s = s.replace("AABB [", "");//minX=" + minX + ", minY=" + minY + ", minZ=" + minZ + ", maxX=" + maxX + ", maxY=" + maxY + ", maxZ=" + maxZ + "
@@ -362,6 +344,6 @@ public class AABB {
 	public BoundingBox translate() {
 		return new BoundingBox(new Vector3((float)minX, (float)minY, (float)minZ),new Vector3((float)maxX, (float)maxY, (float)maxZ));
 	}
-	
-	
+
+
 }

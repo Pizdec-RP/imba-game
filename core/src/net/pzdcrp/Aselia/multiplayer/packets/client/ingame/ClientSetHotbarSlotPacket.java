@@ -7,13 +7,13 @@ import io.netty.buffer.ByteBuf;
 @PacketId(21)
 public class ClientSetHotbarSlotPacket extends Packet {
 	public byte slot;
-	
+
 	public ClientSetHotbarSlotPacket() {}
-	
+
 	public ClientSetHotbarSlotPacket(byte slot) {
 		this.slot = slot;
 	}
-	
+
 	@Override
 	public void read(ByteBuf byteBuf) {
 		slot = byteBuf.readByte();
@@ -23,5 +23,5 @@ public class ClientSetHotbarSlotPacket extends Packet {
 	public void write(ByteBuf byteBuf) {
 		byteBuf.writeByte(slot);
 	}
-	
+
 }

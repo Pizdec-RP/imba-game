@@ -11,11 +11,11 @@ import net.pzdcrp.Aselia.world.elements.inventory.items.Item;
 
 @PacketId(17)
 public class ServerSetupInventoryPacket extends Packet {
-	
+
 	public Map<Integer,Item> items;
-	
+
 	public ServerSetupInventoryPacket() {}
-	
+
 	public ServerSetupInventoryPacket(Map<Integer,Item> items) {
 		this.items = items;
 	}
@@ -36,12 +36,12 @@ public class ServerSetupInventoryPacket extends Packet {
 	@Override
 	public void write(ByteBuf byteBuf) {
 		byteBuf.writeByte((byte) items.size());
-		
+
 		for (Entry<Integer, Item> item : items.entrySet()) {
 			byteBuf.writeByte(item.getKey().byteValue());
 			byteBuf.writeInt(item.getValue().id);
 			byteBuf.writeInt(item.getValue().count);
 		}
 	}
-	
+
 }

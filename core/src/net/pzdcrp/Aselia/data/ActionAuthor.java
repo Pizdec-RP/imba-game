@@ -4,7 +4,7 @@ import net.pzdcrp.Aselia.utils.GameU;
 
 public enum ActionAuthor {
 	mob, command, player, world;
-	
+
 	public static ActionAuthor fromByte(byte b) {
 		switch (b) {
 			case 0:
@@ -20,7 +20,7 @@ public enum ActionAuthor {
 				return null;
 		}
 	}
-	
+
 	public static byte toByte(ActionAuthor a) {
 		switch (a) {
 			case mob:

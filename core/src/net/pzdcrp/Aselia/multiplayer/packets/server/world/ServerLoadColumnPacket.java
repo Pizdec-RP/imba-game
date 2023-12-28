@@ -4,19 +4,18 @@ import de.datasecs.hydra.shared.protocol.packets.Packet;
 import de.datasecs.hydra.shared.protocol.packets.PacketId;
 import io.netty.buffer.ByteBuf;
 import net.pzdcrp.Aselia.Hpb;
-import net.pzdcrp.Aselia.world.PlayerWorld;
 import net.pzdcrp.Aselia.world.World;
 import net.pzdcrp.Aselia.world.elements.Column;
 
 @PacketId(6)
 public class ServerLoadColumnPacket extends Packet {
-	
+
 	public Column c;
-	
+
 	public ServerLoadColumnPacket() {
-		
+
 	}
-	
+
 	public ServerLoadColumnPacket(Column c) {
 		this.c=c;
 	}
@@ -25,19 +24,19 @@ public class ServerLoadColumnPacket extends Packet {
 	public void read(ByteBuf byteBuf) {
 		int x = byteBuf.readInt();
 		int z = byteBuf.readInt();
-		
+
 		c = new Column(x,z,false, Hpb.world); //пакет получает клиент, поэтому используется клиентский мир
 		Object[] blocks = this.readArray(byteBuf);
 		int i = 0;
 		for (int px = 0; px < 16; px++) {
-			for (int py = 0; py < PlayerWorld.maxheight; py++) {
+			for (int py = 0; py < World.maxheight; py++) {
 				for (int pz = 0; pz < 16; pz++) {
 	            	c.fastSetBlock(px, py, pz, (int) blocks[i]);
 	            	i++;
 	            }
 	        }
 	    }
-		
+
 		/*Object[] lights = this.readArray(byteBuf);
 		i = 0;
 		for (int px = 0; px < 16; px++) {
@@ -54,18 +53,18 @@ public class ServerLoadColumnPacket extends Packet {
 	public void write(ByteBuf byteBuf) {
 		byteBuf.writeInt(c.pos.x);
 		byteBuf.writeInt(c.pos.z);
-		
+
 		Object[] blocks = new Object[World.maxheight*16*16];
 		int i = 0;
 		for (int px = 0; px < 16; px++) {
-	        for (int py = 0; py < PlayerWorld.maxheight; py++) {
+	        for (int py = 0; py < World.maxheight; py++) {
 	            for (int pz = 0; pz < 16; pz++) {
 	            	blocks[i++] = c.getBlocki(px, py, pz);
 	            }
 	        }
 	    }
 		this.writeArray(byteBuf, blocks);
-		
+
 		/*Object[] lights = new Object[World.maxheight*16*16];
 		i = 0;
 		for (int px = 0; px < 16; px++) {

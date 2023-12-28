@@ -9,9 +9,9 @@ import net.pzdcrp.Aselia.data.Vector2I;
 public class ServerUnloadColumnPacket extends Packet {
 	public Vector2I pos;
 	public ServerUnloadColumnPacket() {
-		
+
 	}
-	
+
 	public ServerUnloadColumnPacket(Vector2I pos) {
 		this.pos=pos;
 	}

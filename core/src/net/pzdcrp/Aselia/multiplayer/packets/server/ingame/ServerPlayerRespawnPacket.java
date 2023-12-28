@@ -8,9 +8,9 @@ import net.pzdcrp.Aselia.data.Vector3D;
 @PacketId(23)
 public class ServerPlayerRespawnPacket extends Packet {
 	public Vector3D pos;
-	
+
 	public ServerPlayerRespawnPacket() {}
-	
+
 	public ServerPlayerRespawnPacket(Vector3D pos) {
 		this.pos=pos;
 	}

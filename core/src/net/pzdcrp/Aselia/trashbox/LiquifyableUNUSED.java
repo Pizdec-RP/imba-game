@@ -1,13 +1,5 @@
 package net.pzdcrp.Aselia.trashbox;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import net.pzdcrp.Aselia.data.AABB;
-import net.pzdcrp.Aselia.data.ActionAuthor;
-import net.pzdcrp.Aselia.data.DM;
-import net.pzdcrp.Aselia.data.Vector3D;
-
 public class LiquifyableUNUSED /*extends Block*/ {
 	/*
 	public static final Map<Integer, Float> heightMap = new HashMap<>() {{
@@ -19,14 +11,14 @@ public class LiquifyableUNUSED /*extends Block*/ {
 		put(6, 1.0f);
 		put(7, 1.0f);//источник
 	}};
-	
+
 	public int ll;//liquid level
-	
+
 	public Liquifyable(Vector3D pos) {
 		super(pos, null);
 		this.ll = 0;
 	}
-	
+
 	public void setLl(int newll) {
 		boolean b0 = this instanceof Air;
 		if (newll == 0) {
@@ -41,12 +33,12 @@ public class LiquifyableUNUSED /*extends Block*/ {
 			world.setBlock(new Water(this.pos, this.ll), ActionAuthor.world);
 		}
 	}
-	
+
 	public Liquifyable(Vector3D pos, String texture, int ll) {
 		super(pos, texture, new AABB(pos.x,pos.y,pos.z,pos.x+1,pos.y+heightMap.get(ll),pos.z+1));
 		this.ll = ll;
 	}
-	
+
 	/*public int liqlide(int cur) {//слияние
 		//System.out.println("before:"+this.ll);
 		int newlev = cur + this.ll;
@@ -66,5 +58,5 @@ public class LiquifyableUNUSED /*extends Block*/ {
 		//System.out.println("newll:"+this.liquidLevel+" ost:"+toreturn+" onpos:"+pos.toString());
 		return toreturn;
 	}*/
-	
+
 }

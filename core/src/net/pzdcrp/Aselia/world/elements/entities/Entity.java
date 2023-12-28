@@ -10,14 +10,11 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
-import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.shapebuilders.BoxShapeBuilder;
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.math.collision.BoundingBox;
 import com.google.gson.JsonObject;
 
 import net.pzdcrp.Aselia.Hpb;
@@ -27,7 +24,6 @@ import net.pzdcrp.Aselia.data.BlockFace;
 import net.pzdcrp.Aselia.data.DM;
 import net.pzdcrp.Aselia.data.DamageSource;
 import net.pzdcrp.Aselia.data.EntityType;
-import net.pzdcrp.Aselia.data.OTripple;
 import net.pzdcrp.Aselia.data.Settings;
 import net.pzdcrp.Aselia.data.Vector2I;
 import net.pzdcrp.Aselia.data.Vector3D;
@@ -39,25 +35,21 @@ import net.pzdcrp.Aselia.multiplayer.packets.server.entity.ServerSpawnEntityPack
 import net.pzdcrp.Aselia.player.Player;
 import net.pzdcrp.Aselia.utils.GameU;
 import net.pzdcrp.Aselia.utils.VectorU;
-import net.pzdcrp.Aselia.world.PlayerWorld;
 import net.pzdcrp.Aselia.world.World;
-import net.pzdcrp.Aselia.world.elements.Chunk;
 import net.pzdcrp.Aselia.world.elements.Column;
 import net.pzdcrp.Aselia.world.elements.blocks.Air;
 import net.pzdcrp.Aselia.world.elements.blocks.Block;
-import net.pzdcrp.Aselia.world.elements.blocks.Dirt;
-import net.pzdcrp.Aselia.world.elements.inventory.EntityInventory;
 import net.pzdcrp.Aselia.world.elements.inventory.IInventory;
 import net.pzdcrp.Aselia.world.elements.inventory.PlayerInventory;
 
 public class Entity {
 	@SuppressWarnings({ "serial", "deprecation" })
-	public static final Map<Integer, Entity> entities = new HashMap<Integer, Entity>() {{
+	public static final Map<Integer, Entity> entities = new HashMap<>() {{
 		//put(1, new Player()); //не будет использоваться
 		put(2, new ItemEntity(Vector3D.ZERO, null, 0));
 	}};
-	
-	
+
+
 	//сохраняется
 	public Vector3D pos;
 	public Vector3D vel = new Vector3D();
@@ -66,10 +58,10 @@ public class Entity {
 	public byte hp;
 	public Vector2I beforeechc;
 	public double fallstartblock = 0;
-	
+
 	//FIXME не сохраняется
 	public IInventory inventory;
-	
+
 	//не должно сохраняться
 	public Vector2I echc; //столбец в котором находится игрок
 	public boolean firsttick = true;
@@ -79,7 +71,7 @@ public class Entity {
 	public AABB hitbox;
 	public int justspawn = 50;
 	public int localId; //айди сущности для пакетов с данными об энтити. должно сбрасываться при рестарте сервера
-	
+
 	//классы ссылки
 	public Column curCol;
 	public Block currentAimBlock = new Air(new Vector3D());
@@ -87,7 +79,7 @@ public class Entity {
 	public Entity currentAimEntity = null;
 	public Vector3D currentaimpoint;
 	public World world;
-	
+
 	public Entity(Vector3D pos, AABB hitbox, EntityType type, World world, int localid) {
 		this.localId = localid;
 		this.world = world;
@@ -115,20 +107,20 @@ public class Entity {
 		Vector3D justBeforePos = beforepos.clone();
 		beforepos.set(pos);
 		if (justspawn > 0) justspawn--;
-		
+
 		echc = new Vector2I(pos.x,pos.z);
-		
+
 		if (curCol == null) {
 			Column col = world.getColumn(echc);
 			if (col == null) return false;
 			this.curCol = col;
 		}
-		
+
 		if ((!world.isLocal() && !isPlayer) || world.isLocal()) {
 			updateGravity();
 			applyMovement();
 		}
-		
+
 		if (!world.isLocal()) {
 			if (!invincible()) {
 				if (vel.y < 0) {
@@ -151,9 +143,9 @@ public class Entity {
 		        }
 			}
 		}
-		
-		
-		
+
+
+
 		//отсыл позиции каждый второй тик
 		if (sended) {
 			sended = false;
@@ -166,7 +158,7 @@ public class Entity {
 				Hpb.session.send(new ClientPlayerLocationDataPacket(pos, vel, onGround, yaw, pitch));
 			}
 		}
-		
+
 		//if (!world.isLocal()) GameU.log("1");
 		if (firsttick) {
 			Column beforecol = world.getColumn(beforeechc);
@@ -182,9 +174,9 @@ public class Entity {
 			if (col == null) {
 				return false;
 			}
-			if (beforecol != null) 
+			if (beforecol != null)
 				beforecol.entites.remove(this);
-			
+
 			this.curCol = col;
 			col.entites.add(this);
 			beforeechc = echc;
@@ -192,11 +184,11 @@ public class Entity {
 		//GameU.log("player in col "+curCol.pos.toString());
 		return true;
 	}
-	
+
 	public boolean invincible() {
 		return false;
 	}
-	
+
 	public void updateFacing() {
 		//должно вызываться только с клиента
 		Object[] oarr = VectorU.findFacingPair(this.getEyeLocation(), Hpb.world.player.cam.cam.direction, this);
@@ -207,12 +199,12 @@ public class Entity {
 		this.currentAimEntity = oarr[2] == null ? null : (Entity) oarr[2];
 		this.currentaimpoint = (Vector3D)oarr[3];
 	}
-	
+
 	public void updateGravity() {
 		vel.y -= DM.gravity;
 		vel.y *= DM.airdrag;
 	}
-	
+
 	public void teleport(Vector3D pos) {
 		GameU.log((world.isLocal()?"client":"server")+" bpos: "+this.pos.toString()+" npos: "+pos.toString());
 		this.pos = pos;
@@ -220,16 +212,16 @@ public class Entity {
 		echc = new Vector2I(pos.x,pos.z);
 		curCol = world.getColumn(echc);
 	}
-	
+
 	public void onPlayerClick(Player p) {
 		GameU.err("unused method onPlayerClick");
 	}
-	
+
 	public List<AABB> getNearBlocks() {
 		AABB cube = getHitbox();
 		cube = cube.grow(Math.max(vel.x,1),Math.max(vel.y,1),Math.max(vel.z,1));
 		List<AABB> b = new ArrayList<>();
-		
+
 		for (int tx = (int)Math.floor(Math.min(cube.maxX, cube.minX)); tx < Math.max(cube.maxX, cube.minX); tx++) {
 			for (int tz = (int)Math.floor(Math.min(cube.maxZ, cube.minZ)); tz < Math.max(cube.maxZ, cube.minZ); tz++) {
 				for (int ty = (int)Math.floor(Math.min(cube.maxY, cube.minY)); ty < Math.max(cube.maxY, cube.minY); ty++) {
@@ -246,13 +238,13 @@ public class Entity {
 		}
 		return b;
 	}
-	
+
 	public void applyMovement() {
 	    if (vel.x != 0 || vel.y != 0 || vel.z != 0) {
 	        List<AABB> nb = getNearBlocks();
 	        double bx, by, bz;
 	        boolean wasMovingDown = vel.y < 0;
-	        
+
 	        for (AABB collidedBB : nb) {
 	            by = vel.y;
 	            vel.y = collidedBB.calculateYOffset(this.getHitbox(), vel.y);
@@ -260,16 +252,16 @@ public class Entity {
 	                coly = true;
 	            }
 	        }
-	        
+
 	        if (wasMovingDown && vel.y == 0) {
 	            onGround = true;
 	        } else {
 	            onGround = false;
 	        }
-	        
-	        
+
+
 	        this.pos.y += vel.y;
-	        
+
 	        for (AABB collidedBB : nb) {
 	            bx = vel.x;
 	            vel.x = collidedBB.calculateXOffset(this.getHitbox(), vel.x);
@@ -278,7 +270,7 @@ public class Entity {
 	            }
 	        }
 	        this.pos.x += vel.x;
-	        
+
 	        for (AABB collidedBB : nb) {
 	            bz = vel.z;
 	            vel.z = collidedBB.calculateZOffset(this.getHitbox(), vel.z);
@@ -287,7 +279,7 @@ public class Entity {
 	            }
 	        }
 	        this.pos.z += vel.z;
-	        
+
 	        if (this.isPlayer) {
 	            vel.x *= 0.6;
 	            vel.z *= 0.6;
@@ -298,25 +290,25 @@ public class Entity {
 	            } else {
 	                vel.x *= 0.98;
 	                vel.z *= 0.98;
-	            } 
+	            }
 	        }
-	        
+
 	        if (Math.abs(vel.x) < DM.badVel) vel.x = 0;
 	        if (Math.abs(vel.y) < DM.badVel) vel.y = 0;
 	        if (Math.abs(vel.z) < DM.badVel) vel.z = 0;
-	        
+
 	    }
 	}
 
-	
+
 	public AABB getHitbox() {//FIXME
 		return hitbox.noffset(pos);
 	}
-	
+
 	public byte maxhp() {
 		return 5;
 	}
-	
+
 	public void getJson(JsonObject jen) {
 		jen.addProperty("type", this.getType());
 		jen.addProperty("pos", pos.toString());
@@ -334,7 +326,7 @@ public class Entity {
 		jen.addProperty("hp", this.hp);
 		jen.addProperty("fsb", fallstartblock);
 	}
-	
+
 	public void fromJson(JsonObject jen) {
 		String jvel = jen.get("vel").getAsString();
 		vel = Vector3D.fromString(jvel);
@@ -351,7 +343,7 @@ public class Entity {
 		hp = jen.get("hp").getAsByte();
 		fallstartblock = jen.get("fsb").getAsDouble();
 	}
-	
+
 	public void despawn() {
 		curCol.entites.remove(this);
 		if (!world.isLocal()) {
@@ -373,7 +365,7 @@ public class Entity {
 	public void setYaw(float yaw) {
 		this.yaw = yaw;
 	}
-	
+
 	public void setPitch(float pitch) {
 		this.pitch = pitch;
 	}
@@ -383,11 +375,11 @@ public class Entity {
 			Hpb.render(getFrame());
 		}
 	}
-	
+
 	public void setHp(byte i) {
 		this.hp = i;
 	}
-	
+
 	public int getType() {
 		return 0;
 	}
@@ -403,7 +395,7 @@ public class Entity {
 			this.despawn();
 		}
 	}
-	
+
 	ModelInstance bb = null;
 	public ModelInstance getFrame() {
 		if (bb == null) {
@@ -421,12 +413,12 @@ public class Entity {
 			return bb;
 		}
 	}
-	
+
 	private static int idCounter = Integer.MIN_VALUE;
 	public static int genLocalId() {
 		return idCounter++;
 	}
-	
+
 	/**client side, call by packet*/
 	public void setPos(Vector3D newpos) {
 		if (world.getColumn(VectorU.posToColumn(newpos)) == null) {
@@ -435,12 +427,12 @@ public class Entity {
 		this.beforepos.set(pos);
 		this.pos = newpos;
 	}
-	
+
 	public Entity clone(Vector3D pos, World world, ObjectData data, int localId) {
 		GameU.end("не задан метод копирования");
 		return null;
 	}
-	
+
 	public ObjectData consumeData() {
 		GameU.end("не заданый метод");
 		return null;

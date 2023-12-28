@@ -6,8 +6,6 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
 import net.pzdcrp.Aselia.data.BlockModelBuilder;
-import net.pzdcrp.Aselia.data.MBIM;
-import net.pzdcrp.Aselia.data.Vector3D;
 
 public class SexyMeshBuilder extends MeshBuilder {
 	private BlockModelBuilder mbim;
@@ -21,7 +19,7 @@ public class SexyMeshBuilder extends MeshBuilder {
 	public short vertex (Vector3 pos, Vector3 nor, Color col, Vector2 uv) {
 		return super.vertex(pos, nor, col, uv);
 	}
-	
+
 	@Override
 	public void rect (float x00, float y00, float z00, float x10, float y10, float z10, float x11, float y11, float z11, float x01,
 		float y01, float z01, float normalX, float normalY, float normalZ) {

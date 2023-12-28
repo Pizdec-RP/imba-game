@@ -1,5 +1,9 @@
 package de.datasecs.hydra.server;
 
+import java.net.SocketAddress;
+import java.util.Arrays;
+import java.util.Set;
+
 import de.datasecs.hydra.shared.distribution.Distribution;
 import de.datasecs.hydra.shared.handler.HydraSession;
 import de.datasecs.hydra.shared.handler.Session;
@@ -9,10 +13,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.concurrent.EventExecutorGroup;
 import io.netty.util.internal.ConcurrentSet;
-
-import java.net.SocketAddress;
-import java.util.Arrays;
-import java.util.Set;
 
 /**
  * Created with love by DataSecs on 30.09.2017.

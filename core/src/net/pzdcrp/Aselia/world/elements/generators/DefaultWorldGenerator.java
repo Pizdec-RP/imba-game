@@ -1,16 +1,11 @@
 package net.pzdcrp.Aselia.world.elements.generators;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CopyOnWriteArraySet;
 
-import io.netty.util.internal.ConcurrentSet;
 import net.pzdcrp.Aselia.Hpb;
 import net.pzdcrp.Aselia.data.ActionAuthor;
 import net.pzdcrp.Aselia.data.BlockFace;
@@ -18,7 +13,7 @@ import net.pzdcrp.Aselia.data.Vector2I;
 import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.utils.MathU;
 import net.pzdcrp.Aselia.utils.VectorU;
-import net.pzdcrp.Aselia.world.PlayerWorld;
+import net.pzdcrp.Aselia.world.World;
 import net.pzdcrp.Aselia.world.elements.Column;
 import net.pzdcrp.Aselia.world.elements.blocks.Block;
 import net.pzdcrp.Aselia.world.elements.blocks.OakLeaves;
@@ -36,17 +31,17 @@ public class DefaultWorldGenerator {
 	        	int z = c.pos.z*16+pz;
         		Biome biome = Biome.field;//calculate biome by xz pos
         		if (biome == Biome.field) {
-        			int fieldMaxHeight = (int) (PlayerWorld.maxheight*0.4f);
-        			int fieldMinHeight = (int) (PlayerWorld.maxheight*0.25f);
+        			int fieldMaxHeight = (int) (World.maxheight*0.4f);
+        			int fieldMinHeight = (int) (World.maxheight*0.25f);
         			float sharpness = 0.02f;
         			double noise = Noise.get(x*sharpness, z*sharpness);
         			int maxy = MathU.diap(fieldMinHeight, fieldMaxHeight, noise);
-        			for (int y = 0; y < PlayerWorld.maxheight; y++) {
-        				if (y <= maxy-3) {
+        			for (int y = 0; y < World.maxheight; y++) {
+        				if (y < maxy-4) {
         					c.fastSetBlock(px,y,pz, 2);
         				} else if (y == maxy-1) {
         					c.fastSetBlock(px,y,pz, 6);
-        				} else if (y < maxy && y > maxy-3) {
+        				} else if (y < maxy && y >= maxy-4) {
         					c.fastSetBlock(px,y,pz, 1);
         				} else if (y == maxy && Double.toString(noise).contains("34")) {
         					c.fastSetBlock(px,y,pz, 23);
@@ -63,27 +58,27 @@ public class DefaultWorldGenerator {
 	        }
 	    }
 	}
-	
+
 	public static void generateTree(Vector3D pos) {
 		CopyOnWriteArrayList<Block> blocks = new CopyOnWriteArrayList<>();
 		pos.y -= 2;
 		int trunk = MathU.rndi(9, 12);
 		int maxcrona = trunk+1;
 		int mincrona = 6;
-		
+
 		int mid = (mincrona+maxcrona)/2;
 		for (int i = mincrona; i < maxcrona; i++) {
 			int rad = 3;
 			if (i == mincrona) rad = 1;
 			if (i >= maxcrona - 1) rad = 2;
-			if (i+1 >= mid && i-1 <= mid) pos = pos.add(MathU.rndi(-1, 1), 0, MathU.rndi(-1, 1)); 
+			if (i+1 >= mid && i-1 <= mid) pos = pos.add(MathU.rndi(-1, 1), 0, MathU.rndi(-1, 1));
 			blocks.addAll(getBlocksInRadius(pos.add(0, i, 0), rad, new OakLeaves(new Vector3D())));
 		}
-		
+
 		for (int i = 0; i < trunk; i++) {
             blocks.add(new OakLog(pos.add(0, i, 0), BlockFace.PY));
         }
-		
+
         for (Block b : blocks) {
         	Vector2I bp2 = VectorU.posToColumn(b.pos);
         	if (Hpb.world.loadedColumns.containsKey(bp2)) {

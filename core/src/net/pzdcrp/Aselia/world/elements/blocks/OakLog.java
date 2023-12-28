@@ -1,24 +1,12 @@
 package net.pzdcrp.Aselia.world.elements.blocks;
 
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.VertexAttributes;
-import com.badlogic.gdx.graphics.g3d.Material;
-import com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute;
-import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
-import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
-import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
-import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
-import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Vector3;
-
 import net.pzdcrp.Aselia.Hpb;
 import net.pzdcrp.Aselia.data.AABB;
 import net.pzdcrp.Aselia.data.AABBList;
 import net.pzdcrp.Aselia.data.BlockFace;
 import net.pzdcrp.Aselia.data.BlockModelBuilder;
-import net.pzdcrp.Aselia.data.Pair;
-import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.data.MBIM.offset;
+import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.extended.SexyMeshBuilder;
 import net.pzdcrp.Aselia.utils.ModelUtils;
 
@@ -28,7 +16,7 @@ public class OakLog extends FacingBlock {
 		super(pos, tname, blockface);
 		hitbox = new AABBList(new AABB(pos.x,pos.y,pos.z,pos.x+1,pos.y+1,pos.z+1));
 	}
-	
+
 	@Override
 	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, BlockModelBuilder mbim) {
 		SexyMeshBuilder a = mbim.obtain(pos, this.isTransparent());
@@ -123,20 +111,20 @@ public class OakLog extends FacingBlock {
 		    }
 		}
 	}
-	
+
 	@Override
 	public BlockType getType() {
 		return BlockType.solid;
 	}
-	
+
 	@Override
 	public Block clone(Vector3D poss) {
 		return new OakLog(poss,this.blockface);
 	}
-	
+
 	@Override
 	public float getResistance() {
 		return 2.5f;
 	}
-}	
+}
 

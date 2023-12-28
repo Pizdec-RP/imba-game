@@ -7,13 +7,13 @@ import java.util.Random;
  * This is Ken Perlin's implementation of Perlin Noise but modified to be more
  * OOP.
  * </p>
- * 
+ *
  * @author Ken Perlin, Matthew A. Johnston (WarmWaffles)
- * 
+ *
  */
 public class PerlinNoise {
 	private int seed;
-	
+
 	private static final int P  = 8;
 	private static final int B  = 1 << P;
 	private static final int M  = B - 1;
@@ -23,28 +23,28 @@ public class PerlinNoise {
 	private int[]      p;
 	private double[][] g2;
 	private double[]   g1;
-	
+
 	private static double[][] points;
-	
+
 	public PerlinNoise(int seed) {
 		p  = new int[B + B + 2];
 		g2 = new double[B + B + 2][2];
 		g1 = new double[B + B + 2];
-		
+
 		points = new double[32][3];
-		
+
 		init(seed);
 	}
-	
+
 	/**
 	 * A stub function that calls {@link #init(int)}
-	 * 
+	 *
 	 * @param seed
 	 */
 	public void setSeed(int seed) {
 		init(seed);
 	}
-	
+
 	public double noise(double x, double y, double z) {
 
 		int bx, by, bz, b0, b1, b00, b10, b01, b11;
@@ -103,10 +103,10 @@ public class PerlinNoise {
 		v = rx1 * q[0] + ry1 * q[1] + rz * q[2];
 		b = lerp(sx, u, v);
 		c = lerp(sy, a, b);
-		
+
 		bz++;
 		rz--;
-		
+
 		q = G(b00 + bz);
 		u = rx0 * q[0] + ry0 * q[1] + rz * q[2];
 		q = G(b10 + bz);
@@ -121,7 +121,7 @@ public class PerlinNoise {
 
 		return lerp(sz, c, d);
 	}
-	
+
 	public double noise(double x, double y) {
 		int    bx0, bx1, by0, by1, b00, b10, b01, b11;
 		double rx0, rx1, ry0, ry1, sx, sy, a, b, t, u, v, q[];
@@ -164,7 +164,7 @@ public class PerlinNoise {
 
 		return lerp(sy, a, b);
 	}
-	
+
 	public double noise(double x) {
 
 		int bx0, bx1;
@@ -181,11 +181,11 @@ public class PerlinNoise {
 
 		return lerp(sx, u, v);
 	}
-	
+
 	public int getSeed() {
 		return seed;
 	}
-	
+
 	// ========================================================================
 	//                             PRIVATE
 	// ========================================================================
@@ -195,22 +195,22 @@ public class PerlinNoise {
 		v[0] = v[0] / s;
 		v[1] = v[1] / s;
 	}
-	
+
 	private double[] G(int i) {
 		return points[i % 32];
 	}
-	
+
 	private double s_curve(double t) {
 		return t * t * (3 - t - t);
 	}
-	
+
 	private double lerp(double t, double a, double b) {
 		return a + t * (b - a);
 	}
-	
+
 	private final void init(int seed) {
 		this.seed = seed;
-		
+
 		int i, j, k;
 		double u, v, w, U, V, W, Hi, Lo;
 		Random r = new Random(seed);
@@ -221,14 +221,14 @@ public class PerlinNoise {
 			do {
 				u = 2 * r.nextDouble() - 1;
 				v = 2 * r.nextDouble() - 1;
-			} while ( u * u + v * v > 1 || 
+			} while ( u * u + v * v > 1 ||
 			          Math.abs(u)   > 2.5 * Math.abs(v) ||
 			          Math.abs(v)   > 2.5 * Math.abs(u) ||
 			          Math.abs(Math.abs(u) - Math.abs(v)) < .4);
-			
+
 			g2[i][0] = u;
 			g2[i][1] = v;
-			
+
 			normalize2(g2[i]);
 
 			do {

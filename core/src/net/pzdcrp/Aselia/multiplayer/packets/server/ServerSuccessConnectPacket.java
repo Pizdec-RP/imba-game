@@ -10,15 +10,15 @@ import io.netty.buffer.ByteBuf;
 public class ServerSuccessConnectPacket extends Packet {
 
 	private UUID id;
-	
+
 	public ServerSuccessConnectPacket() {
-		
+
 	}
 
 	public ServerSuccessConnectPacket(UUID id) {
 		this.id=id;
 	}
-	
+
 	public UUID getid() {
 		return id;
 	}
@@ -32,5 +32,5 @@ public class ServerSuccessConnectPacket extends Packet {
 	public void write(ByteBuf buffer) {
 		writeString(buffer, id.toString());
 	}
-	
+
 }

@@ -2,9 +2,6 @@ package net.pzdcrp.Aselia.data;
 
 import java.util.List;
 
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.g3d.ModelInstance;
-
 import net.pzdcrp.Aselia.data.MBIM.offset;
 import net.pzdcrp.Aselia.extended.SexyMeshBuilder;
 import net.pzdcrp.Aselia.utils.GameU;
@@ -29,7 +26,7 @@ public class BlockModelBuilder {
 		GameU.end("unsetted method");
 		return null;
 	}
-	
+
 	public int[] getTLightArray() {
 		GameU.end("unsetted method");
 		return null;
@@ -57,5 +54,5 @@ public class BlockModelBuilder {
 	public void clear() {
 		GameU.end("unsetted method");
 	}
-	
+
 }

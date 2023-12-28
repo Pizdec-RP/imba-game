@@ -1,7 +1,5 @@
 package net.pzdcrp.Aselia.multiplayer.packets.server.ingame;
 
-import java.util.UUID;
-
 import de.datasecs.hydra.shared.protocol.packets.Packet;
 import de.datasecs.hydra.shared.protocol.packets.PacketId;
 import io.netty.buffer.ByteBuf;
@@ -10,15 +8,15 @@ import io.netty.buffer.ByteBuf;
 public class ServerChatPacket extends Packet {
 
 	private String msg;
-	
+
 	public ServerChatPacket() {
-		
+
 	}
 
 	public ServerChatPacket(String message) {
 		this.msg = message;
 	}
-	
+
 	public String getmsg() {
 		return msg;
 	}
@@ -32,5 +30,5 @@ public class ServerChatPacket extends Packet {
 	public void write(ByteBuf buffer) {
 		writeString(buffer, msg);
 	}
-	
+
 }

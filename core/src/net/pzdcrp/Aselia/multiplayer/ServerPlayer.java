@@ -1,23 +1,17 @@
 package net.pzdcrp.Aselia.multiplayer;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.Map.Entry;
-
-import com.badlogic.gdx.math.Vector3;
 
 import de.datasecs.hydra.shared.handler.Session;
 import de.datasecs.hydra.shared.protocol.packets.Packet;
-import net.pzdcrp.Aselia.Hpb;
-import net.pzdcrp.Aselia.data.ActionAuthor;
-import net.pzdcrp.Aselia.data.Settings;
 import net.pzdcrp.Aselia.data.Vector2I;
 import net.pzdcrp.Aselia.data.Vector3I;
 import net.pzdcrp.Aselia.multiplayer.packets.client.ClientWorldSuccLoadPacket;
@@ -25,10 +19,10 @@ import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientChatPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientClickBlockPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientPlaceBlockPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientPlayerActionPacket;
+import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientPlayerActionPacket.PlayerAction;
 import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientPlayerLocationDataPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientPlayerRespawnPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientSetHotbarSlotPacket;
-import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientPlayerActionPacket.PlayerAction;
 import net.pzdcrp.Aselia.multiplayer.packets.client.inventory.ClientCloseInventoryPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.client.inventory.ClientCraftRequestPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.client.inventory.ClientInventoryActionPacket;
@@ -48,9 +42,7 @@ import net.pzdcrp.Aselia.utils.GameU;
 import net.pzdcrp.Aselia.utils.VectorU;
 import net.pzdcrp.Aselia.world.elements.Chunk;
 import net.pzdcrp.Aselia.world.elements.Column;
-import net.pzdcrp.Aselia.world.elements.blocks.Air;
 import net.pzdcrp.Aselia.world.elements.entities.Entity;
-import net.pzdcrp.Aselia.world.elements.generators.DefaultWorldGenerator;
 
 
 public class ServerPlayer {
@@ -62,7 +54,7 @@ public class ServerPlayer {
 	public ServerWorld world;
 	public Player playerEntity;
 	private boolean isLoaded = false;
-	
+
 	//хранит только ссылки на классы в стеке, оптимизировать не надо
 	public Map<Vector2I, Column> columnsAroundPlayer = new ConcurrentHashMap<>();
 	public List<Vector3I> chunkLightOrder = new CopyOnWriteArrayList<>();
@@ -74,7 +66,7 @@ public class ServerPlayer {
 		this.session = s;
 		this.world = world;
 	}
-	
+
 	public void onPacket(Packet p) {
 		try {
 			if (p instanceof ClientWorldSuccLoadPacket) {
@@ -167,12 +159,12 @@ public class ServerPlayer {
 			System.exit(0);
 		}
 	}
-	
+
 	public void disconnect(String reason) {
 		GameU.end(reason);
 		//TODO переделать
 	}
-	
+
 	public void updateLoadedColumns()  {
 		if (!isLoaded) return;
 		if (playerEntity.echc == null) {
@@ -185,7 +177,7 @@ public class ServerPlayer {
                 cl.add(vector);
             }
         }
-	    
+
 	    // Хранит ключи столбцов, которые нужно удалить
 	    List<Vector2I> toRemove = new ArrayList<>();
 	    // Проверяем какие столбцы уже загружены и убираем из cl то что есть
@@ -246,5 +238,5 @@ public class ServerPlayer {
 	public void sendmsg(String text) {
 		session.send(new ServerChatPacket(text));
 	}
-	
+
 }

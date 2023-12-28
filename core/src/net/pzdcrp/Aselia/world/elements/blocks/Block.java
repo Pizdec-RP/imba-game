@@ -1,6 +1,5 @@
 package net.pzdcrp.Aselia.world.elements.blocks;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -17,17 +16,15 @@ import net.pzdcrp.Aselia.data.AABB;
 import net.pzdcrp.Aselia.data.AABBList;
 import net.pzdcrp.Aselia.data.BlockFace;
 import net.pzdcrp.Aselia.data.BlockModelBuilder;
-import net.pzdcrp.Aselia.data.DM;
 import net.pzdcrp.Aselia.data.MBIM;
-import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.data.MBIM.offset;
+import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.extended.SexyMeshBuilder;
 import net.pzdcrp.Aselia.player.Player;
 import net.pzdcrp.Aselia.utils.GameU;
 import net.pzdcrp.Aselia.utils.MathU;
 import net.pzdcrp.Aselia.utils.ModelUtils;
 import net.pzdcrp.Aselia.utils.VectorU;
-import net.pzdcrp.Aselia.world.PlayerWorld;
 import net.pzdcrp.Aselia.world.World;
 import net.pzdcrp.Aselia.world.elements.Chunk;
 import net.pzdcrp.Aselia.world.elements.entities.Entity;
@@ -38,7 +35,7 @@ import net.pzdcrp.Aselia.world.elements.inventory.items.NoItem;
 public class Block {
 	//public static PlayerWorld world;// = GameInstance.world;
 	public Vector3D pos;
-	public static final Map<Integer, Block> blocks = new HashMap<Integer, Block>() {
+	public static final Map<Integer, Block> blocks = new HashMap<>() {
 		private static final long serialVersionUID = 3707568282902670945L;
 		{
 			put(0, new Air(new Vector3D()));
@@ -65,8 +62,8 @@ public class Block {
 			put(22, new OakLeaves(new Vector3D()));
 			put(23, new Weed(new Vector3D()));
 			put(24, new Crate(new Vector3D()));
-		}};;
-	private static Map<Integer, Integer> BlockidToItemid = new ConcurrentHashMap<Integer, Integer>() {
+		}};
+	private static Map<Integer, Integer> BlockidToItemid = new ConcurrentHashMap<>() {
 		private static final long serialVersionUID = 37079642665568945L;
 		{
 			put(0, 0);
@@ -93,9 +90,9 @@ public class Block {
 	public String texture;
 	protected AABBList hitbox;
 	private int id = -1;
-	
+
 	public static int count = 0;
-	
+
 	/*public Block(Vector3D pos, String texture, AABB hitbox) {
 		this.pos = pos;//.VecToInt();
 		this.texture = texture;
@@ -107,11 +104,11 @@ public class Block {
 		this.texture = texture;
 		count++;
 	}
-	
+
 	public static Block getRaw(int id) {
 		return blocks.get(id);
 	}
-	
+
 	public static int idByBlock(Block block) {
 		for (Entry<Integer, Block> entry : blocks.entrySet()) {
 			if (entry.getValue().equals(block)) return entry.getKey();
@@ -119,12 +116,12 @@ public class Block {
 		GameU.end("unregistered block: "+block.toString());
 		return 0;
 	}
-	
+
 	public static Block blockById(int id, Vector3D v) {
 		Block block = Block.blocks.get(id).clone(v);
 		return block;
 	}
-	
+
 	public Block[] getSides(World world) {
 	    Set<Vector3D> set = new HashSet<>(Arrays.asList(
 	            pos.add(1, 0, 0),
@@ -145,100 +142,100 @@ public class Block {
 	    return blockSet.toArray(new Block[0]);
 	}
 
-	
+
 	public static Block getAbstractBlock(int id) {
 		return blocks.get(id);
 	}
-	
+
 	public boolean clickable() {
 		return false;
 	}
-	
+
 	public void onNeighUpdate(World world) {
-		
+
 	}
-	
+
 	public boolean emitLight() {
 		return false;
 	}
-	
+
 	public void callChunkUpdate(World world) {
 		world.getColumn(pos.x, pos.z).chunks[(int) (Math.floor(pos.y)/16)].updateModel();
 	}
-	
+
 	public Chunk getChunk(World world) {
 		return world.getColumn(pos.x, pos.z).chunks[(int) (Math.floor(pos.y)/16)];
 	}
-	
+
 	public boolean isRenderable() {
 		return true;
 	}
-	
+
 	public boolean isCollide() {
 		return true;
 	}
-	
+
 	public boolean isTransparent() {
 		return false;
 	}
-	
+
 	public boolean collide(AABB with) {
 		return hitbox.collide(with);
 	}
-	
+
 	public AABBList getHitbox() {
 		return hitbox;
 	}
-	
+
 	public BlockType getType() {
 		return BlockType.solid;
 	}
-	
+
 	public void addModel(boolean py, boolean ny, boolean nx, boolean px, boolean nz, boolean pz, BlockModelBuilder mbim) {
-		
+
 	}
-	
+
 	public BlockFace getFace() {
 		return BlockFace.PX;
 	}
-	
+
 	public Block clone(Vector3D pos) {
 		System.out.println(this.getClass().getName()+" not overriding clone()");
 		return null;
 	}
-	
+
 	@Deprecated
 	@Override
 	public Block clone() {
 		GameU.end("не юзай этот мтеод");
 		return new Block(pos, texture);
 	}
-	
+
 	@Override
 	public boolean equals(Object block) {
 		if (block instanceof Block) {
 			Block b = (Block) block;
 			if (block.getClass() == this.getClass() && b.getFace() == this.getFace()) return true;
-			
+
 		}
 		return false;
 	}
-	
+
 	@Override
 	public String toString() {
 		return this.getClass().getName()+"[face:"+this.getFace()+", pos: "+this.pos.toStringInt()+"]";
 	}
-	
+
 	public void onClick(Player actor) {
 		GameU.err("click called on non clickable block");
 		GameU.tracer();
 		return;
 	}
-	
+
 	public boolean tickable() {
 		return false;
 	}
-	
+
 	public static int itemIdToBlockId(int itemid) {
 		for (Entry<Integer, Integer> entry : BlockidToItemid.entrySet()) {
 			if (entry.getValue() == itemid) return entry.getKey();
@@ -250,7 +247,7 @@ public class Block {
 	public static Block blockByItem(Item item) {
 		return blocks.get(itemIdToBlockId(item.getId()));
 	}
-	
+
 	public static Item itemByBlockId(int id) {
 		Integer itemid = BlockidToItemid.get(id);
 		if (itemid == null) return null;
@@ -258,21 +255,21 @@ public class Block {
 	}
 
 	public void tick() {
-		
+
 	}
 
 	public float getResistance() {
 		return 5;
 	}
-	
+
 	public JsonObject toJson() {
 		return null;
 	}
-	
+
 	public void fromJson(JsonObject data) {
-		
+
 	}
-	
+
 	public static void bbmodel(MBIM mbim, Vector3D pos, int stage) {
 		if (stage > 9) stage = 9;
 		SexyMeshBuilder a = mbim.obtain(pos, true);
@@ -291,14 +288,14 @@ public class Block {
 	    mbim.setCuroffset(offset.ny);
 	    ModelUtils.buildBottomX(a);//NY
 	}
-	
+
 	public int getId() {
 		if (id == -1) {
 			this.id = idByBlock(this);
 		}
 		return id;
 	}
-	
+
 	/**
 	 * Server side
 	 * @param world

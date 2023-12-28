@@ -11,7 +11,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.VertexAttributes;
@@ -42,7 +41,6 @@ import net.pzdcrp.Aselia.world.elements.blocks.Air;
 import net.pzdcrp.Aselia.world.elements.blocks.Block;
 import net.pzdcrp.Aselia.world.elements.blocks.Voed;
 import net.pzdcrp.Aselia.world.elements.entities.Entity;
-import net.pzdcrp.Aselia.world.elements.generators.DefaultWorldGenerator;
 
 public class PlayerWorld implements World {// implements RenderableProvider {
 	public Player player;
@@ -56,27 +54,27 @@ public class PlayerWorld implements World {// implements RenderableProvider {
     //private ModelInstance shield;
     public Vector3 lightDirection = new Vector3();
     public static int seed = 228;
-    
+
     private static final int DAY_LENGTH = 60000;
     private static final float DISTANCE_FROM_CENTER = 2000f;
     Material skymaterial;
-    
+
     public ModelInstance particlesModel = new ModelInstance(new Model());
     public List<Particle> particles = new CopyOnWriteArrayList<>();
-	
+
 	public boolean needtoloadenviroment = false;
-    
+
 	public PlayerWorld() {
 		particlesModel.userData = new Object[] {"particles"};
 	}
-	
+
 	public void load() {
 		System.out.println("world loading");
 		needtoloadenviroment = true;
 	}
 
 	public void loadEnvironment() {
-		
+
 		ModelBuilder modelBuilder = new ModelBuilder();
 		skymaterial = new Material(IntAttribute.createCullFace(GL20.GL_FRONT));
 		Model model = modelBuilder.createBox(DISTANCE_FROM_CENTER*10, DISTANCE_FROM_CENTER*10, DISTANCE_FROM_CENTER*10, skymaterial, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);
@@ -85,23 +83,23 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 		Matrix4 transform = new Matrix4();
 		transform.translate(0,0,0);
 		sky.transform.set(transform);
-		
+
 		modelBuilder = new ModelBuilder();
 		Material material = new Material(TextureAttribute.createDiffuse(Hpb.mutex.getOTexture("sun")));
 		model = modelBuilder.createBox(700f, 700f, 700f, material, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);
 		sun = new ModelInstance(model);
 		sun.userData = new Object[] {"sun"};
-		
+
 		modelBuilder = new ModelBuilder();
 		material = new Material(ColorAttribute.createDiffuse(Color.DARK_GRAY));
 		model = modelBuilder.createSphere(5f, 5f, 5f, 5, 5, material, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
 		moon = new ModelInstance(model);
 		moon.userData = new Object[] {"moon"};
 	}
-	
+
 	@Override
 	public List<Entity> getEntities(Vector3D pos, double radius) {
-		ArrayList<Entity> e = new ArrayList<Entity>();
+		ArrayList<Entity> e = new ArrayList<>();
 		for (Column column : Hpb.world.loadedColumns.values()) {
 			for (Entity en : column.entites) {
 				if (VectorU.sqrt(en.pos, pos) <= radius) {
@@ -111,7 +109,7 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 		}
 		return e;
 	}
-	
+
 	@Override
 	public boolean posDostupna(int x, int y, int z) {
 		if (y < 0 || y > maxheight-1) {
@@ -119,7 +117,7 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 		}
 		return loadedColumns.containsKey(VectorU.xzToColumn(x,z));
 	}
-	
+
 	@Override
 	public boolean posDostupna(Vector3D pos) {
 		if (pos.y < 0 || pos.y > maxheight-1) {
@@ -127,7 +125,7 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 		}
 		return loadedColumns.containsKey(VectorU.posToColumn(pos));
 	}
-	
+
 	@Override
 	public void setBlock(int block, Vector3D pos, ActionAuthor author) {
 		if (pos.y < 0 || pos.y >= buildheight) {
@@ -142,7 +140,7 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 			}
 		}
 	}
-	
+
 	static final float bs = 0.2f;
 	@Override
 	public boolean setBlock(Block block, ActionAuthor author) {
@@ -150,7 +148,7 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 			Hpb.displayInfo("build limit reached");
 			return false;
 		}
-		
+
 		if (author == ActionAuthor.player) {
 			for (Entry<Vector2I, Column> tcol : loadedColumns.entrySet()) {
 				for (Entity en : tcol.getValue().entites) {
@@ -176,13 +174,13 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 			}
 		}
 	}
-	
+
 	@Override
 	public void spawnEntity(Entity entity) {
 		Column spawnin = getColumn(VectorU.posToColumn(entity.pos));
 		spawnin.entites.add(entity);
 	}
-	
+
 	static final int maxpart = 1000;
 	public void spawnParticle(String tname, Vector3 pos, Vector3 vel, int lifetime) {
 		if (particles.size() >= maxpart) {
@@ -254,11 +252,11 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 	    Hpb.render(sky);
 	    //Hpb.render(shield);
 	}
-	
+
 	public void addLC(Column c) {
 		loadedColumns.put(c.pos, c);
 	}
-	
+
 	public boolean continuee = false;
 	@Override
 	public void tick() {
@@ -284,8 +282,8 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 		GameU.log(now - beforetime);
 		beforetime = now;
 	}
-	
-	private final Comparator<Chunk> chunkComparator = new Comparator<Chunk>() {
+
+	private final Comparator<Chunk> chunkComparator = new Comparator<>() {
 	    @Override
 	    public int compare(Chunk chunk1, Chunk chunk2) {
 	        Vector3 chunk1Pos = new Vector3(chunk1.column.pos.x, chunk1.height, chunk1.column.pos.z);
@@ -297,7 +295,7 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 	};
 	public void render() {
 		if (Hpb.exit) return;
-		
+
 		byte upd = 0;
 		for (Column col : loadedColumns.values()) {
 			for (Chunk chunk : col.chunks) {
@@ -317,7 +315,7 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 				col.renderNormal();
 			}
 		}
-		
+
 		Set<Chunk> notSorted = new HashSet<>();
 		for (Column col : loadedColumns.values()) {
 			if (col.isInFrustum()) {
@@ -343,7 +341,7 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 		Hpb.render(particlesModel);
 		player.render();
 	}
-	
+
 	@Override
 	public boolean isLocal() {
 		return true;
@@ -379,7 +377,7 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 		GameU.end("не должно использоваться");
 		return null;
 	}
-	
+
 	@Override
 	public void broadcastByColumn(Vector2I pos, Packet p) {
 		GameU.end("не должно использоваться");

@@ -13,16 +13,13 @@ import com.badlogic.gdx.graphics.g3d.model.Node;
 import com.badlogic.gdx.graphics.g3d.model.NodePart;
 import com.badlogic.gdx.graphics.g3d.utils.MeshBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
-import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
-import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 
 import net.pzdcrp.Aselia.data.BlockModelBuilder;
-import net.pzdcrp.Aselia.data.MBIM;
 
 public class SexyModelBuilder {
 	/** The model currently being build */
@@ -30,8 +27,8 @@ public class SexyModelBuilder {
 	/** The node currently being build */
 	private Node node;
 	/** The mesh builders created between begin and end */
-	private Array<SexyMeshBuilder> builders = new Array<SexyMeshBuilder>();
-	
+	private Array<SexyMeshBuilder> builders = new Array<>();
+
 	public BlockModelBuilder mbim;
 	private boolean tr;
 
@@ -171,9 +168,9 @@ public class SexyModelBuilder {
 	public SexyMeshBuilder part (final String id, int primitiveType, final long attributes, final Material material) {
 		return part(id, primitiveType, createAttributes(attributes), material);
 	}
-	
+
 	public static VertexAttributes createAttributes (long usage) {
-		final Array<VertexAttribute> attrs = new Array<VertexAttribute>();
+		final Array<VertexAttribute> attrs = new Array<>();
 		if ((usage & Usage.Position) == Usage.Position)
 			attrs.add(new VertexAttribute(Usage.Position, 3, ShaderProgram.POSITION_ATTRIBUTE));
 		if ((usage & Usage.ColorUnpacked) == Usage.ColorUnpacked)

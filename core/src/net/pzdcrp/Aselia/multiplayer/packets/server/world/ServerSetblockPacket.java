@@ -11,11 +11,11 @@ public class ServerSetblockPacket extends Packet {
 	public Vector3D pos;
 	public int id;
 	public ActionAuthor author;
-	
+
 	public ServerSetblockPacket() {
-		
+
 	}
-	
+
 	public ServerSetblockPacket(Vector3D pos, int id, ActionAuthor author) {
 		this.pos = pos;
 		this.id=id;

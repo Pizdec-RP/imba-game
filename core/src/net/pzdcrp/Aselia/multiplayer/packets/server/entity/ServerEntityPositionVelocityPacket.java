@@ -7,14 +7,14 @@ import net.pzdcrp.Aselia.data.Vector3D;
 
 @PacketId(13)
 public class ServerEntityPositionVelocityPacket extends Packet {
-	
+
 	public Vector3D pos, vel;
 	public int id;
-	
+
 	public ServerEntityPositionVelocityPacket() {
-		
+
 	}
-	
+
 	public ServerEntityPositionVelocityPacket(Vector3D pos, Vector3D vel, int id) {
 		this.pos = pos;
 		this.vel = vel;

@@ -1,8 +1,5 @@
 package net.pzdcrp.Aselia.data;
 
-import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
-import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
-
 import net.pzdcrp.Aselia.extended.SexyMeshBuilder;
 import net.pzdcrp.Aselia.extended.SexyModelBuilder;
 

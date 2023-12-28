@@ -10,11 +10,11 @@ public class TextField {
 	private BitmapFont font;
 	public float width = 0, height = 0;
 	public String text;
-	
+
 	public TextField(BitmapFont font) {
 		this.font = font;
 	}
-	
+
 	public String setText(String text) {
 		this.text = text;
 		glyph.setText(font, text);
@@ -22,11 +22,11 @@ public class TextField {
 		height = glyph.height;
 		return text;
 	}
-	
+
 	public void render(SpriteBatch batch, float x, float y) {
 		font.draw(batch, text,x,y);
 	}
-	
+
 	public void render(SpriteBatch batch, float x, float y, float r, float g, float b, float a) {
 		Color c = font.getColor();
 		float br = c.r, bg = c.g, bb = c.b, ba = c.a;

@@ -2,7 +2,6 @@ package net.pzdcrp.Aselia.data.objects.entityObjectData;
 
 import io.netty.buffer.ByteBuf;
 import net.pzdcrp.Aselia.data.objects.ObjectData;
-import net.pzdcrp.Aselia.utils.GameU;
 
 public class ItemEntityData implements ObjectData {
 	public int item, count;

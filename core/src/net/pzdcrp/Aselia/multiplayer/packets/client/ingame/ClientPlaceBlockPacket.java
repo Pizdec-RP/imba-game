@@ -10,14 +10,14 @@ import net.pzdcrp.Aselia.data.Vector3D;
 public class ClientPlaceBlockPacket extends Packet {
 	public Vector3D pos;
 	public BlockFace face;
-	
+
 	public ClientPlaceBlockPacket() {}
-	
+
 	public ClientPlaceBlockPacket(Vector3D pos, BlockFace face) {
 		this.pos=pos;
 		this.face=face;
 	}
-	
+
 	@Override
 	public void read(ByteBuf byteBuf) {
 		pos = new Vector3D(byteBuf);

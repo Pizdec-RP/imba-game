@@ -6,14 +6,14 @@ import io.netty.buffer.ByteBuf;
 
 @PacketId(1)
 public class ClientPlayerConnectionPacket extends Packet {
-	
+
 	public String name;
 	public int renderDistance;
-	
+
 	public ClientPlayerConnectionPacket() {
-		
+
 	}
-	
+
 	public ClientPlayerConnectionPacket(String name, int rd) {
 		this.name = name;
 		this.renderDistance = rd;
@@ -30,5 +30,5 @@ public class ClientPlayerConnectionPacket extends Packet {
 		writeString(buffer, name);
 		writeInt(buffer, renderDistance);
 	}
-	
+
 }

@@ -9,9 +9,9 @@ import io.netty.buffer.ByteBuf;
 @PacketId(3)
 public class ClientWorldSuccLoadPacket extends Packet {
 	public UUID id;
-	
+
 	public ClientWorldSuccLoadPacket() {
-		
+
 	}
 
 	public ClientWorldSuccLoadPacket(UUID id) {

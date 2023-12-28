@@ -10,7 +10,7 @@ public class EntityInventory implements IInventory {
 	public EntityInventory(Entity owner) {
 		this.owner = owner;
 	}
-	
+
 	@Override
 	public Entity getOwner() {
 		return owner;
@@ -37,5 +37,5 @@ public class EntityInventory implements IInventory {
 	@Override
 	public void dropAllItems() {
 	}
-	
+
 }

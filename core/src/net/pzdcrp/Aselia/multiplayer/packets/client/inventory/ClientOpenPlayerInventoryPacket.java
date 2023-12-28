@@ -6,7 +6,7 @@ import io.netty.buffer.ByteBuf;
 
 @PacketId(24)
 public class ClientOpenPlayerInventoryPacket extends Packet {
-	
+
 	public ClientOpenPlayerInventoryPacket() {}
 
 	@Override
@@ -16,5 +16,5 @@ public class ClientOpenPlayerInventoryPacket extends Packet {
 	@Override
 	public void write(ByteBuf byteBuf) {
 	}
-	
+
 }

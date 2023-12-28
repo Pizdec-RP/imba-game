@@ -1,24 +1,16 @@
 package net.pzdcrp.Aselia.world.elements.inventory.items;
 
-import java.text.DecimalFormat;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g3d.ModelInstance;
 
 import net.pzdcrp.Aselia.Hpb;
 import net.pzdcrp.Aselia.data.BlockFace;
-import net.pzdcrp.Aselia.data.Vector2I;
 import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.player.Player;
 import net.pzdcrp.Aselia.utils.GameU;
 import net.pzdcrp.Aselia.world.elements.entities.Entity;
-import net.pzdcrp.Aselia.world.elements.inventory.IInventory;
 
 
 public class Item {
@@ -35,12 +27,12 @@ public class Item {
 		/*put(8, new TntCrateItem(0));
 		put(4, new WaterBucketItem());*/
 	}};
-	
+
 	public Item(int id) {
 		this.id = id;
 		this.count = 0;
 	}
-	
+
 	public Item(int id, int count) {
 		this.id = id;
 		this.count = count;
@@ -61,19 +53,19 @@ public class Item {
 	public void setСount(int count) {
 		this.count = count;
 	}
-	
+
 	public int stackSize() {
 		return 99;
 	}
-	
+
 	public void placeBlockAction(Vector3D cp, BlockFace face, Player actor) {
-		
+
 	}
-	
+
 	public void breakBlockAction(Entity actor) {
-		
+
 	}
-	
+
 	public Texture getTexture() {
 		if (this.isModel()) {
 			Texture t =  Hpb.mutex.getItemTexture(getName());
@@ -83,11 +75,11 @@ public class Item {
 		GameU.end("модель вызвана на немодельном предмете "+this.getClass().getName());
 		return null;
 	}
-	
+
 	public String getName() {
 		return "unnamed";
 	}
-	
+
 	public boolean isModel() {
 		return false;
 	}
@@ -95,21 +87,21 @@ public class Item {
 	public byte getDamage() {
 		return 1;
 	}
-	
+
 	public Item clone(int count) {
 		GameU.end("метод копирования не назначен для класса "+this.getClass().getName());
 		return null;
 	}
-	
+
 	public String getDescription() {
 		return null;
 	}
-	
+
 	@Override
 	public String toString() {
 		return "Item[ i:"+id+", c:"+count+"]";
 	}
-	
+
 	public static Item fromString(String s) {
 		if (s.startsWith("Item[ i:") && s.endsWith("]")) {
 			int count = 0;

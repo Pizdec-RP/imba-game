@@ -7,13 +7,13 @@ import net.pzdcrp.Aselia.data.Vector3D;
 
 @PacketId(5)
 public class ClientPlayerLocationDataPacket extends Packet {
-	
+
 	public Vector3D pos,vel;
 	public boolean onGround;
 	public float yaw, pitch;
 
 	public ClientPlayerLocationDataPacket() {
-		
+
 	}
 
 	public ClientPlayerLocationDataPacket(Vector3D pos, Vector3D vel, boolean onGround, float yaw, float pitch) {

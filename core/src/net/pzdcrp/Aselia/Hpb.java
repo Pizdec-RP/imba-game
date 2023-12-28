@@ -1,13 +1,10 @@
 package net.pzdcrp.Aselia;
 
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
-import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -38,7 +35,6 @@ import io.netty.channel.ChannelOption;
 import net.pzdcrp.Aselia.data.Mutex;
 import net.pzdcrp.Aselia.data.Settings;
 import net.pzdcrp.Aselia.data.Vector3D;
-import net.pzdcrp.Aselia.data.Vector3I;
 import net.pzdcrp.Aselia.multiplayer.HpbProtocol;
 import net.pzdcrp.Aselia.multiplayer.packets.client.ClientPlayerConnectionPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.client.ClientWorldSuccLoadPacket;
@@ -69,39 +65,39 @@ public class Hpb extends ApplicationAdapter {
 	public static SuperPizdatiyShader shaderprovider;
 	//public static OrthographicCamera mCamera;
 	public static Mutex mutex;
-	
+
 	public static final Vector3 forAnyReason = new Vector3();
 	public static PlayerWorld world;
 	//public static SpriteBatch gui = new SpriteBatch();
-	
+
 	public static Label infoLabel;
 	public static InputMultiplexer multiplexer;
 	//private static ShaderProgram sp;
 	//public static FrameBuffer buffer;
 	//public static TextureRegion textureRegion;
-	
+
 	public static State state = State.CREATINGINTERNALSERVER;
 	private ShaderProgram stage2shader;
 	public static InternalServer internalserver;
 	public static boolean deadplayer = false;
 	private static GlyphLayout respawn;
-	
+
 	public enum State {
 		CREATINGINTERNALSERVER, SENDCONNECTION, WAITFORSERVER, PREPARE, INGAME
 	}
-	
+
 	private HydraProtocol protocol = new HpbProtocol(new HpbPacketListener(this));
 	private boolean spawned = false;
 	public static Session session;
 	private static HydraClient client;
 	public static UUID playerId;
-	
+
 	public static Texture backgroundOfEverything;
-	
+
 	public Hpb() {
-		
+
 	}
-	
+
 	public void packetReceived(Session s, Packet p) {
 		try {
 			if (!(p instanceof ServerChunkLightPacket) &&
@@ -120,7 +116,7 @@ public class Hpb extends ApplicationAdapter {
 				ServerSpawnPlayerPacket packet = (ServerSpawnPlayerPacket)p;
 				world.player = new Player(packet.x,packet.y,packet.z, "Player1488", world, packet.lid);
 				//TODO transfer other data like inventory+, rotation-, hp+
-				
+
 				multiplexer.addProcessor(controls = new ControlListener(world.player));
 			} else {
 				if (world.player == null) GameU.end("bad packet: "+p.getClass().getSimpleName());
@@ -138,33 +134,33 @@ public class Hpb extends ApplicationAdapter {
 		pmp.setColor(Color.DARK_GRAY);
 		pmp.fill();
 		backgroundOfEverything = new Texture(pmp);
-		
+
 		Thread.currentThread().setName("main thd");
 		mutex = new Mutex();
 		System.out.println("loading textures");
 		loadTextures();
-		
-		
+
+
 		System.out.println("lessgo");
 		modelBatch = new ModelBatch(shaderprovider = new SuperPizdatiyShader());
 		spriteBatch = new SpriteBatch();
-		
+
 		font = mutex.getFont(20);
 		label = new Label(" ", new Label.LabelStyle(font, Color.WHITE));
 		label.setVisible(true);
-		
+
 		stage = new Stage();
 		respawn = new GlyphLayout();
 		respawn.setText(mutex.getFont(40), "Ты сдох. Возвращаемся через 0.00!");//TODO переделать на свой класс
 		infoLabel = new Label(" ", new Label.LabelStyle(font, Color.WHITE));
 		infoLabel.setPosition(Gdx.graphics.getWidth() / 2, 100);
-		
+
 		stage.addActor(label);
 		stage.addActor(infoLabel);
-		
+
 		multiplexer = new InputMultiplexer();
 		Gdx.input.setInputProcessor(multiplexer);
-		
+
 		Gdx.input.setCursorCatched(true);
 		buffer = new FrameBuffer(Pixmap.Format.RGBA8888, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
 		textureRegion = new TextureRegion();
@@ -174,10 +170,10 @@ public class Hpb extends ApplicationAdapter {
 		isdeadatr = stage2shader.getUniformLocation("isdead");
 		randomatr = stage2shader.getUniformLocation("random");
 		respawnshadesatr = stage2shader.getUniformLocation("deadshades");
-		
+
 		mutex.getFont(25);//инициализируем шрифт потомучто он используется в чате а создание чата происходит в потоке обработки пакетов
 	}
-	
+
 	@Override
 	public void resize (int width, int height) {
 		if (world == null) return;
@@ -189,34 +185,34 @@ public class Hpb extends ApplicationAdapter {
 	    spriteBatch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
 	    buffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, true);
 	}
-	
+
 	public void tick() {
 		world.tick();
 	}
-	
+
 	long last = System.currentTimeMillis();
 	//public static ModelInstance modelInstance;
 	private static long /*delta, */now;
 	private static int en;
-	
+
 	public static double tlerp(double a, double b, int ticks) {
 	    float t = (float)(System.nanoTime() - timeone) / (tickrate * ticks * 1000000);
 	    if (t > 1f) t = 1f;
 	    return a * (1.0 - t) + b * t;
 	}
-	
+
 	public static float lerp(float a, float b) {
 	    float t = (float)(System.nanoTime() - timeone) / (tickrate * 1000000);
 	    if (t > 1f) t = 1f;
 	    return a * (1.0f - t) + b * t;
 	}
-	
+
 	public static double lerp(double a, double b) {
 	    float t = (float)(System.nanoTime() - timeone) / (tickrate * 1000000);
 	    if (t > 1f) t = 1f;
 	    return a * (1.0 - t) + b * t;
 	}
-	
+
 	static String fullText;
     static String currentText = "";
     static int currentIndex = 0;
@@ -224,7 +220,7 @@ public class Hpb extends ApplicationAdapter {
     static float vanishDelay = 5f;
     static Timer.Task textTimer;
     static GlyphLayout layout = new GlyphLayout();
-    
+
     public static void displayInfo(String text) {
         if(textTimer != null) {
             textTimer.cancel();
@@ -256,7 +252,7 @@ public class Hpb extends ApplicationAdapter {
 	private static TextureRegion textureRegion;
 	private static int screensizeatr, hurtlevelatr, isdeadatr, randomatr, respawnshadesatr;
 	public static float hurtlvl = 0, deadtimer = 0, respawnshades = 0;
-	
+
 	public void renderWorld() {
 		if (hurtlvl > 0) {
 			hurtlvl--;
@@ -266,10 +262,10 @@ public class Hpb extends ApplicationAdapter {
 
 		//Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-		
+
 		int halfwidth = Gdx.graphics.getWidth()/2;
 		int halfheight = Gdx.graphics.getHeight()/2;
-		
+
 		//1 стадия
 		if (deadtimer == 0 || deadtimer >= 400) {
 			shaderprovider.newstage();
@@ -279,14 +275,14 @@ public class Hpb extends ApplicationAdapter {
 			shaderprovider.end();
 		}
 		//конец 1 стадии
-		
+
 		//2 стадия
 		textureRegion.setRegion(buffer.getColorBufferTexture());
-		
+
 		buffer.end();
-		
+
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-		
+
 		spriteBatch.begin();
 		spriteBatch.setShader(stage2shader);
 		stage2shader.setUniformf(screensizeatr, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -294,13 +290,13 @@ public class Hpb extends ApplicationAdapter {
 		stage2shader.setUniformf(hurtlevelatr, hurtlvl);
 		stage2shader.setUniformf(respawnshadesatr, respawnshades);
 		stage2shader.setUniformf(randomatr, MathU.rndnrm());
-		
+
 		Texture buftex = textureRegion.getTexture();
-		
+
 		spriteBatch.draw(buftex, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, buftex.getWidth(), buftex.getHeight(), false, true);
 		spriteBatch.setShader(null);
-		
-		if (deadplayer) { 
+
+		if (deadplayer) {
 			if (hurtlvl == 0) {
 				BitmapFont f = mutex.getFont(40);
 				deadtimer++;
@@ -343,18 +339,18 @@ public class Hpb extends ApplicationAdapter {
 			font.draw(spriteBatch, currentText, halfwidth - textWidth / 2, Gdx.graphics.getHeight()*0.2f);
 			world.player.pinterface.render(halfwidth, halfheight);
 		}
-		
+
 		spriteBatch.end();
 		//конец 2 стадии
 	}
-	
+
 	public static void render(ModelInstance obj) {
 		modelBatch.render(obj);
 	}
 	public static void render(ModelInstance obj, Environment env) {
 		modelBatch.render(obj, env);
 	}
-	
+
 	@Override
 	public void render() {
 		if (exit) {
@@ -413,7 +409,7 @@ public class Hpb extends ApplicationAdapter {
 				}
 				if (world.player == null) return;
 				renderWorld();
-				
+
 				if (Settings.debug) {
 					StringBuilder builder = new StringBuilder();
 					if (world.player.curCol != null) {
@@ -450,19 +446,19 @@ public class Hpb extends ApplicationAdapter {
 			System.exit(0);
 		}
 	}
-	
+
 	@Override
 	public void dispose() {
 		exit = true;
 	}
-	
+
 	@SuppressWarnings("deprecation")
 	public static void loadTextures() {
 		try {
 			mutex.begin();
 			System.out.println(Gdx.files.getLocalStoragePath());
 			JsonObject obj = (JsonObject) new JsonParser().parse(Gdx.files.internal("textureData.json").readString());
-			
+
 			//JsonObject blocks = obj.get("blocks").getAsJsonObject();
 			GameU.log(Block.blocks.values().size());
 			for (Block b : Block.blocks.values()) {
@@ -474,37 +470,37 @@ public class Hpb extends ApplicationAdapter {
 					mutex.addTexture(texture, key);
 				}
 			}
-			
+
 			for (int i = 0; i < 10; i++) {
 				String key = "ds"+i;
 				Texture texture = new Texture(Gdx.files.internal("textures/blocks/"+key+".png"),Format.RGBA8888,true);
 				//texture.setFilter(TextureFilter.MipMap,TextureFilter.Nearest);
 				mutex.addTexture(texture, key);
 			}
-			
+
 			JsonObject other = obj.get("other").getAsJsonObject();
 			for (String key : other.keySet()) {
 				Texture texture  = new Texture(Gdx.files.internal("textures/other/"+other.get(key).getAsString()),Format.RGBA8888,true);
 				//texture.setFilter(TextureFilter.MipMap,TextureFilter.Nearest);
 				mutex.addOtherTexture(texture, key);
 			}
-			
+
 			JsonObject items = obj.get("items").getAsJsonObject();
 			for (String key : items.keySet()) {
 				Texture texture  = new Texture(Gdx.files.internal("textures/items/"+items.get(key).getAsString()),Format.RGBA8888,true);
 				//texture.setFilter(TextureFilter.MipMap,TextureFilter.Nearest);
 				mutex.addItemTexture(texture, key);
 			}
-			
+
 			mutex.end();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	static long timeone = System.nanoTime();
 	static int curcomp = 0;
-	
+
 	public void tickLoop() {
 		new Thread(() -> {
 			while (true) {
@@ -523,14 +519,14 @@ public class Hpb extends ApplicationAdapter {
 	        }
 	    }, "client tick thread").start();
 	}
-	
+
 	/*public static void onCommand(String rawcommand) {
 		if (rawcommand.split(" ").length == 0) return;
 		String command = rawcommand.split(" ")[0].replace("/", "");
 		String[] args = rawcommand.split(" ");
-		
+
 		//TODO ClientPlayerCommandPacket
-		
+
 		//System.out.println(command);
 		if (command.equals("stop")) {
 			if (world.save()) {

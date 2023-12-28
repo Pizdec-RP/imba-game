@@ -7,12 +7,12 @@ import net.pzdcrp.Aselia.world.elements.inventory.items.Item;
 
 @PacketId(19)
 public class ServerSetSlotPacket extends Packet {
-	
+
 	public int index;
 	public Item item;
-	
+
 	public ServerSetSlotPacket() {}
-	
+
 	public ServerSetSlotPacket(int index, Item item) {
 		this.index = index;
 		this.item = item;

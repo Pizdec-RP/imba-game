@@ -16,7 +16,7 @@ public interface World {
 	public static final int chunks = 16, maxheight = chunks * 16, buildheight = maxheight-1;
 
 	void tick();
-	
+
 	boolean containColumn(Vector2I pos);
 
 	Block getBlock(Vector3D v);
@@ -28,9 +28,9 @@ public interface World {
 	int getLight(int x, int y, int z);
 
 	Column getColumn(Vector2I cc);
-	
+
 	/**
-	 * 
+	 *
 	 * @param x - block pos
 	 * @param z - block pos
 	 * @return
@@ -42,24 +42,24 @@ public interface World {
 	void spawnEntity(Entity entity);
 
 	boolean setBlock(Block block, ActionAuthor author);
-	
+
 	void setBlock(int block, Vector3D pos, ActionAuthor author);
 
 	boolean posDostupna(int x, int y, int z);
 
 	List<Entity> getEntities(Vector3D pos, double radius);
-	
+
 	List<Player> getPlayers(Vector3D pos, double radius);
-	
+
 	boolean isLocal();
-	
+
 	Column getWithoutLoad(Vector2I cc);
-	
+
 	Map<Vector2I,Column> getLoadedColumns();
 
 	boolean posDostupna(Vector3D pos);
 
 	void broadcastByColumn(Vector2I pos, Packet p);
-	
+
 	Entity getEntity(int id);
 }

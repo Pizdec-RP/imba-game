@@ -12,18 +12,17 @@ import net.pzdcrp.Aselia.Hpb;
 import net.pzdcrp.Aselia.data.MBIM.offset;
 import net.pzdcrp.Aselia.extended.SexyMeshBuilder;
 import net.pzdcrp.Aselia.extended.SexyModelBuilder;
-import net.pzdcrp.Aselia.utils.GameU;
 import net.pzdcrp.Aselia.world.elements.Chunk;
 
 public class NotMBIM extends BlockModelBuilder {
 	public Pair all;
 	private int mask;
 	public NotMBIM() {
-		mask = 
+		mask =
 		VertexAttributes.Usage.Position
 		| VertexAttributes.Usage.Normal
 		| VertexAttributes.Usage.TextureCoordinates;
-		
+
 		SexyModelBuilder mb = new SexyModelBuilder(this, true);
 		mb.begin();
 
@@ -32,7 +31,7 @@ public class NotMBIM extends BlockModelBuilder {
 		all = new Pair(
 			mb.part(
 				"cube",
-				GL20.GL_TRIANGLES, 
+				GL20.GL_TRIANGLES,
 				mask,
 				new Material(
 		    		TextureAttribute.createDiffuse(Hpb.mutex.getComplex()),
@@ -42,24 +41,24 @@ public class NotMBIM extends BlockModelBuilder {
 			),
 			mb
 		);
-		
+
 	}
-	
+
 	@Override
 	public Chunk getChunk() {
 		return null;
 	}
-	
+
 	@Override
 	public SexyMeshBuilder obtain(Vector3D blockpos, boolean transparent) {
 		return all.mpb;
 	}
-	
+
 	@Override
 	public void setCuroffset(offset ofs) {
 		//pass
 	}
-	
+
 	@Override
 	public void rebuildBuilders() {
 		if (all.mb.model != null) {
@@ -68,7 +67,7 @@ public class NotMBIM extends BlockModelBuilder {
 		all.mb.begin();
 		all.mpb = all.mb.part(
 				"cube",
-				GL20.GL_TRIANGLES, 
+				GL20.GL_TRIANGLES,
 				mask,
 				new Material(
 		    		TextureAttribute.createDiffuse(Hpb.mutex.getComplex()),
@@ -78,12 +77,12 @@ public class NotMBIM extends BlockModelBuilder {
 			);
 		all.calls = 1;
 	}
-	
+
 	@Override
 	public void clear() {
 		rebuildBuilders();
 	}
-	
+
 	public ModelInstance end() {
 		return new ModelInstance(all.mb.end());
 	}
