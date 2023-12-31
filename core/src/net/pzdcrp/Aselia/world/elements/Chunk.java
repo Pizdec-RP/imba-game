@@ -255,12 +255,12 @@ public class Chunk {
 					if (clas.isRenderable()) {
 						clas.pos.setComponents(normx(xx), normy(yy), normz(zz));
 						boolean n1,n2,n3,n4,n5,n6;
-						n1 = wr(xx,yy+1,zz, clas);
-						n2 = wr(xx,yy-1,zz, clas);
-						n3 = wr(xx-1,yy,zz, clas);//left -x
-						n4 = wr(xx+1,yy,zz, clas);
-						n5 = wr(xx,yy,zz-1, clas);
-						n6 = wr(xx,yy,zz+1, clas);
+						n1 = hideside(xx,yy+1,zz, clas);
+						n2 = hideside(xx,yy-1,zz, clas);
+						n3 = hideside(xx-1,yy,zz, clas);//left -x
+						n4 = hideside(xx+1,yy,zz, clas);
+						n5 = hideside(xx,yy,zz-1, clas);
+						n6 = hideside(xx,yy,zz+1, clas);
 						clas.addModel(n1,n2,n3,n4,n5,n6,m);
 						clas.pos.setComponents(0,0,0);
 					}
@@ -298,7 +298,7 @@ public class Chunk {
 		}
 	}
 
-	private boolean wr(int x, int y, int z, Block current) {//false = рендерится
+	private boolean hideside(int x, int y, int z, Block current) {//false = рендерится
 		if (this.height+y < 0) {
 			return true;
 		}
@@ -306,12 +306,13 @@ public class Chunk {
 
 		if (b.getType() == BlockType.air) {
 			return false;
-		}
-		if (b.getType() == BlockType.transparent) {
+		} else if (b.getType() == BlockType.transparent) {
 			if (current.getClass() == b.getClass()) return true;
 			return false;
 		} else if (b.getType() == BlockType.noncollideabe) {
 			return false;
+		} else if (b.getType() == BlockType.slab) {
+			return false;//too ez
 		}
 		return true;
 	}

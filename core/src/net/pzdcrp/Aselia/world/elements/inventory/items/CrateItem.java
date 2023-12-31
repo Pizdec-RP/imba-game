@@ -13,7 +13,7 @@ public class CrateItem extends Item {
 	}
 
 	@Override
-	public void placeBlockAction(Vector3D cp, BlockFace face, Player actor) {
+	public void placeBlockAction(Vector3D cp, BlockFace face, Vector3D origin, Player actor) {
 		if (actor.placeBlock(new Crate(cp))) actor.castedInv.wasteHandItem();
 	}
 

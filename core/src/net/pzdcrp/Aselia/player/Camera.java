@@ -2,6 +2,7 @@ package net.pzdcrp.Aselia.player;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 
 import net.pzdcrp.Aselia.Hpb;
@@ -43,9 +44,10 @@ public class Camera {
 		//return nowfov;
 		return cam.fieldOfView;
 	}
-	Vector3 offset = new Vector3();
+	
+	public float yoffset = 0;
 	public void render() {
-		cam.position.set(Hpb.lerp(before.x, now.x), Hpb.lerp(before.y, now.y), Hpb.lerp(before.z, now.z));
+		cam.position.set(Hpb.lerp(before.x, now.x), Hpb.lerp(before.y, now.y)+yoffset, Hpb.lerp(before.z, now.z));
 		cam.update();
 	}
 

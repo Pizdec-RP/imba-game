@@ -65,6 +65,12 @@ public class Block {
 			put(25, new OakSlab(new Vector3D(), true));
 			put(26, new OakSlab(new Vector3D(), false));
 		}};
+		/**
+		 * правила:
+		 * 
+		 * айди полублоков:
+		 * 	направленные вверх - нечет, вниз - чет
+		 */
 	private static Map<Integer, Integer> BlockidToItemid = new ConcurrentHashMap<>() {
 		private static final long serialVersionUID = 37079642665568945L;
 		{
@@ -89,7 +95,7 @@ public class Block {
 		}};
 	public static Map<Integer, ModelInstance> blockModels = new ConcurrentHashMap<>();
 	public enum BlockType {
-		air, solid, transparent, noncollideabe;
+		air, solid, transparent, noncollideabe, slab;
 	}
 	public String texture;
 	protected AABBList hitbox;
@@ -258,7 +264,7 @@ public class Block {
 		return Item.items.get(itemid);
 	}
 
-	public void tick() {
+	public void tick(World w) {
 
 	}
 
@@ -297,8 +303,14 @@ public class Block {
 		if (id == -1) {
 			this.id = idByBlock(this);
 		}
+		//GameU.err("override this");
+		//GameU.tracer();
 		return id;
 	}
+	
+	//public Item[] getDrop() {
+		
+	//}
 
 	/**
 	 * Server side

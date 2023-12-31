@@ -53,7 +53,7 @@ public class PlayerWorld implements World {// implements RenderableProvider {
     private ModelInstance moon;
     //private ModelInstance shield;
     public Vector3 lightDirection = new Vector3();
-    public static int seed = 228;
+    public static int seed = 43567867;
 
     private static final int DAY_LENGTH = 60000;
     private static final float DISTANCE_FROM_CENTER = 2000f;
@@ -293,7 +293,7 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 	        return Float.compare(distance2, distance1); // Сортировка в обратном порядке
 	    }
 	};
-	public void render() {
+	public void render(float deltaTime) {
 		if (Hpb.exit) return;
 
 		byte upd = 0;
@@ -311,7 +311,7 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 		renderSky();
 		for (Column col : loadedColumns.values()) {
 			if (col.canrender()) {
-				col.renderEntites();
+				col.renderEntites(deltaTime);
 				col.renderNormal();
 			}
 		}
@@ -339,7 +339,7 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 			p.render();
 		}
 		Hpb.render(particlesModel);
-		player.render();
+		player.render(deltaTime);
 	}
 
 	@Override

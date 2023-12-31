@@ -78,7 +78,7 @@ public class Entity {
 	public Block currentAimBlock = new Air(new Vector3D());
 	public BlockFace currentAimFace = BlockFace.PX;
 	public Entity currentAimEntity = null;
-	public Vector3D currentaimpoint;
+	public Vector3D currentaimpoint = new Vector3D();
 	public World world;
 
 	public Entity(Vector3D pos, AABB hitbox, EntityType type, World world, int localid) {
@@ -371,7 +371,7 @@ public class Entity {
 		this.pitch = pitch;
 	}
 
-	public void render() {
+	public void render(float delta) {
 		if (Settings.debug) {
 			Hpb.render(getFrame());
 		}

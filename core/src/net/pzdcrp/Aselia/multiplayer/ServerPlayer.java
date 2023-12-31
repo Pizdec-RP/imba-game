@@ -107,7 +107,7 @@ public class ServerPlayer {
 				if (!world.loadedColumns.containsKey(VectorU.posToColumn(packet.pos))) {
 					disconnect("click outside of range "+packet.pos.toString());
 				}
-				playerEntity.castedInv.onRClick(packet.pos, packet.face);
+				playerEntity.castedInv.onRClick(packet.pos, packet.face, packet.origin);
 			} else if (p instanceof ClientChatPacket) {
 				ClientChatPacket packet = (ClientChatPacket) p;
 				if (packet.msg.startsWith("/")) {

@@ -270,7 +270,8 @@ public class Hpb extends ApplicationAdapter {
 		if (deadtimer == 0 || deadtimer >= 400) {
 			shaderprovider.newstage();
 			modelBatch.begin(world.player.cam.cam);
-			world.render();
+			float deltaTime = Gdx.graphics.getDeltaTime();
+			world.render(deltaTime);
 			modelBatch.end();
 			shaderprovider.end();
 		}

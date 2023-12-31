@@ -324,4 +324,8 @@ public class MathU {
 	    }
 	    return result;
 	}
+	
+	public static boolean isDecimalAfterPointGreaterOrEqualHalf(float value) {
+        return ((value - (int) value) >= 0.5f);
+    }
 }

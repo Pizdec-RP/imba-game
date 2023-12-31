@@ -50,4 +50,9 @@ public class Dirt extends Block {
 	public float getResistance() {
 		return 1f;
 	}
+	
+	@Override
+	public int getId() {
+		return 1;
+	}
 }

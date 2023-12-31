@@ -143,10 +143,10 @@ public class Column {
 		}
 	}
 
-	public void renderEntites() {
+	public void renderEntites(float delta) {
 		for (Entity entity : this.entites) {
 			if (entity.type != EntityType.player) {
-				entity.render();
+				entity.render(delta);
 			}
 		}
 	}

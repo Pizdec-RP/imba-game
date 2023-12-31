@@ -4,6 +4,9 @@ import net.pzdcrp.Aselia.data.BlockFace;
 import net.pzdcrp.Aselia.data.ItemSortType;
 import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.player.Player;
+import net.pzdcrp.Aselia.utils.GameU;
+import net.pzdcrp.Aselia.utils.MathU;
+import net.pzdcrp.Aselia.world.elements.blocks.Block;
 import net.pzdcrp.Aselia.world.elements.blocks.OakSlab;
 import net.pzdcrp.Aselia.world.elements.blocks.Planks;
 
@@ -14,8 +17,9 @@ public class OakSlabItem extends Item {
 	}
 
 	@Override
-	public void placeBlockAction(Vector3D cp, BlockFace face, Player actor) {
-		if (actor.placeBlock(new OakSlab(cp, false))) actor.castedInv.wasteHandItem();
+	public void placeBlockAction(Vector3D cp, BlockFace face, Vector3D origin, Player actor) {
+		//MathU.isDecimalAfterPointGreaterOrEqualHalf(origin.y)
+		if (actor.placeBlock(new OakSlab(cp, (cp.y + 0.5f) < origin.y))) actor.castedInv.wasteHandItem();
 	}
 
 	@Override

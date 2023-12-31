@@ -71,11 +71,9 @@ public class Player extends Entity {
 	private boolean isMining = false;
 	public PlayerInventory castedInv;
 
-
 	//server
 	public String nickname;
 	public ServerPlayer serverProfile;
-
 
 	public Player(float tx, float ty, float tz, String name, World world, int lid) {
 		super(new Vector3D(tx,ty,tz),new AABB(-0.3, 0, -0.3, 0.3, 1.7, 0.3), EntityType.player, world, lid);
@@ -87,15 +85,6 @@ public class Player extends Entity {
 		}
 		pinterface = new PlayerInterface(this);
 		this.castedInv = (PlayerInventory) inventory;
-		/*this.inventory.addItem(new TntCrateItem(99), 0);
-		this.inventory.addItem(new GlassItem(99), 1);
-		this.inventory.addItem(new GrassItem(99), 2);
-		this.inventory.addItem(new StoneItem(99), 3);
-		this.inventory.addItem(new OakLogItem(99), 4);
-		this.inventory.addItem(new PlanksItem(99), 5);
-		this.inventory.addItem(new DirtItem(99), 6);
-		this.inventory.addItem(new WaterBucketItem(1), 7);
-		this.inventory.addItem(new WeedItem(99), 8);*/
 	}
 
 	@Override
@@ -380,12 +369,51 @@ public class Player extends Entity {
 	}
 
 
+	private float y = 0, y1 = 0;
+    private float s = 16f, s1 = 8f;
+    private float a = 0.06f, a1 = 0.06f;
+    private float f = 1f, f1 = 1f;
+    private float angle = 0f, angle1 = 0f;
+    
+    public void applyCamBobbing(float delta) {
+    	boolean update = (forward || reverse || left || right) && onGround;
+    	boolean apply = update;
+    	
+    	if (!update) {
+    		if (angle != 0 || angle1 != 0) {
+    			angle = 0f;
+    			angle1 = 0f;
+    			apply = true;
+    		}
+    	}
+    	
+    	if (update) {
+    		if (run) {
+    			s = 20f;
+    			s1 = 10f;
+    		} else {
+    			s = 14f;
+    			s1 = 7f;
+    		}
+	    	y += delta * s;
+	        angle = a * MathUtils.sin(f * y);
+	        
+	        y1 += delta * s1;
+	        angle1 = a1 * MathUtils.sin(f1 * y1);
+    	}
+    	if (apply) {
+    		cam.yoffset = angle;
+    		cam.cam.rotate(Vector3.Y, angle1);
+    	}
+        
+        //cam.rotate(Vector3.Z, angle);
+    }
 
 	@Override
-	public void render() {
-		super.render();
+	public void render(float delta) {
+		super.render(delta);
 		if (Gdx.input.isKeyPressed(Input.Keys.W)) {
-			if (run && cam.getFov() < Settings.fov+5) {
+			if (run && cam.getFov() < Settings.fov+10) {
 				cam.setFov(cam.getFov() + 0.4f);
 			} else {
 				if (!run && cam.getFov() > Settings.fov) {
@@ -397,6 +425,7 @@ public class Player extends Entity {
 				cam.setFov(cam.getFov() - 0.4f);
 			}
 		}
+		applyCamBobbing(delta);
 		cam.render();
 	}
 

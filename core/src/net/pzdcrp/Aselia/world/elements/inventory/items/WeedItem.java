@@ -16,7 +16,7 @@ public class WeedItem extends Item {
 	}
 
 	@Override
-	public void placeBlockAction(Vector3D cp, BlockFace face, Player actor) {
+	public void placeBlockAction(Vector3D cp, BlockFace face, Vector3D origin, Player actor) {
 		if (actor.placeBlock(new Weed(cp))) actor.castedInv.wasteHandItem();
 	}
 

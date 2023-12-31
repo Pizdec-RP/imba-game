@@ -91,12 +91,12 @@ public class PlayerInventory implements IInventory {
 		if (owner.currentAimBlock.clickable() && !owner.down) {
 			Hpb.session.send(new ClientClickBlockPacket(owner.currentAimBlock.pos));
 		} else {
-			Hpb.session.send(new ClientPlaceBlockPacket(clickedPos, owner.currentAimFace));
+			Hpb.session.send(new ClientPlaceBlockPacket(clickedPos, owner.currentAimFace, owner.currentaimpoint));
 		}
 	}
 
-    public void onRClick(Vector3D pos, BlockFace face) {
-    	getSlot(getCurrentSlotInt()).placeBlockAction(pos, face, owner);
+    public void onRClick(Vector3D pos, BlockFace face, Vector3D origin) {
+    	getSlot(getCurrentSlotInt()).placeBlockAction(pos, face, origin, owner);
     }
 
     /**server side*/

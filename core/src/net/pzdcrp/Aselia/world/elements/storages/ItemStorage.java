@@ -25,6 +25,7 @@ import net.pzdcrp.Aselia.world.elements.inventory.items.NoItem;
 public class ItemStorage {
 	public static Map<Byte, ItemStorage> storageTable = new HashMap<>() {{
 		put((byte) 0, new ChestItemStorage(false));
+		put((byte) 1, new FurnaceInterface(false));
 	}};
 
 	public Map<Integer, Item> items = new HashMap<>();
@@ -59,7 +60,10 @@ public class ItemStorage {
             		PlayerInventory.slotWidth - PlayerInventory.spacing * 2);
     	}
 	}
-
+	
+	public void serverTick() {
+		
+	}
 
 	public void open(Player opener) {
 		viewers.add(opener);

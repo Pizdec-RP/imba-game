@@ -45,12 +45,12 @@ public class ItemEntity extends Entity {
 	}
 
 	@Override
-	public void render() {
+	public void render(float delta) {
 		if (despawn) {
 			super.despawn();
 			return;
 		}
-		super.render();
+		super.render(delta);
 		if (model == null) {
 			ModelInstance temp = Block.blockModels.get(blockid);
 			if (temp == null) {

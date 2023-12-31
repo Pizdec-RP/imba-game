@@ -37,4 +37,9 @@ public class Voed extends Block {
 	public Block clone(Vector3D poss) {
 		return new Voed(poss);
 	}
+	
+	@Override
+	public int getId() {
+		return 5;
+	}
 }
