@@ -192,6 +192,7 @@ public class MBIM extends BlockModelBuilder {
 		GameU.end("unknown face "+curoffset.toString());
 		return 0;
 	}
+	
 	@Override
 	public void setCuroffset(offset ofs) {
 		curoffset = ofs;

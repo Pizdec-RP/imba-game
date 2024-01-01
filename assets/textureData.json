@@ -8,8 +8,8 @@
         "hpf": "hpheartfull.png",
         "hph": "hphearthalf.png",
         "hpz": "hpheart.png",
-        "hrzbtn": "horizontalbuttonbkg.png"
-
+        "hrzbtn": "horizontalbuttonbkg.png",
+		"buttonbackground" : "buttonbackground.png"
     },
     "items": {
         "bucket": "bucket.png",

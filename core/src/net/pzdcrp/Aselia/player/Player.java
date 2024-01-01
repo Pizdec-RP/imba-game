@@ -37,6 +37,8 @@ import net.pzdcrp.Aselia.multiplayer.packets.server.world.ServerChunkLightPacket
 import net.pzdcrp.Aselia.multiplayer.packets.server.world.ServerLoadColumnPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.world.ServerSetblockPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.world.ServerUnloadColumnPacket;
+import net.pzdcrp.Aselia.player.screens.PlayerGameDeadScreen;
+import net.pzdcrp.Aselia.player.screens.PlayerInGameHudScreen;
 import net.pzdcrp.Aselia.server.InternalServer;
 import net.pzdcrp.Aselia.server.ServerWorld;
 import net.pzdcrp.Aselia.utils.GameU;
@@ -63,7 +65,6 @@ public class Player extends Entity {
 	public float camHeight = 1.6f;
 	public int actcd = 0;//15 ticks
 	public Chat2 chat = new Chat2();
-	public PlayerInterface pinterface;
 
 	private int breakingticks = 0;
 	private Block beforeAimBlock = new Air(new Vector3D());
@@ -83,12 +84,12 @@ public class Player extends Entity {
 			cam.setpos(this.pos.x,this.pos.y,this.pos.z);
 			cam.cam.update();
 		}
-		pinterface = new PlayerInterface(this);
 		this.castedInv = (PlayerInventory) inventory;
 	}
 
 	@Override
 	public boolean tick() {
+		if (hp == 0) return false;
 		boolean continuee = super.tick();
 		if (!this.world.isLocal()) {
 			if (hp < maxhp() && hp != 0) {
@@ -275,13 +276,13 @@ public class Player extends Entity {
 	/**multi side*/
 	public void onDeath() {
 		if (world.isLocal()) {
-			Hpb.deadplayer = true;
+			//Hpb.deadplayer = true;
+			Hpb.changeScreen(new PlayerGameDeadScreen());
 		} else {
 			this.inventory.dropAllItems();
 			//TODO отослать близжайшим игрокам пакет о смерти игрока
 			//TODO при телепорте ентити проверять пропадает ли она из зоны стрима игроков и если да то деспавнить
 		}
-		//this.inventory.dropAllItems();
 	}
 
 	public void respawn() {
@@ -427,6 +428,9 @@ public class Player extends Entity {
 		}
 		applyCamBobbing(delta);
 		cam.render();
+		//if (hp == 0) {
+			//TODO при смерти камера смотрит вверх и падает на нижнюю позицию хитбокса игрока
+		//}
 	}
 
 	@Override

@@ -56,11 +56,11 @@ public class OakSlab extends Block {
 		ModelUtils.setModelSizes(hitbox.get()[0]);
 		
     	if (!py) {
-    		mbim.setCuroffset(offset.py);
+    		mbim.setCuroffset(offset.no);
     		ModelUtils.buildTopX(a);//PY
     	}
     	if (!ny) {
-	    	mbim.setCuroffset(offset.ny);
+	    	mbim.setCuroffset(offset.no);
 	    	ModelUtils.buildBottomX(a);//NY
 	    }
     	

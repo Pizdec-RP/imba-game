@@ -45,7 +45,10 @@ import net.pzdcrp.Aselia.multiplayer.packets.server.world.ServerLoadColumnPacket
 import net.pzdcrp.Aselia.multiplayer.packets.server.world.ServerUnloadColumnPacket;
 import net.pzdcrp.Aselia.player.ControlListener;
 import net.pzdcrp.Aselia.player.Player;
+import net.pzdcrp.Aselia.player.screens.PlayerInGameHudScreen;
+import net.pzdcrp.Aselia.player.screens.Screen;
 import net.pzdcrp.Aselia.server.InternalServer;
+import net.pzdcrp.Aselia.ui.Button;
 import net.pzdcrp.Aselia.utils.GameU;
 import net.pzdcrp.Aselia.utils.MathU;
 import net.pzdcrp.Aselia.world.PlayerWorld;
@@ -79,8 +82,8 @@ public class Hpb extends ApplicationAdapter {
 	public static State state = State.CREATINGINTERNALSERVER;
 	private ShaderProgram stage2shader;
 	public static InternalServer internalserver;
-	public static boolean deadplayer = false;
-	private static GlyphLayout respawn;
+	//public static boolean deadplayer = false;
+	//private static GlyphLayout respawn;
 
 	public enum State {
 		CREATINGINTERNALSERVER, SENDCONNECTION, WAITFORSERVER, PREPARE, INGAME
@@ -93,9 +96,26 @@ public class Hpb extends ApplicationAdapter {
 	public static UUID playerId;
 
 	public static Texture backgroundOfEverything;
+	
+	private static Screen currentScreen;
 
 	public Hpb() {
 
+	}
+	
+	private static Screen nextScreen;
+	private static boolean changescreenRequest = false;
+	public static void changeScreen(Screen s) {
+		nextScreen = s;
+		changescreenRequest = true;
+	}
+	
+	private static void changeScreen() {
+		currentScreen.end();
+		currentScreen = nextScreen;
+		GameU.log("binging new screen");
+		nextScreen.bind();
+		changescreenRequest = false;
 	}
 
 	public void packetReceived(Session s, Packet p) {
@@ -116,7 +136,10 @@ public class Hpb extends ApplicationAdapter {
 				ServerSpawnPlayerPacket packet = (ServerSpawnPlayerPacket)p;
 				world.player = new Player(packet.x,packet.y,packet.z, "Player1488", world, packet.lid);
 				//TODO transfer other data like inventory+, rotation-, hp+
-
+				
+				//старт начинается сразу с игры
+				currentScreen = new PlayerInGameHudScreen();
+				
 				multiplexer.addProcessor(controls = new ControlListener(world.player));
 			} else {
 				if (world.player == null) GameU.end("bad packet: "+p.getClass().getSimpleName());
@@ -150,8 +173,7 @@ public class Hpb extends ApplicationAdapter {
 		label.setVisible(true);
 
 		stage = new Stage();
-		respawn = new GlyphLayout();
-		respawn.setText(mutex.getFont(40), "Ты сдох. Возвращаемся через 0.00!");//TODO переделать на свой класс
+		
 		infoLabel = new Label(" ", new Label.LabelStyle(font, Color.WHITE));
 		infoLabel.setPosition(Gdx.graphics.getWidth() / 2, 100);
 
@@ -172,6 +194,8 @@ public class Hpb extends ApplicationAdapter {
 		respawnshadesatr = stage2shader.getUniformLocation("deadshades");
 
 		mutex.getFont(25);//инициализируем шрифт потомучто он используется в чате а создание чата происходит в потоке обработки пакетов
+		
+		Button.texture = mutex.getOTexture("buttonbackground");
 	}
 
 	@Override
@@ -180,7 +204,7 @@ public class Hpb extends ApplicationAdapter {
 		if (world.player != null) {
 			world.player.cam.cam.viewportWidth = width;
 			world.player.cam.cam.viewportHeight = height;
-			world.player.pinterface.resize(width, height);
+			currentScreen.resize(width, height);
 		}
 	    spriteBatch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
 	    buffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, true);
@@ -251,9 +275,12 @@ public class Hpb extends ApplicationAdapter {
 	private static FrameBuffer buffer;
 	private static TextureRegion textureRegion;
 	private static int screensizeatr, hurtlevelatr, isdeadatr, randomatr, respawnshadesatr;
-	public static float hurtlvl = 0, deadtimer = 0, respawnshades = 0;
+	public static float hurtlvl = 0;//, deadtimer = 0, respawnshades = 0;
 
 	public void renderWorld() {
+		if (changescreenRequest) {
+			changeScreen();
+		}
 		if (hurtlvl > 0) {
 			hurtlvl--;
 		}
@@ -267,14 +294,14 @@ public class Hpb extends ApplicationAdapter {
 		int halfheight = Gdx.graphics.getHeight()/2;
 
 		//1 стадия
-		if (deadtimer == 0 || deadtimer >= 400) {
+		//if (deadtimer == 0 || deadtimer >= 400) {
 			shaderprovider.newstage();
 			modelBatch.begin(world.player.cam.cam);
 			float deltaTime = Gdx.graphics.getDeltaTime();
 			world.render(deltaTime);
 			modelBatch.end();
 			shaderprovider.end();
-		}
+		//}
 		//конец 1 стадии
 
 		//2 стадия
@@ -287,9 +314,9 @@ public class Hpb extends ApplicationAdapter {
 		spriteBatch.begin();
 		spriteBatch.setShader(stage2shader);
 		stage2shader.setUniformf(screensizeatr, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		stage2shader.setUniformf(isdeadatr, deadplayer?1f:0f);
+		//stage2shader.setUniformf(isdeadatr, deadplayer?1f:0f);
 		stage2shader.setUniformf(hurtlevelatr, hurtlvl);
-		stage2shader.setUniformf(respawnshadesatr, respawnshades);
+		//stage2shader.setUniformf(respawnshadesatr, respawnshades);
 		stage2shader.setUniformf(randomatr, MathU.rndnrm());
 
 		Texture buftex = textureRegion.getTexture();
@@ -297,7 +324,7 @@ public class Hpb extends ApplicationAdapter {
 		spriteBatch.draw(buftex, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, buftex.getWidth(), buftex.getHeight(), false, true);
 		spriteBatch.setShader(null);
 
-		if (deadplayer) {
+		/*if (deadplayer) {
 			if (hurtlvl == 0) {
 				BitmapFont f = mutex.getFont(40);
 				deadtimer++;
@@ -334,12 +361,14 @@ public class Hpb extends ApplicationAdapter {
 				f.getColor().set(1,1,1,1);
 			}
 		} else {
-			//displayinfo
-			layout.setText(font, currentText);
-		    float textWidth = layout.width;
-			font.draw(spriteBatch, currentText, halfwidth - textWidth / 2, Gdx.graphics.getHeight()*0.2f);
-			world.player.pinterface.render(halfwidth, halfheight);
-		}
+			
+		}*/
+		
+		//displayinfo
+		layout.setText(font, currentText);
+	    float textWidth = layout.width;
+		font.draw(spriteBatch, currentText, halfwidth - textWidth / 2, Gdx.graphics.getHeight()*0.2f);
+		currentScreen.render(halfwidth, halfheight);
 
 		spriteBatch.end();
 		//конец 2 стадии

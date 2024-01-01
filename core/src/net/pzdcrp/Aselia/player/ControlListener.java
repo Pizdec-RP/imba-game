@@ -1,5 +1,8 @@
 package net.pzdcrp.Aselia.player;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
@@ -11,6 +14,7 @@ import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientPlayerActionPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientPlayerActionPacket.PlayerAction;
 import net.pzdcrp.Aselia.server.InternalServer;
+import net.pzdcrp.Aselia.ui.Button;
 import net.pzdcrp.Aselia.utils.GameU;
 import net.pzdcrp.Aselia.world.elements.Particle;
 import net.pzdcrp.Aselia.world.elements.generators.DefaultWorldGenerator;
@@ -18,11 +22,16 @@ import net.pzdcrp.Aselia.world.elements.inventory.CraftBoard;
 
 public class ControlListener implements InputProcessor {
 	private Player p;
+	public boolean forceIgnore = false;
+	public List<Button> processedButtons = new CopyOnWriteArrayList<>();
+	
 	public ControlListener(Player p) {
 		this.p = p;
 	}
+	
 	@Override
 	public boolean keyDown(int keycode) {
+		if (forceIgnore) return false;
 		if (p.chat.isOpened()) return false;
 		if (keycode == Input.Keys.Q) {
 			if (p.castedInv.getHandItem().id == 0) return false;
@@ -143,24 +152,30 @@ public class ControlListener implements InputProcessor {
 	@Override
 	public boolean touchUp(int screenX, int screenY, int pointer, int button) {
 		//if (p.castedInv.isOpened) p.castedInv.onMouseClick(screenX, screenY, false, button);
+		for (Button b : processedButtons) {
+			b.onClick(screenX, screenY, button);
+		}
 		return true;
 	}
 
 	@Override
 	public boolean touchDragged(int screenX, int screenY, int pointer) {
+		if (forceIgnore) return false;
 		p.handleMM(screenX, screenY);
 		return true;
 	}
 
 	@Override
 	public boolean mouseMoved(int screenX, int screenY) {
+		if (forceIgnore) return false;
 		p.handleMM(screenX, screenY);
 		return true;
 	}
 
 	@Override
 	public boolean scrolled(float ax, float ay) {
-		if (p.chat.isOpened()) return true;
+		if (forceIgnore) return false;
+		if (p.chat.isOpened()) return false;
 		if (p.castedInv.isOpened && p.castedInv.openedStorage == null) {
 			CraftBoard.scroll(ay);
 			return true;

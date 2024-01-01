@@ -1,16 +1,17 @@
-package net.pzdcrp.Aselia.player;
+package net.pzdcrp.Aselia.player.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 
 import net.pzdcrp.Aselia.Hpb;
+import net.pzdcrp.Aselia.player.Player;
 import net.pzdcrp.Aselia.utils.GameU;
 import net.pzdcrp.Aselia.utils.MathU;
 import net.pzdcrp.Aselia.utils.RenderaU;
 import net.pzdcrp.Aselia.world.elements.inventory.PlayerInventory;
 
-public class PlayerInterface {
+public class PlayerInGameHudScreen extends Screen {
 	private Player p;
 	private float hpw = 0, hph = 25f, hpx = 0, hpy = 0,
 			heartx = 0;
@@ -23,12 +24,13 @@ public class PlayerInterface {
 	private final int crosshairsize = 30;
 	private boolean firstrender = true;
 
-	public PlayerInterface(Player p) {
-		this.p = p;
+	public PlayerInGameHudScreen() {
+		this.p = Hpb.world.player;
 		hppix = new Pixmap(130, 30, Pixmap.Format.RGBA8888);
 		crosshair = Hpb.mutex.getOTexture("crosshair");
 	}
-
+	
+	@Override
 	public void render(int halfwidth, int halfheight) {
 		if (firstrender) {
 			firstrender = false;
@@ -37,7 +39,6 @@ public class PlayerInterface {
 			zero = RenderaU.resizeTextureWithPrepare(Hpb.mutex.getOTexture("hpz"), (int)hph, (int)hph);
 			heart = full;//hp f h z
 		}
-		if (Hpb.deadplayer) return;
 		if (hptex == null) {
 			hptex = new Texture(hppix);//инициализатор вызывается не в потоке рендера
 			this.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -60,7 +61,7 @@ public class PlayerInterface {
 
 
 	}
-
+	
 	public void redrawhp() {
 		int hpw = (int)this.hpw, hph = (int)this.hph;
 
@@ -91,7 +92,8 @@ public class PlayerInterface {
 
 		hptex.draw(hppix, 0, 0);
 	}
-
+	
+	@Override
 	public void resize(int width, int height) {
 		GameU.log("RESIZE");
 		PlayerInventory.x = width / 2 - PlayerInventory.frameWidth / 2;
