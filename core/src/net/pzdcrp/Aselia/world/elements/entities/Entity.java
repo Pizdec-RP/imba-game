@@ -243,6 +243,28 @@ public class Entity {
 		}
 		return b;
 	}
+	
+	public void checkStepUpAndSetNewPos(float step) {
+		AABB virtualBounds = getHitbox().noffset(new Vector3D(pos.x, pos.y+step, pos.z));
+		virtualBounds = virtualBounds.grow(1f,1f,1f);
+
+		for (int tx = (int)Math.floor(Math.min(virtualBounds.maxX, virtualBounds.minX)); tx < Math.max(virtualBounds.maxX, virtualBounds.minX); tx++) {
+			for (int tz = (int)Math.floor(Math.min(virtualBounds.maxZ, virtualBounds.minZ)); tz < Math.max(virtualBounds.maxZ, virtualBounds.minZ); tz++) {
+				for (int ty = (int)Math.floor(Math.min(virtualBounds.maxY, virtualBounds.minY)); ty < Math.max(virtualBounds.maxY, virtualBounds.minY); ty++) {
+					Block bl = world.getBlock(new Vector3D(tx, ty, tz));//TODO оптимизировать
+					if (bl != null) {
+						if (bl.isCollide()) {
+							for (AABB t : bl.getHitbox().get()) {
+								if (t.collide(virtualBounds)) return;
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		this.pos.y += step;
+	}
 
 	public void applyMovement() {
 	    if (vel.x != 0 || vel.y != 0 || vel.z != 0) {
@@ -265,7 +287,49 @@ public class Entity {
 	        }
 	        this.pos.y += vel.y;
 	        
-
+	        
+	        float maxyx = 0;
+	        float maxyz = 0;
+	        
+	        if (onGround) {
+		        float velxbackup = vel.x;
+		        for (AABB collidedBB : nb) {
+		        	float bex = collidedBB.calculateXOffset(this.getHitbox(), velxbackup);
+		        	if (bex != velxbackup) {
+		        		float raznica = collidedBB.maxY - pos.y;
+		        		if (raznica > 0 && maxyx < raznica) {
+		        			maxyx = raznica;
+		        		}
+		        	}
+		        }
+		        
+	        	float velzbackup = vel.z;
+		        for (AABB collidedBB : nb) {
+		        	float bez = collidedBB.calculateZOffset(this.getHitbox(), velzbackup);
+		        	if (bez != velzbackup) {
+		        		float raznica = collidedBB.maxY - pos.y;
+		        		if (raznica > 0 && maxyz < raznica) {
+		        			maxyz = raznica;
+		        		}
+		        	}
+		        }
+		        
+		        /*float maxy = Math.max(maxyx, maxyz);
+	        	if (maxy <= step()) {
+	        		checkStepUpAndSetNewPos(maxy);
+	        	}*/
+		        if (maxyx <= step()) {
+		        	checkStepUpAndSetNewPos(maxyx);
+		        }
+		        if (maxyz <= step()) {
+		        	checkStepUpAndSetNewPos(maxyz);
+		        }
+	        	
+	        	//if (isPlayer) GameU.log("x "+maxyx+" z "+maxyz);
+	        }
+	        
+	        
+	        
 	        for (AABB collidedBB : nb) {
 	            bx = vel.x;
 	            vel.x = collidedBB.calculateXOffset(this.getHitbox(), vel.x);
@@ -274,8 +338,6 @@ public class Entity {
 	            }
 	        }
 	        this.pos.x += vel.x;
-	        
-
 	        for (AABB collidedBB : nb) {
 	            bz = vel.z;
 	            vel.z = collidedBB.calculateZOffset(this.getHitbox(), vel.z);
