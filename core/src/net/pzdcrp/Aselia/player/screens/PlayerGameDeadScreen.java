@@ -10,11 +10,11 @@ public class PlayerGameDeadScreen extends Screen {
 	private TextField text;
 	private float textx = 50, texty = 50;
 	private Button respawn;
-	
+
 	public PlayerGameDeadScreen() {
-		
+
 	}
-	
+
 	@Override
 	public void bind() {
 		text = new TextField(Hpb.mutex.getFont(40));
@@ -24,7 +24,7 @@ public class PlayerGameDeadScreen extends Screen {
 		Gdx.input.setCursorCatched(false);
 		Hpb.controls.processedButtons.add(respawn);
 	}
-	
+
 	@Override
 	public void end() {
 		Hpb.controls.forceIgnore = false;

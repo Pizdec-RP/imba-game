@@ -3,12 +3,15 @@ package net.pzdcrp.Aselia.world.elements.chat;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 
 import net.pzdcrp.Aselia.Hpb;
+import net.pzdcrp.Aselia.data.Mutex;
+import net.pzdcrp.Aselia.data.TextField;
 import net.pzdcrp.Aselia.multiplayer.packets.client.ingame.ClientChatPacket;
 
 public class Chat2 {
@@ -18,11 +21,19 @@ public class Chat2 {
 	private boolean isOpened = false;
 	public String inputField = "";
 	private InputProcessor lst;
+	public TextField currentWriteLine;
+	private boolean callopen;
 
 	public Chat2() {
 		glyph = new GlyphLayout();
 		font = Hpb.mutex.getFont(25);
 		lst = new TypeListener2(this);
+		currentWriteLine = new TextField(font);
+		resize(Gdx.graphics.getWidth(), 0);
+	}
+
+	public void resize(int width, int height) {
+		currentWriteLine.setMaxWidth(width);
 	}
 
 	public static float
@@ -39,6 +50,14 @@ public class Chat2 {
 			font.draw(Hpb.spriteBatch, msg.text, x, y);
 			i++;
 		}
+		if (isOpened) {
+			currentWriteLine.render(0, currentWriteLine.height+5);
+		}
+		if (callopen) {
+			Hpb.multiplexer.addProcessor(0, lst);
+			isOpened = true;
+			callopen = false;
+		}
 	}
 
 	public void debug(String text) {
@@ -51,7 +70,7 @@ public class Chat2 {
 
 	public void send(String text) {
 		if (text.length() <= 1) return;
-		Hpb.session.send(new ClientChatPacket(text.substring(1)));
+		Hpb.session.send(new ClientChatPacket(text));
 	}
 
 	public void closeAndSend() {
@@ -66,8 +85,8 @@ public class Chat2 {
 	}
 
 	public void openChat() {
-		isOpened = true;
-		Hpb.multiplexer.addProcessor(0, lst);
+		currentWriteLine.resetText();
+		callopen = true;//фикс бага с буквой t появляющейся при открытии чата
 	}
 
 	public void close() {
@@ -86,9 +105,10 @@ class TypeListener2 implements InputProcessor {
 
 	@Override
     public boolean keyTyped(char e) {
-		if (!chat.isOpened()) return true;
+		if (!chat.isOpened() || !Mutex.AllowedSymbols.contains(String.valueOf(e))) return false;
 		chat.inputField = chat.inputField+e;
-        System.out.println("Key pressed: " + e);
+        System.out.println("Key typed: " + e);
+        chat.currentWriteLine.setText(chat.inputField);
         return true;
     }
 
@@ -96,7 +116,8 @@ class TypeListener2 implements InputProcessor {
 	public boolean keyDown(int e) {
 		if (e == Input.Keys.BACKSPACE) {
 			if (chat.inputField.length() != 0) {
-				chat.inputField.substring(0, chat.inputField.length() - 1);
+				chat.inputField = chat.inputField.substring(0, chat.inputField.length() - 1);
+				chat.currentWriteLine.setText(chat.inputField);
 			}
 		} else if (e == Input.Keys.ENTER) {
 			chat.closeAndSend();

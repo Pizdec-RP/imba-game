@@ -38,7 +38,6 @@ import net.pzdcrp.Aselia.multiplayer.packets.server.world.ServerLoadColumnPacket
 import net.pzdcrp.Aselia.multiplayer.packets.server.world.ServerSetblockPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.world.ServerUnloadColumnPacket;
 import net.pzdcrp.Aselia.player.screens.PlayerGameDeadScreen;
-import net.pzdcrp.Aselia.player.screens.PlayerInGameHudScreen;
 import net.pzdcrp.Aselia.server.InternalServer;
 import net.pzdcrp.Aselia.server.ServerWorld;
 import net.pzdcrp.Aselia.utils.GameU;
@@ -77,7 +76,7 @@ public class Player extends Entity {
 	public ServerPlayer serverProfile;
 
 	public Player(float tx, float ty, float tz, String name, World world, int lid) {
-		super(new Vector3D(tx,ty,tz),new AABB(-0.3, 0, -0.3, 0.3, 1.7, 0.3), EntityType.player, world, lid);
+		super(new Vector3D(tx,ty,tz),new AABB(-0.3f, 0, -0.3f, 0.3f, 1.7f, 0.3f), EntityType.player, world, lid);
 		this.nickname = name;
 		if (world.isLocal()) {
 			cam = new Camera();
@@ -375,11 +374,11 @@ public class Player extends Entity {
     private float a = 0.06f, a1 = 0.06f;
     private float f = 1f, f1 = 1f;
     private float angle = 0f, angle1 = 0f;
-    
+
     public void applyCamBobbing(float delta) {
-    	boolean update = (forward || reverse || left || right) && onGround;
+    	boolean update = (forward || reverse || left || right) && onGround && !down;
     	boolean apply = update;
-    	
+
     	if (!update) {
     		if (angle != 0 || angle1 != 0) {
     			angle = 0f;
@@ -387,7 +386,7 @@ public class Player extends Entity {
     			apply = true;
     		}
     	}
-    	
+
     	if (update) {
     		if (run) {
     			s = 20f;
@@ -398,7 +397,7 @@ public class Player extends Entity {
     		}
 	    	y += delta * s;
 	        angle = a * MathUtils.sin(f * y);
-	        
+
 	        y1 += delta * s1;
 	        angle1 = a1 * MathUtils.sin(f1 * y1);
     	}
@@ -406,7 +405,7 @@ public class Player extends Entity {
     		cam.yoffset = angle;
     		cam.cam.rotate(Vector3.Y, angle1);
     	}
-        
+
         //cam.rotate(Vector3.Z, angle);
     }
 
@@ -439,7 +438,7 @@ public class Player extends Entity {
 	}
 
 	public float getEyeHeight() {
-		return (float) (pos.y+camHeight);
+		return pos.y+camHeight;
 	}
 
 	public float getYaw() {
@@ -449,6 +448,11 @@ public class Player extends Entity {
     public float getPitch() {
     	return this.pitch;
     }
+    
+    @Override
+    public float step() {
+		return 0.5f;
+	}
 
     private int lastCursorX = Gdx.graphics.getWidth() / 2;
     private int lastCursorY = Gdx.graphics.getHeight() / 2;

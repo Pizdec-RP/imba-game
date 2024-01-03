@@ -2,7 +2,21 @@ package net.pzdcrp.Aselia.world.elements.entities;
 
 import java.util.List;
 
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Mesh;
+import com.badlogic.gdx.graphics.VertexAttribute;
+import com.badlogic.gdx.graphics.VertexAttributes.Usage;
+import com.badlogic.gdx.graphics.g3d.Material;
+import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute;
+import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
+import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
+import com.badlogic.gdx.graphics.g3d.model.MeshPart;
+import com.badlogic.gdx.graphics.g3d.model.Node;
+import com.badlogic.gdx.graphics.g3d.model.NodePart;
+import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
+import com.badlogic.gdx.math.Vector3;
 import com.google.gson.JsonObject;
 
 import net.pzdcrp.Aselia.Hpb;
@@ -15,6 +29,7 @@ import net.pzdcrp.Aselia.data.objects.ObjectData;
 import net.pzdcrp.Aselia.data.objects.entityObjectData.ItemEntityData;
 import net.pzdcrp.Aselia.player.Player;
 import net.pzdcrp.Aselia.utils.GameU;
+import net.pzdcrp.Aselia.utils.MathU;
 import net.pzdcrp.Aselia.utils.VectorU;
 import net.pzdcrp.Aselia.world.World;
 import net.pzdcrp.Aselia.world.elements.blocks.Block;
@@ -23,9 +38,10 @@ import net.pzdcrp.Aselia.world.elements.inventory.items.Item;
 public class ItemEntity extends Entity {
 	private ModelInstance model;
 	private int lifetime = 6000;
-	private int blockid = -1;
 	private boolean despawn = false;
 	private Item item;
+	
+	private float sins = 0f;
 
 	/**
 	 * For Column.fromJson only
@@ -33,15 +49,13 @@ public class ItemEntity extends Entity {
 	 */
 	@Deprecated
 	public ItemEntity(Vector3D pos, World world, int lid) {
-		super(pos, new AABB(-0.15, -0.15, -0.15, 0.15, 0.15, 0.15), EntityType.item, world, lid);
+		super(pos, new AABB(-0.15f, -0.15f, -0.15f, 0.15f, 0.15f, 0.15f), EntityType.item, world, lid);
 	}
 
 	public ItemEntity(Vector3D pos, Item item, World world, int lid) {
-		super(pos, new AABB(-0.15, -0.15, -0.15, 0.15, 0.15, 0.15), EntityType.item, world, lid);
+		super(pos, new AABB(-0.15f, -0.15f, -0.15f, 0.15f, 0.15f, 0.15f), EntityType.item, world, lid);
 		if (item.getId() == 0) GameU.end("air can not be as item");
 		this.item = item;
-		this.blockid = Block.itemIdToBlockId(item.id);
-		//GameU.log("spawned item with id: "+blockid+" in "+(world.isLocal()?"client":"server"));
 	}
 
 	@Override
@@ -52,23 +66,64 @@ public class ItemEntity extends Entity {
 		}
 		super.render(delta);
 		if (model == null) {
-			ModelInstance temp = Block.blockModels.get(blockid);
-			if (temp == null) {
-				GameU.err("unknown block id "+blockid+" in item: "+toString()+" lid: "+localId);
-				return;
+			if (item.isModel()) {
+				ModelInstance temp = Block.blockModels.get(Block.itemIdToBlockId(item.id));
+				if (temp == null) {
+					GameU.err("unknown block id "+Block.itemIdToBlockId(item.id)+" in item: "+toString()+" lid: "+localId);
+					return;
+				}
+				this.model = temp.copy();
+				model.userData = new Object[] {"item", 0f};
+				updateLight();
+			} else {
+				Mesh mesh = new Mesh(
+				    true,
+				    4, 6,
+				    VertexAttribute.Position(),
+				    new VertexAttribute(Usage.TextureCoordinates, 2, "a_texCoord0")
+				);
+				float[] vertices = new float[] {
+						-0.15f,    0.3f, 0f, 0, 0,
+						0.15f, 0.3f, 0f,     1, 0,
+						0.15f, 0,    0f,     1, 1,
+						-0.15f,    0, 0f,    0, 1,
+					};
+				short[] indices = new short[] {
+				    0, 1, 2,
+				    2, 3, 0
+				};
+				mesh.setVertices(vertices);
+				mesh.setIndices(indices);
+				
+				// Create a ModelBuilder
+				ModelBuilder modelBuilder = new ModelBuilder();
+				modelBuilder.begin();
+				modelBuilder.part(
+					"meshPart", 
+					mesh, 
+					GL20.GL_TRIANGLES, 
+					new Material(
+						TextureAttribute.createDiffuse(item.getTexture()),
+						IntAttribute.createCullFace(GL20.GL_NONE),
+						new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+					)
+				);
+				Model tmodel = modelBuilder.end();
+				model = new ModelInstance(tmodel);
+				model.userData = new Object[] {"item", 0f};
 			}
-			this.model = temp.copy();
-			model.userData = new Object[] {"item", 0f};
-			updateLight();
 		}
-
 		if (VectorU.sqrt(pos, Hpb.world.player.pos) > Settings.maxItemRenderDistance) return;
-
-		Hpb.render(model);
+		
 		model.transform.setTranslation(
-				(float)Hpb.lerp(beforepos.x, pos.x)-0.15f,
-				(float)Hpb.lerp(beforepos.y, pos.y)-0.15f,
-				(float)Hpb.lerp(beforepos.z, pos.z)-0.15f);
+				Hpb.lerp(beforepos.x, pos.x),
+				Hpb.lerp(beforepos.y, pos.y)-0.15f,
+				Hpb.lerp(beforepos.z, pos.z));
+		if (!item.isModel()) {
+			model.transform.rotate(Vector3.Y, 1);
+			model.transform.translate(0, (0.15f*MathU.sin(sins+=0.05f))+0.15f, 0);
+		}
+		Hpb.render(model);
 	}
 
 	@Override
@@ -132,14 +187,12 @@ public class ItemEntity extends Entity {
 	@Override
 	public void getJson(JsonObject jen) {
 		super.getJson(jen);
-		jen.addProperty("bid", blockid);
 		jen.addProperty("lt", lifetime);
 		jen.addProperty("item", this.item.toString());
 	}
 
 	@Override
 	public void fromJson(JsonObject jen) {
-		blockid = jen.get("bid").getAsInt();
 		this.lifetime = jen.get("lt").getAsInt();
 		this.item = Item.fromString(jen.get("item").getAsString());
 	}
@@ -172,6 +225,6 @@ public class ItemEntity extends Entity {
 
 	@Override
 	public String toString() {
-		return "ItemEntity blockid:"+blockid+" item: "+item.toString();
+		return "ItemEntity(item:"+item.toString()+")";
 	}
 }

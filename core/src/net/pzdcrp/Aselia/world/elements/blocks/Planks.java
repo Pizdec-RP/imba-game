@@ -8,6 +8,9 @@ import net.pzdcrp.Aselia.data.MBIM.offset;
 import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.extended.SexyMeshBuilder;
 import net.pzdcrp.Aselia.utils.ModelUtils;
+import net.pzdcrp.Aselia.world.elements.inventory.items.CrateItem;
+import net.pzdcrp.Aselia.world.elements.inventory.items.Item;
+import net.pzdcrp.Aselia.world.elements.inventory.items.PlanksItem;
 
 public class Planks extends Block {
 	public static String tname = "planks";
@@ -48,5 +51,10 @@ public class Planks extends Block {
 	@Override
 	public float getResistance() {
 		return 2.5f;
+	}
+	
+	@Override
+	public Item[] getDrop() {
+		return new Item[] {new PlanksItem(1)};
 	}
 }

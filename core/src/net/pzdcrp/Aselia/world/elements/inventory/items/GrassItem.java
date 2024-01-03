@@ -26,6 +26,7 @@ public class GrassItem extends Item {
 	public boolean isModel() {
 		return true;
 	}
+	
 	@Override
 	public Item clone(int count) {
 		return new GrassItem(count);

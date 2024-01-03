@@ -37,14 +37,21 @@ public abstract class Packet {
         return byteBuf.readInt();
     }
 
-    protected void writeString(ByteBuf byteBuf, String string) {
-        byteBuf.writeInt(string.length());
+    protected void writeString(ByteBuf byteBuf, String string) {//fixed
+    	try {
+    		byte[] bytes = string.getBytes("UTF-8");
+    		byteBuf.writeInt(bytes.length);
+            byteBuf.writeBytes(bytes);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        /*byteBuf.writeInt(string.length());
 
         try {
             byteBuf.writeBytes(string.getBytes("UTF-8"));
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     protected String readString(ByteBuf byteBuf) {

@@ -44,14 +44,14 @@ public class PlayerInventory implements IInventory {
 	private Player owner;
 	public boolean isOpened = false;
 	public static final Item EMPTY = new NoItem();
-	public CraftBoard craftboard;
+	public HandCraftingGUI craftboard;
 
 	public PlayerInventory(Player owner) {
 		for (int i = -1; i < 40; i++) {
 			items.put(i, EMPTY);
 		}
 		this.owner = owner;
-		craftboard = new CraftBoard(this);
+		craftboard = new HandCraftingGUI(this);
 		if (owner.world.isLocal()) {
 			font = Hpb.mutex.getFont(20);
 			currentText = new TextField(font);

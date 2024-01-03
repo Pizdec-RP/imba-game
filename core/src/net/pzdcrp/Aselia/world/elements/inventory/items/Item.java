@@ -16,15 +16,19 @@ import net.pzdcrp.Aselia.world.elements.entities.Entity;
 public class Item {
     public int count, id;
 	public static final Map<Integer, Item> items = new HashMap<>() {{
-		put(1, new DirtItem(0));
-		put(3, new GlassItem(0));
-		put(5, new GrassItem(0));
 		put(0, new NoItem());
+		put(1, new DirtItem(0));
+		put(2, new StoneItem(0));
+		put(3, new GlassItem(0));
+		
+		put(5, new GrassItem(0));
 		put(6, new OakLogItem(0));
 		put(7, new PlanksItem(0));
-		put(2, new StoneItem(0));
+		
+		
 		put(10, new CrateItem(0));
 		put(11, new OakSlabItem(0));
+		put(12, new MudItem(0));
 		/*put(8, new TntCrateItem(0));
 		put(4, new WaterBucketItem());*/
 	}};
@@ -68,13 +72,9 @@ public class Item {
 	}
 
 	public Texture getTexture() {
-		if (this.isModel()) {
-			Texture t =  Hpb.mutex.getItemTexture(getName());
-			if (t == null) GameU.end("текстура не задана для предмета "+getClass().getName());
-			return t;
-		}
-		GameU.end("модель вызвана на немодельном предмете "+this.getClass().getName());
-		return null;
+		Texture t =  Hpb.mutex.getItemTexture(getName());
+		if (t == null) GameU.end("текстура не задана для предмета "+getClass().getName());
+		return t;
 	}
 
 	public String getName() {

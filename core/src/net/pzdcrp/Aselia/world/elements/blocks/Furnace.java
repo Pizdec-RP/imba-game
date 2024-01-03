@@ -4,16 +4,13 @@ import net.pzdcrp.Aselia.Hpb;
 import net.pzdcrp.Aselia.data.AABB;
 import net.pzdcrp.Aselia.data.AABBList;
 import net.pzdcrp.Aselia.data.BlockModelBuilder;
-import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.data.MBIM.offset;
+import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.extended.SexyMeshBuilder;
 import net.pzdcrp.Aselia.player.Player;
-import net.pzdcrp.Aselia.server.InternalServer;
 import net.pzdcrp.Aselia.utils.ModelUtils;
 import net.pzdcrp.Aselia.world.World;
 import net.pzdcrp.Aselia.world.elements.Column;
-import net.pzdcrp.Aselia.world.elements.blocks.Block.BlockType;
-import net.pzdcrp.Aselia.world.elements.storages.ChestItemStorage;
 import net.pzdcrp.Aselia.world.elements.storages.FurnaceInterface;
 import net.pzdcrp.Aselia.world.elements.storages.ItemStorage;
 
@@ -58,7 +55,7 @@ public class Furnace extends Block {
 	    mbim.setCuroffset(offset.ny);
 	    if (!ny) ModelUtils.buildBottomX(a);//NY
 	}
-	
+
 	boolean ticking = false;
 	@Override
 	public void tick(World w) {

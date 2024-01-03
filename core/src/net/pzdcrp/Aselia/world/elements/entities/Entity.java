@@ -213,6 +213,10 @@ public class Entity {
 		echc = new Vector2I(pos.x,pos.z);
 		curCol = world.getColumn(echc);
 	}
+	
+	public float step() {
+		return 0f;
+	}
 
 	public void onPlayerClick(Player p) {
 		GameU.err("unused method onPlayerClick");
@@ -259,9 +263,8 @@ public class Entity {
 	        } else {
 	            onGround = false;
 	        }
-
-
 	        this.pos.y += vel.y;
+	        
 
 	        for (AABB collidedBB : nb) {
 	            bx = vel.x;
@@ -271,6 +274,7 @@ public class Entity {
 	            }
 	        }
 	        this.pos.x += vel.x;
+	        
 
 	        for (AABB collidedBB : nb) {
 	            bz = vel.z;

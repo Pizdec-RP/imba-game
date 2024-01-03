@@ -8,6 +8,8 @@ import net.pzdcrp.Aselia.data.MBIM.offset;
 import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.extended.SexyMeshBuilder;
 import net.pzdcrp.Aselia.utils.ModelUtils;
+import net.pzdcrp.Aselia.world.elements.inventory.items.Item;
+import net.pzdcrp.Aselia.world.elements.inventory.items.MudItem;
 
 public class Dirt extends Block {
 	public static String tname = "dirt";
@@ -50,9 +52,14 @@ public class Dirt extends Block {
 	public float getResistance() {
 		return 1f;
 	}
-	
+
 	@Override
 	public int getId() {
 		return 1;
+	}
+	
+	@Override
+	public Item[] getDrop() {
+		return new Item[] {new MudItem(1), new MudItem(1), new MudItem(1), new MudItem(1)};
 	}
 }

@@ -14,7 +14,7 @@ public class Button {
 	private TextField text;
 	public static Texture texture;
 	private boolean clicked = false;
-	
+
 	public Button(String text, float scale, int textsize, boolean autocenter, float x, float y) {
 		width *= scale;
 		height *= scale;
@@ -23,7 +23,7 @@ public class Button {
 			this.y = y - height/2;
 			bminx = x - width/2;
 			bmaxx = x + width/2;
-		} else {	
+		} else {
 			this.x = x;
 			this.y = y;
 			bminx = x;
@@ -36,7 +36,7 @@ public class Button {
 		textx = (this.x + width/2) - (this.text.width/2);
 		texty = (this.y + height/2) + (this.text.height/2);
 	}
-	
+
 	public boolean read() {
 		if (clicked) {
 			clicked = false;
@@ -44,12 +44,12 @@ public class Button {
 		}
 		return false;
 	}
-	
+
 	public void render() {
 		Hpb.spriteBatch.draw(texture, x, y, width, height);
 		text.render(textx, texty);
 	}
-	
+
 	public void onClick(int screenX, int screenY, int button) {
 		GameU.log("click "+screenX+" "+ screenY);
 		GameU.log("bounds "+bminx+" "+bmaxx+" "+bminy+" "+bmaxy);

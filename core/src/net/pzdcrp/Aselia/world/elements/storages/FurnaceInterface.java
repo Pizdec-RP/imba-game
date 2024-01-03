@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map;
 
 import net.pzdcrp.Aselia.player.Player;
-import net.pzdcrp.Aselia.utils.GameU;
 import net.pzdcrp.Aselia.world.elements.inventory.PlayerInventory;
 import net.pzdcrp.Aselia.world.elements.inventory.items.Item;
 
@@ -33,10 +32,10 @@ public class FurnaceInterface extends ItemStorage {
 	public void close(Player p) {
 		super.close(p);
 	}
-	
+
 	@Override
 	public void serverTick() {
-		
+
 	}
 
 	@Override

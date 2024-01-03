@@ -54,7 +54,7 @@ public class Glass extends Block {
 	public float getResistance() {
 		return 0.5f;
 	}
-	
+
 	@Override
 	public int getId() {
 		return 3;

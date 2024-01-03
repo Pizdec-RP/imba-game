@@ -18,21 +18,20 @@ import net.pzdcrp.Aselia.ui.Button;
 import net.pzdcrp.Aselia.utils.GameU;
 import net.pzdcrp.Aselia.world.elements.Particle;
 import net.pzdcrp.Aselia.world.elements.generators.DefaultWorldGenerator;
-import net.pzdcrp.Aselia.world.elements.inventory.CraftBoard;
+import net.pzdcrp.Aselia.world.elements.inventory.HandCraftingGUI;
 
 public class ControlListener implements InputProcessor {
 	private Player p;
 	public boolean forceIgnore = false;
 	public List<Button> processedButtons = new CopyOnWriteArrayList<>();
-	
+
 	public ControlListener(Player p) {
 		this.p = p;
 	}
-	
+
 	@Override
 	public boolean keyDown(int keycode) {
-		if (forceIgnore) return false;
-		if (p.chat.isOpened()) return false;
+		if (forceIgnore || p.chat.isOpened()) return false;
 		if (keycode == Input.Keys.Q) {
 			if (p.castedInv.getHandItem().id == 0) return false;
 			if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)) {
@@ -160,24 +159,23 @@ public class ControlListener implements InputProcessor {
 
 	@Override
 	public boolean touchDragged(int screenX, int screenY, int pointer) {
-		if (forceIgnore) return false;
+		if (forceIgnore || !Gdx.input.isCursorCatched()) return false;
 		p.handleMM(screenX, screenY);
 		return true;
 	}
 
 	@Override
 	public boolean mouseMoved(int screenX, int screenY) {
-		if (forceIgnore) return false;
+		if (forceIgnore || !Gdx.input.isCursorCatched()) return false;
 		p.handleMM(screenX, screenY);
 		return true;
 	}
 
 	@Override
 	public boolean scrolled(float ax, float ay) {
-		if (forceIgnore) return false;
-		if (p.chat.isOpened()) return false;
+		if (forceIgnore || p.chat.isOpened()) return false;
 		if (p.castedInv.isOpened && p.castedInv.openedStorage == null) {
-			CraftBoard.scroll(ay);
+			HandCraftingGUI.scroll(ay);
 			return true;
 		}
 

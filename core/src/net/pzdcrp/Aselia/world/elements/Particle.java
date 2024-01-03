@@ -120,17 +120,17 @@ public class Particle {
 	    	if (vel.x != 0 || vel.y != 0 || vel.z != 0) {
 				List<AABB> nb = getNearBlocks();
 				for (AABB collidedBB : nb) {
-					vel.y = (float) collidedBB.calculateYOffset(this.getHitbox(), vel.y);
+					vel.y = collidedBB.calculateYOffset(this.getHitbox(), vel.y);
 				}
 				this.pos.y += vel.y;
 
 				for (AABB collidedBB : nb) {
-					vel.x = (float) collidedBB.calculateXOffset(this.getHitbox(), vel.x);
+					vel.x = collidedBB.calculateXOffset(this.getHitbox(), vel.x);
 				}
 				this.pos.x += vel.x;
 
 				for (AABB collidedBB : nb) {
-					vel.z = (float) collidedBB.calculateZOffset(this.getHitbox(), vel.z);
+					vel.z = collidedBB.calculateZOffset(this.getHitbox(), vel.z);
 				}
 				this.pos.z += vel.z;
 			}

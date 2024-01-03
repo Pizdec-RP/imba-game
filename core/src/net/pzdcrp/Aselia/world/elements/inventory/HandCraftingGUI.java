@@ -16,9 +16,14 @@ import net.pzdcrp.Aselia.data.TextField;
 import net.pzdcrp.Aselia.multiplayer.packets.client.inventory.ClientCraftRequestPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.ingame.ServerNotificationPacket;
 import net.pzdcrp.Aselia.utils.GameU;
-import net.pzdcrp.Aselia.world.elements.inventory.items.*;
+import net.pzdcrp.Aselia.world.elements.inventory.items.CrateItem;
+import net.pzdcrp.Aselia.world.elements.inventory.items.Item;
+import net.pzdcrp.Aselia.world.elements.inventory.items.NoItem;
+import net.pzdcrp.Aselia.world.elements.inventory.items.OakLogItem;
+import net.pzdcrp.Aselia.world.elements.inventory.items.OakSlabItem;
+import net.pzdcrp.Aselia.world.elements.inventory.items.PlanksItem;
 
-public class CraftBoard {
+public class HandCraftingGUI {
 	static int ri = 0;//im lazy. i just want to copy/paste code
 	public static final List<Recipe> x22 = new ArrayList<>() {{
 		add(new Recipe(ri++, new PlanksItem(4), new Item[] {new OakLogItem(1)}));
@@ -31,7 +36,7 @@ public class CraftBoard {
 	PlayerInventory host;
 
 
-	public CraftBoard(PlayerInventory host) {
+	public HandCraftingGUI(PlayerInventory host) {
 		this.host = host;
 	}
 

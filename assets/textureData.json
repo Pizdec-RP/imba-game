@@ -14,6 +14,7 @@
     "items": {
         "bucket": "bucket.png",
         "waterbucket": "waterbucket.png",
-        "weed": "weed.png"
+        "weed": "weed.png",
+        "mud": "mud.png"
     }
 }

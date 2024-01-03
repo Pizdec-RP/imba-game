@@ -15,7 +15,7 @@ import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.extended.SexyMeshBuilder;
 
 public class ModelUtils extends BaseShapeBuilder {
-	
+
 
 	public static ModelInstance combineModels(List<Model> world) {
 	    ModelBuilder modelBuilder = new ModelBuilder();
@@ -36,11 +36,11 @@ public class ModelUtils extends BaseShapeBuilder {
 	private static float blockScale = 1f;
 	private static AABB modelBounds;
 	private static final AABB defaultBounds = new AABB(0,0,0,1,1,1);
-	
+
 	public static void setModelSizes(AABB modelBound) {
 		modelBounds = modelBound;
 	}
-	
+
 	public static void resetModelSizes() {
 		modelBounds = defaultBounds;
 	}
@@ -50,9 +50,9 @@ public class ModelUtils extends BaseShapeBuilder {
 	}
 
 	public static void setTransform(Vector3D pos) {
-		sp.x = (float)pos.x;
-		sp.y = (float)pos.y;
-		sp.z = (float)pos.z;
+		sp.x = pos.x;
+		sp.y = pos.y;
+		sp.z = pos.z;
 		resetModelSizes();
 	}
 

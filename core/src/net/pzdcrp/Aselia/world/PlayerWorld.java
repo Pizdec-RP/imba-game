@@ -235,7 +235,7 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 	public ModelInstance sky;
 	public void renderSky() {
 	    //time = (int) time % DAY_LENGTH;//TODO Хз че это надо поправить
-	    float px = (float)player.pos.x/*, py = (float)player.pos.y*/, pz = (float)player.pos.z;
+	    float px = player.pos.x/*, py = (float)player.pos.y*/, pz = player.pos.z;
 	    float angle = 2f * (float) Math.PI * time / DAY_LENGTH;
 	    float x = (DISTANCE_FROM_CENTER * MathU.cos(angle) + px) * 2;
 	    float y = (DISTANCE_FROM_CENTER * MathU.sin(angle)) * 2;

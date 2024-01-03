@@ -69,7 +69,7 @@ public class ServerWorld implements World {
 
 	public void packetReceived(Session s, Packet p) {
 		if (!(p instanceof ClientPlayerLocationDataPacket)) {
-			GameU.log("server got packet "+p.getClass().getSimpleName());
+			GameU.log("client -> server "+p.getClass().getSimpleName());
 		}
 		if (p instanceof ClientPlayerConnectionPacket) {
 			ClientPlayerConnectionPacket packet = (ClientPlayerConnectionPacket) p;
@@ -95,7 +95,7 @@ public class ServerWorld implements World {
 			} else {
 				Column c = this.getColumn(playercol);
 				Player enplayer = c.getUnloadedPlayerByName(player.name);
-				GameU.log("got player "+enplayer.nickname);
+				GameU.log("new player "+enplayer.nickname);
 				player.playerEntity = enplayer;
 				player.setEntityDataset(enplayer);
 				/*if (player.playerEntity == null) {
@@ -384,7 +384,7 @@ public class ServerWorld implements World {
     	}
 	}
 
-	private static final boolean saveit = false;
+	private static final boolean saveit = true;
 	public boolean save() {
 		if (!saveit) return true;
 		try {

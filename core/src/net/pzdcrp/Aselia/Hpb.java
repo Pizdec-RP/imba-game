@@ -96,20 +96,20 @@ public class Hpb extends ApplicationAdapter {
 	public static UUID playerId;
 
 	public static Texture backgroundOfEverything;
-	
+
 	private static Screen currentScreen;
 
 	public Hpb() {
 
 	}
-	
+
 	private static Screen nextScreen;
 	private static boolean changescreenRequest = false;
 	public static void changeScreen(Screen s) {
 		nextScreen = s;
 		changescreenRequest = true;
 	}
-	
+
 	private static void changeScreen() {
 		currentScreen.end();
 		currentScreen = nextScreen;
@@ -123,7 +123,7 @@ public class Hpb extends ApplicationAdapter {
 			if (!(p instanceof ServerChunkLightPacket) &&
 				!(p instanceof ServerLoadColumnPacket) &&
 				!(p instanceof ServerUnloadColumnPacket)) {
-				GameU.log("client got packet "+p.getClass().getSimpleName());
+				GameU.log("server -> client "+p.getClass().getSimpleName());
 			}
 			if (p instanceof ServerSuccessConnectPacket) {
 				playerId = ((ServerSuccessConnectPacket)p).getid();
@@ -136,10 +136,10 @@ public class Hpb extends ApplicationAdapter {
 				ServerSpawnPlayerPacket packet = (ServerSpawnPlayerPacket)p;
 				world.player = new Player(packet.x,packet.y,packet.z, "Player1488", world, packet.lid);
 				//TODO transfer other data like inventory+, rotation-, hp+
-				
+
 				//старт начинается сразу с игры
 				currentScreen = new PlayerInGameHudScreen();
-				
+
 				multiplexer.addProcessor(controls = new ControlListener(world.player));
 			} else {
 				if (world.player == null) GameU.end("bad packet: "+p.getClass().getSimpleName());
@@ -173,7 +173,7 @@ public class Hpb extends ApplicationAdapter {
 		label.setVisible(true);
 
 		stage = new Stage();
-		
+
 		infoLabel = new Label(" ", new Label.LabelStyle(font, Color.WHITE));
 		infoLabel.setPosition(Gdx.graphics.getWidth() / 2, 100);
 
@@ -194,7 +194,7 @@ public class Hpb extends ApplicationAdapter {
 		respawnshadesatr = stage2shader.getUniformLocation("deadshades");
 
 		mutex.getFont(25);//инициализируем шрифт потомучто он используется в чате а создание чата происходит в потоке обработки пакетов
-		
+
 		Button.texture = mutex.getOTexture("buttonbackground");
 	}
 
@@ -205,6 +205,7 @@ public class Hpb extends ApplicationAdapter {
 			world.player.cam.cam.viewportWidth = width;
 			world.player.cam.cam.viewportHeight = height;
 			currentScreen.resize(width, height);
+			world.player.chat.resize(width, height);
 		}
 	    spriteBatch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
 	    buffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, true);
@@ -361,9 +362,9 @@ public class Hpb extends ApplicationAdapter {
 				f.getColor().set(1,1,1,1);
 			}
 		} else {
-			
+
 		}*/
-		
+
 		//displayinfo
 		layout.setText(font, currentText);
 	    float textWidth = layout.width;

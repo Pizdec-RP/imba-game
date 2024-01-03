@@ -62,14 +62,14 @@ public class Block {
 			put(22, new OakLeaves(new Vector3D()));
 			put(23, new Weed(new Vector3D()));
 			put(24, new Crate(new Vector3D()));
-			put(25, new OakSlab(new Vector3D(), true));
-			put(26, new OakSlab(new Vector3D(), false));
+			put(25, new OakSlab(new Vector3D(), false));
+			put(26, new OakSlab(new Vector3D(), true));
 		}};
 		/**
 		 * правила:
-		 * 
+		 *
 		 * айди полублоков:
-		 * 	направленные вверх - нечет, вниз - чет
+		 * 	направленные вверх - чет, вниз - нечет
 		 */
 	private static Map<Integer, Integer> BlockidToItemid = new ConcurrentHashMap<>() {
 		private static final long serialVersionUID = 37079642665568945L;
@@ -307,10 +307,10 @@ public class Block {
 		//GameU.tracer();
 		return id;
 	}
-	
-	//public Item[] getDrop() {
-		
-	//}
+
+	public Item[] getDrop() {
+		return null;
+	}
 
 	/**
 	 * Server side
@@ -318,7 +318,17 @@ public class Block {
 	 */
 	public void onBreak(World world) {
 		if (world.isLocal()) GameU.end("onBreak не должен вызываться в клиенте");
-		Item blockItem = Block.itemByBlockId(getId());
+		Item[] drops = getDrop();
+		if (drops == null) return;
+		for (Item i : drops) {
+			ItemEntity e;
+			world.spawnEntity(e = new ItemEntity(pos.add(0.5f), i, world, Entity.genLocalId()));
+			e.vel.y = 0.01f;
+			e.vel.x = MathU.rndf(-0.1f, 0.1f);
+			e.vel.z = MathU.rndf(-0.1f, 0.1f);
+		}
+		
+		/*Item blockItem = Block.itemByBlockId(getId());
 		System.out.println("onb "+isRenderable()+" "+blockItem != null+" "+!(blockItem instanceof NoItem));
 		if (isRenderable() && blockItem != null && !(blockItem instanceof NoItem)) {
 			ItemEntity e;
@@ -329,6 +339,6 @@ public class Block {
 			e.vel.y = 0.01f;
 			e.vel.x = MathU.rndf(-0.1f, 0.1f);
 			e.vel.z = MathU.rndf(-0.1f, 0.1f);
-		}
+		}*/
 	}
 }

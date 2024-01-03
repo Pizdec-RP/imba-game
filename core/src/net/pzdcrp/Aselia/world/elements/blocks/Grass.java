@@ -56,7 +56,7 @@ public class Grass extends Block {
 		return 1f;
 	}
 
-	
+
 	@Override
 	public int getId() {
 		return 6;

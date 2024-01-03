@@ -4,11 +4,7 @@ import net.pzdcrp.Aselia.data.BlockFace;
 import net.pzdcrp.Aselia.data.ItemSortType;
 import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.player.Player;
-import net.pzdcrp.Aselia.utils.GameU;
-import net.pzdcrp.Aselia.utils.MathU;
-import net.pzdcrp.Aselia.world.elements.blocks.Block;
 import net.pzdcrp.Aselia.world.elements.blocks.OakSlab;
-import net.pzdcrp.Aselia.world.elements.blocks.Planks;
 
 public class OakSlabItem extends Item {
 	public static ItemSortType sorttype = ItemSortType.onetype;

@@ -49,7 +49,7 @@ public class Stone extends Block {
 	public float getResistance() {
 		return 5f;
 	}
-	
+
 	@Override
 	public int getId() {
 		return 2;

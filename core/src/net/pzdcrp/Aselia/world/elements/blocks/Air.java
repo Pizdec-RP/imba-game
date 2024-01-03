@@ -2,7 +2,6 @@ package net.pzdcrp.Aselia.world.elements.blocks;
 
 import net.pzdcrp.Aselia.data.AABBList;
 import net.pzdcrp.Aselia.data.Vector3D;
-import net.pzdcrp.Aselia.utils.GameU;
 
 public class Air extends Block {
 	public Air(Vector3D pos) {
@@ -38,7 +37,7 @@ public class Air extends Block {
 	public Block clone(Vector3D poss) {
 		return new Air(poss);
 	}
-	
+
 	@Override
 	public int getId() {
 		return 0;

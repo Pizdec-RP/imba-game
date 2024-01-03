@@ -358,7 +358,7 @@ public class Vector3D {
 	}
 
 	public Vector3 translate() {
-		return new Vector3((float)x, (float)y, (float)z);
+		return new Vector3(x, y, z);
 	}
 
 	public void setComponents(float x, float y, float z) {

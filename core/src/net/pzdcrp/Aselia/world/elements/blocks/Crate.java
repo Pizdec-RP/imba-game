@@ -11,6 +11,8 @@ import net.pzdcrp.Aselia.player.Player;
 import net.pzdcrp.Aselia.utils.ModelUtils;
 import net.pzdcrp.Aselia.world.World;
 import net.pzdcrp.Aselia.world.elements.Column;
+import net.pzdcrp.Aselia.world.elements.inventory.items.CrateItem;
+import net.pzdcrp.Aselia.world.elements.inventory.items.Item;
 import net.pzdcrp.Aselia.world.elements.storages.ChestItemStorage;
 import net.pzdcrp.Aselia.world.elements.storages.ItemStorage;
 
@@ -69,6 +71,11 @@ public class Crate extends Block {
 	@Override
 	public float getResistance() {
 		return 2.5f;
+	}
+	
+	@Override
+	public Item[] getDrop() {
+		return new Item[] {new CrateItem(1)};
 	}
 
 	@Override

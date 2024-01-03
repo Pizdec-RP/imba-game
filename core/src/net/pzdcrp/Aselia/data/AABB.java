@@ -19,16 +19,7 @@ public class AABB {
 	    this.maxY = y1;
 	    this.maxZ = z1;
 	}
-
-	public AABB(double x0, double y0, double z0, double x1, double y1, double z1) {
-		this.minX = (float)x0;
-	    this.minY = (float)y0;
-	    this.minZ = (float)z0;
-	    this.maxX = (float)x1;
-	    this.maxY = (float)y1;
-	    this.maxZ = (float)z1;
-	}
-
+	
 	@Override
 	public AABB clone() {
 	    return new AABB(this.minX, this.minY, this.minZ, this.maxX, this.maxY, this.maxZ);

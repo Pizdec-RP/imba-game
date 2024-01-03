@@ -60,9 +60,9 @@ public class ItemStorage {
             		PlayerInventory.slotWidth - PlayerInventory.spacing * 2);
     	}
 	}
-	
+
 	public void serverTick() {
-		
+
 	}
 
 	public void open(Player opener) {

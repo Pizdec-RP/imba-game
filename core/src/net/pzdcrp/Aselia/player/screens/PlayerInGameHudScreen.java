@@ -29,7 +29,7 @@ public class PlayerInGameHudScreen extends Screen {
 		hppix = new Pixmap(130, 30, Pixmap.Format.RGBA8888);
 		crosshair = Hpb.mutex.getOTexture("crosshair");
 	}
-	
+
 	@Override
 	public void render(int halfwidth, int halfheight) {
 		if (firstrender) {
@@ -61,7 +61,7 @@ public class PlayerInGameHudScreen extends Screen {
 
 
 	}
-	
+
 	public void redrawhp() {
 		int hpw = (int)this.hpw, hph = (int)this.hph;
 
@@ -92,7 +92,7 @@ public class PlayerInGameHudScreen extends Screen {
 
 		hptex.draw(hppix, 0, 0);
 	}
-	
+
 	@Override
 	public void resize(int width, int height) {
 		GameU.log("RESIZE");

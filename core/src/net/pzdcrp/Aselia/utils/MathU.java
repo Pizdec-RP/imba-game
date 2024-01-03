@@ -30,7 +30,7 @@ public class MathU {
 
     public static int floor(float value) {
         int i = (int)value;
-        return value < (float)i ? i - 1 : i;
+        return value < i ? i - 1 : i;
     }
 
     public static int ceilFloat(float n) {
@@ -236,7 +236,7 @@ public class MathU {
             return Math.floor(value);
         }
     }
-    
+
     public static float max(float a, float b) {
 		return a > b ? a : b;
 	}
@@ -312,9 +312,21 @@ public class MathU {
 	}
 
 
-	public static float sqrt(float f) {
-		return f*f;
-	}
+	public static float sqrt(float x) {
+        if (x < 0) {
+            throw new IllegalArgumentException("Отрицательное число не имеет вещественного квадратного корня");
+        }
+
+        float guess = x / 2.0f;
+        float prevGuess;
+
+        do {
+            prevGuess = guess;
+            guess = 0.5f * (prevGuess + x / prevGuess);
+        } while (Math.abs(guess - prevGuess) > 1e-6);
+
+        return guess;
+    }
 
 
 	public static float pow(final float base, final int power) {
@@ -324,7 +336,7 @@ public class MathU {
 	    }
 	    return result;
 	}
-	
+
 	public static boolean isDecimalAfterPointGreaterOrEqualHalf(float value) {
         return ((value - (int) value) >= 0.5f);
     }

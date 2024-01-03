@@ -161,12 +161,12 @@ public class MBIM extends BlockModelBuilder {
 	public int[] getSLightArray() {
 		return this.Slightarray.stream().mapToInt(Integer::intValue).toArray();
 	}
-	
+
 	@Override
 	public int[] getTLightArray() {
 		return this.Tlightarray.stream().mapToInt(Integer::intValue).toArray();
 	}
-	
+
 	@Override
 	public Chunk getChunk() {
 		return this.chunk;
@@ -192,7 +192,7 @@ public class MBIM extends BlockModelBuilder {
 		GameU.end("unknown face "+curoffset.toString());
 		return 0;
 	}
-	
+
 	@Override
 	public void setCuroffset(offset ofs) {
 		curoffset = ofs;

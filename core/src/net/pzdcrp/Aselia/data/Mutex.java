@@ -46,6 +46,7 @@ public class Mutex {
 	private Map<String, Texture> otherTextures = new HashMap<>();
 	private FreeTypeFontGenerator generator;
 	private Map<Integer, BitmapFont> fonts = new ConcurrentHashMap<>();
+	public static final String AllowedSymbols = FreeTypeFontGenerator.DEFAULT_CHARS + "йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ ";
 
 	public Mutex() {
 		this.generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/Underdog.ttf"));
@@ -179,7 +180,7 @@ public class Mutex {
 
 	    fbo = new FrameBuffer(Format.RGBA8888, 500, 500, true);
 
-	    Hpb.loadTextures();
+	    //Hpb.loadTextures();
 
 	    sbatch = new SpriteBatch();
     }
@@ -270,7 +271,7 @@ public class Mutex {
 				parameter.minFilter = TextureFilter.Linear;
 				parameter.magFilter = TextureFilter.Linear;
 				parameter.genMipMaps = true;
-				parameter.characters = FreeTypeFontGenerator.DEFAULT_CHARS + "йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ";
+				parameter.characters = AllowedSymbols;
 				BitmapFont font = generator.generateFont(parameter);
 				fonts.put(i, font);
 				return font;
