@@ -280,6 +280,7 @@ public class Hpb extends ApplicationAdapter {
 	public static float hurtlvl = 0;//, deadtimer = 0, respawnshades = 0;
 
 	public void renderWorld() {
+		if (Settings.logTimer) GameU.log("---------------------------");
 		if (changescreenRequest) {
 			changeScreen();
 		}
@@ -296,20 +297,20 @@ public class Hpb extends ApplicationAdapter {
 		int halfheight = Gdx.graphics.getHeight()/2;
 
 		//1 стадия
-		//if (deadtimer == 0 || deadtimer >= 400) {
-			shaderprovider.newstage();
-			modelBatch.begin(world.player.cam.cam);
-			float deltaTime = Gdx.graphics.getDeltaTime();
-			world.render(deltaTime);
-			modelBatch.end();
-			shaderprovider.end();
-		//}
+		shaderprovider.newstage();
+		modelBatch.begin(world.player.cam.cam);
+		float deltaTime = Gdx.graphics.getDeltaTime();
+		world.render(deltaTime);
+		
+		modelBatch.end();
+		shaderprovider.end();
 		//конец 1 стадии
 
 		//2 стадия
 		textureRegion.setRegion(buffer.getColorBufferTexture());
 
 		buffer.end();
+		PlayerWorld.deltaTime("default batch end");
 
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
@@ -326,46 +327,6 @@ public class Hpb extends ApplicationAdapter {
 		spriteBatch.draw(buftex, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, buftex.getWidth(), buftex.getHeight(), false, true);
 		spriteBatch.setShader(null);
 
-		/*if (deadplayer) {
-			if (hurtlvl == 0) {
-				BitmapFont f = mutex.getFont(40);
-				deadtimer++;
-				if (deadtimer == 300) {
-					world.player.respawn();
-				}
-				if (deadtimer >= 300 && deadtimer <= 400) {
-					float a = 1f-MathU.norm(300, 400, deadtimer);
-					float b = MathU.norm(300, 400, deadtimer);
-					f.getColor().set(0, 1, b, a);
-				} else if (deadtimer >= 400 && deadtimer < 500) {
-					f.getColor().set(0, 0, 0, 0);
-					respawnshades = MathU.norm(400, 500, deadtimer);
-					if (!world.player.curCol.canrender()) {
-						deadtimer--;
-					}
-					//shades on
-				} else if (deadtimer >= 0 && deadtimer <= 100) {
-					f.getColor().r = 1f-MathU.norm(0, 100, deadtimer);
-				} else if (deadtimer >= 100 && deadtimer <= 200) {
-					f.getColor().g = 1f-MathU.norm(100, 200, deadtimer);
-					f.getColor().r = MathU.norm(100, 200, deadtimer);
-				} else if (deadtimer >= 200 && deadtimer <= 300) {
-					f.getColor().b = 1f-MathU.norm(200, 300, deadtimer);
-					f.getColor().g = MathU.norm(200, 300, deadtimer);
-				} else if (deadtimer >= 500) {
-					deadplayer = false;
-					deadtimer = 0f;
-					respawnshades = 0;
-				}
-				f.draw(spriteBatch,
-						"Ты сдох. Возвращаемся через "+String.format("%.2f",((1-MathU.norm(0, 400, deadtimer))*5))+"!",
-						halfwidth - respawn.width / 2, halfheight);
-				f.getColor().set(1,1,1,1);
-			}
-		} else {
-
-		}*/
-
 		//displayinfo
 		layout.setText(font, currentText);
 	    float textWidth = layout.width;
@@ -375,6 +336,7 @@ public class Hpb extends ApplicationAdapter {
 		//spriteBatch.draw(mutex.getComplex(), halfwidth, halfheight);
 
 		spriteBatch.end();
+		PlayerWorld.deltaTime("spritebatch end");
 		//конец 2 стадии
 	}
 
@@ -443,6 +405,7 @@ public class Hpb extends ApplicationAdapter {
 				}
 				if (world.player == null) return;
 				mutex.tick();
+				PlayerWorld.deltaTime("mutex update");
 				renderWorld();
 
 				if (Settings.debug) {

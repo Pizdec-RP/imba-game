@@ -35,7 +35,12 @@ public class SuperPizdatiyShader extends BaseShaderProvider {
     	Shader suggestedShader = renderable.shader;
 		if (suggestedShader != null && suggestedShader.canRender(renderable)) return suggestedShader;
 		for (Shader shader : shaders) {
-			if (shader.canRender(renderable)) return shader;
+			if (shader.canRender(renderable)) {
+				/*if (renderable.userData != null) {
+					GameU.log("shader "+shader.getClass().getName()+" for "+ ((Object[])renderable.userData)[0]);
+				}*/
+				return shader;
+			}
 		}
 		final Shader shader = createShader(renderable);
 		if (!shader.canRender(renderable)) throw new GdxRuntimeException("unable to provide a shader for this renderable");
@@ -100,6 +105,15 @@ class ChunkModelShader extends DefaultShader {
 		set(campos, s.pos);
 		super.render(renderable, combinedAttributes);
 	}
+	
+	/*@Override
+	public boolean canRender (final Renderable renderable) {
+		if (renderable.bones != null && renderable.bones.length > config.numBones) return false;
+		if (renderable.userData != null) {
+			if (((Object[])renderable.userData)[0].equals("chunk")) return true;
+		}
+		return false;
+	}*/ //модель чанка с прозрачными блоками почемуто не принимается этим кодом
 }
 
 class SkyModelShader extends DefaultShader {
@@ -115,6 +129,15 @@ class SkyModelShader extends DefaultShader {
 	public void render (Renderable renderable, Attributes combinedAttributes) {
 		set(lightlevel, s.skylightlevel);
 		super.render(renderable, combinedAttributes);
+	}
+	
+	@Override
+	public boolean canRender (final Renderable renderable) {
+		if (renderable.bones != null && renderable.bones.length > config.numBones) return false;
+		if (renderable.userData != null) {
+			if (((Object[])renderable.userData)[0].equals("sky")) return true;
+		}
+		return false;
 	}
 }
 
@@ -132,6 +155,15 @@ class ItemEntityShader extends DefaultShader {
 		float f = (float) ((Object[])renderable.userData)[1];
 		set(lightlevel, f);
 		super.render(renderable, combinedAttributes);
+	}
+	
+	@Override
+	public boolean canRender (final Renderable renderable) {
+		if (renderable.bones != null && renderable.bones.length > config.numBones) return false;
+		if (renderable.userData != null) {
+			if (((Object[])renderable.userData)[0].equals("item")) return true;
+		}
+		return false;
 	}
 }
 
@@ -153,5 +185,14 @@ class CloudShader extends DefaultShader {
 		set(pos, v);
 		set(sdvig, Hpb.world.globaltime);
 		super.render(renderable, combinedAttributes);
+	}
+	
+	@Override
+	public boolean canRender (final Renderable renderable) {
+		if (renderable.bones != null && renderable.bones.length > config.numBones) return false;
+		if (renderable.userData != null) {
+			if (((Object[])renderable.userData)[0].equals("cloud")) return true;
+		}
+		return false;
 	}
 }

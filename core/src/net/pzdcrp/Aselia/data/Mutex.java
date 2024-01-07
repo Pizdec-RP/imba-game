@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -29,6 +30,7 @@ import net.pzdcrp.Aselia.utils.GameU;
 import net.pzdcrp.Aselia.utils.MathU;
 import net.pzdcrp.Aselia.utils.ModelUtils;
 import net.pzdcrp.Aselia.utils.RenderaU;
+import net.pzdcrp.Aselia.world.PlayerWorld;
 import net.pzdcrp.Aselia.world.elements.blocks.Block;
 import net.pzdcrp.Aselia.world.elements.inventory.items.Item;
 import net.pzdcrp.Aselia.world.elements.inventory.items.NoItem;
@@ -154,10 +156,12 @@ public class Mutex {
 			//GameU.log("ticktexture");
 			anim.tick();
 		}
+		PlayerWorld.deltaTime("updated animated");
 		//GameU.log("tick2 "+updated);
 		if (updated) {
 			//GameU.log("re set");
 			comp.draw(pixmap, 0, 0);
+			PlayerWorld.deltaTime("redraw comp");
 			//pixmap.dispose();
 		}
 		//GameU.log("tick3");
@@ -165,10 +169,10 @@ public class Mutex {
 	
 	public void clearPixmap() {
 		//GameU.log("clearing pixmap");
-		pixmap.setColor(0, 0, 0, 0);
+		pixmap.setColor(Color.CLEAR);
 		pixmap.fill();
-		pixmap.drawPixmap(defaultPixmap, 0, 0);
-		
+		pixmap.drawPixmap(defaultPixmap, 0, 0);//TODO эта хуйня тратит 14ms
+		PlayerWorld.deltaTime("clear pixmap");
 		/*GameU.log("consume1");
 		if (!comp.getTextureData().isPrepared()) comp.getTextureData().prepare();
 		GameU.log("consume2");

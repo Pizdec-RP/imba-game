@@ -329,9 +329,10 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 	}
 	static long beforetime = System.currentTimeMillis();
 	static long now;
-	public static void deltaTime() {
+	public static void deltaTime(String s) {
+		if (!Settings.logTimer) return;
 		now = System.currentTimeMillis();
-		GameU.log(now - beforetime);
+		GameU.log(s+" "+(now - beforetime));
 		beforetime = now;
 	}
 
@@ -348,7 +349,7 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 	
 	public void render(float deltaTime) {
 		if (Hpb.exit) return;
-
+		deltaTime("start");
 		byte upd = 0;
 		for (Column col : loadedColumns.values()) {
 			for (Chunk chunk : col.chunks) {
@@ -361,14 +362,16 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 			}
 			if (upd > 3) break;
 		}
+		deltaTime("model updating");
 		renderSky();
+		deltaTime("sky render");
 		for (Column col : loadedColumns.values()) {
 			if (col.canrender()) {
 				col.renderEntites(deltaTime);
 				col.renderNormal();
 			}
 		}
-
+		deltaTime("render entities");
 		Set<Chunk> notSorted = new HashSet<>();
 		for (Column col : loadedColumns.values()) {
 			if (col.isInFrustum()) {
@@ -377,22 +380,29 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 				}
 			}
 		}
+		deltaTime("frustum filter");
 		List<Chunk> sortedChunks = new ArrayList<>(notSorted);
 		Collections.sort(sortedChunks, chunkComparator);
+		deltaTime("sort transparent");
 		for (Chunk c : sortedChunks) {
 			if (c.column.canrender()) {
 				if (/*!Vector3D.ZERO.equals(player.vel)*//* || c.needUpdateTransp())*/ VectorU.sqrt(new Vector3D(player.echc.x, player.pos.y/16, player.echc.z), c.pos) <= Settings.updatingDistance) c.rebuildTransparent();
 				if (c.transparent != null) Hpb.render(c.transparent);
 			}
 		}
+		deltaTime("render transparent");
 		for (ModelInstance a : additional) {
 			Hpb.render(a);
 		}
+		deltaTime("render add.");
 		for (Particle p : particles) {
 			p.render();
 		}
+		deltaTime("update particles");
 		Hpb.render(particlesModel);
+		deltaTime("render particles");
 		player.render(deltaTime);
+		deltaTime("render player");
 	}
 
 	@Override

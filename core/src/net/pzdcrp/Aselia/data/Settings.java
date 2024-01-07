@@ -6,4 +6,5 @@ public class Settings {
 	public static int streamZone = 4;
 	public static double maxItemRenderDistance = 30;
 	public static boolean debug = false;
+	public static boolean logTimer = false;
 }
