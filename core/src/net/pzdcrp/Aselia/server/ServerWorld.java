@@ -42,6 +42,7 @@ import net.pzdcrp.Aselia.world.elements.Column;
 import net.pzdcrp.Aselia.world.elements.Region;
 import net.pzdcrp.Aselia.world.elements.blocks.Air;
 import net.pzdcrp.Aselia.world.elements.blocks.Block;
+import net.pzdcrp.Aselia.world.elements.blocks.Fire;
 import net.pzdcrp.Aselia.world.elements.blocks.Voed;
 import net.pzdcrp.Aselia.world.elements.entities.Entity;
 import net.pzdcrp.Aselia.world.elements.entities.ItemEntity;
@@ -384,7 +385,7 @@ public class ServerWorld implements World {
     	}
 	}
 
-	private static final boolean saveit = true;
+	private static final boolean saveit = false;
 	public boolean save() {
 		if (!saveit) return true;
 		try {
@@ -601,6 +602,8 @@ public class ServerWorld implements World {
 			}
 		} else if (command.equals("istest")) {
 			player.playerEntity.castedInv.open(new ChestItemStorage());
+		} else if (command.equals("fire")) {
+			setBlock(new Fire(player.playerEntity.pos), ActionAuthor.command);
 		} else {
 			player.sendmsg("unknown command \""+command+"\"");
 		}

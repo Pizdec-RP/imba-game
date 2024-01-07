@@ -18,6 +18,12 @@ public class RenderaU {
 		newPixmap.dispose();
 		return newTexture;
 	}
+	
+	public static Pixmap clonePixmap(Pixmap p1) {
+		Pixmap newPixmap = new Pixmap(p1.getWidth(), p1.getHeight(), p1.getFormat());
+		newPixmap.drawPixmap(p1, 0, 0);
+		return newPixmap;
+	}
 
 	public static Texture resizeTextureWithPrepare(Texture oldTexture, int newWidth, int newHeight) {
 		Pixmap oldPixmap = new Pixmap(oldTexture.getWidth(), oldTexture.getHeight(), Format.RGBA8888);

@@ -271,6 +271,7 @@ public class MathU {
 	public static double lerp(double minValue, double maxValue, double t) {
 	    return minValue + (maxValue - minValue) * t;
 	}
+	
 	public static float lerp(float minValue, float maxValue, float t) {
 	    return minValue + (maxValue - minValue) * t;
 	}

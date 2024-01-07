@@ -14,6 +14,7 @@ import net.pzdcrp.Aselia.data.Vector3D;
 import net.pzdcrp.Aselia.data.Vector3I;
 import net.pzdcrp.Aselia.server.InternalServer;
 import net.pzdcrp.Aselia.utils.GameU;
+import net.pzdcrp.Aselia.utils.MathU;
 import net.pzdcrp.Aselia.world.PlayerWorld;
 import net.pzdcrp.Aselia.world.World;
 import net.pzdcrp.Aselia.world.elements.blocks.Block;
@@ -375,6 +376,13 @@ public class Chunk {
 	public static int index(int x, int y, int z) {
         return y << 8 | z << 4 | x;
     }
+	
+	public static Vector3D reverseIndex(int index) {
+        int x = index & 0xF;
+        int y = (index >> 8) & 0xF;
+        int z = (index >> 4) & 0xF;
+        return new Vector3D(x, y, z);
+    }
 
 	/**
 	 * Server side only
@@ -402,5 +410,10 @@ public class Chunk {
 		canrender = true;
 		column.recheckcanrender();
 		this.light = light;
+	}
+
+	public void randomTick() {
+		int random = MathU.rndi(0, 4095);
+		Block.blockById(blocks.get(random), reverseIndex(random)).onRandomTick();
 	}
 }

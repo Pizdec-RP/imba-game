@@ -45,7 +45,7 @@ public class Column {
 		if (world == null) GameU.end("null world");
 		this.pos = cords;
 		this.world = world;
-		System.out.println("new col: "+cords.toString());
+		//System.out.println("new col: "+cords.toString());
 		skylightlenght = new int[16][16];
 
 		center = new Vector3(pos.x*16+8,World.maxheight/2,pos.z*16+8);
@@ -133,12 +133,17 @@ public class Column {
 	}
 
 	public void tick() {
-		for (Entity entity : this.entites) {
-			if (world.isLocal()) {
+		if (world.isLocal()) {
+			for (Entity entity : this.entites) {
 				if (!entity.isPlayer)
 					entity.tick();
-			} else {
+			}
+		} else {
+			for (Entity entity : this.entites) {
 				entity.tick();
+			}
+			for (Chunk c : chunks) {
+				c.randomTick();
 			}
 		}
 	}

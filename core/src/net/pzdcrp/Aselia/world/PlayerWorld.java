@@ -13,10 +13,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Mesh;
+import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes;
+import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
@@ -27,6 +31,7 @@ import com.badlogic.gdx.math.Vector3;
 import de.datasecs.hydra.shared.protocol.packets.Packet;
 import net.pzdcrp.Aselia.Hpb;
 import net.pzdcrp.Aselia.data.ActionAuthor;
+import net.pzdcrp.Aselia.data.Mutex;
 import net.pzdcrp.Aselia.data.Settings;
 import net.pzdcrp.Aselia.data.Vector2I;
 import net.pzdcrp.Aselia.data.Vector3D;
@@ -47,11 +52,13 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 	public Map<Vector2I,Column> loadedColumns = new ConcurrentHashMap<>();
 	public List<ModelInstance> additional = new CopyOnWriteArrayList<>();
 	public int time = 0;
+	public int globaltime = 0;
 	public static boolean ready = false;
 	public Matrix4 temp = new Matrix4();
 	private ModelInstance sun;
     private ModelInstance moon;
-    //private ModelInstance shield;
+    private ModelInstance cloud;
+    public float weatherlvl = 0; //clear-0 rain-1
     public Vector3 lightDirection = new Vector3();
     public static int seed = 43567867;
 
@@ -95,6 +102,46 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 		model = modelBuilder.createSphere(5f, 5f, 5f, 5, 5, material, VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
 		moon = new ModelInstance(model);
 		moon.userData = new Object[] {"moon"};
+		
+		
+		Mesh mesh = new Mesh(
+		    true,
+		    4, 6,
+		    VertexAttribute.Position(),
+		    new VertexAttribute(Usage.TextureCoordinates, 2, "a_texCoord0")
+		);
+		float[] vertices = new float[] {
+				-1000f, World.maxheight+100, 1000f,  0, 0,
+				1000f,  World.maxheight+100, 1000f,  1, 0,
+				1000f,  World.maxheight+100, -1000f, 1, 1,
+				-1000f, World.maxheight+100, -1000f, 0, 1,
+			};
+		short[] indices = new short[] {
+		    0, 1, 2,
+		    2, 3, 0
+		};
+		mesh.setVertices(vertices);
+		mesh.setIndices(indices);
+		
+		modelBuilder = new ModelBuilder();
+		modelBuilder.begin();
+		modelBuilder.part(
+			"meshPart",
+			mesh,
+			GL20.GL_TRIANGLES,
+			new Material(
+				TextureAttribute.createDiffuse(Hpb.mutex.getBlockTexture("dirt")),
+				IntAttribute.createCullFace(GL20.GL_NONE),
+				new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+			)
+		);
+		model = modelBuilder.end();
+		cloud = new ModelInstance(model);
+		cloud.userData = new Object[] {"cloud"};
+	}
+	
+	public float getWorldLightLevelNorm() {
+		return 1.0f;
 	}
 
 	@Override
@@ -247,10 +294,15 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 	    sun.transform.getTranslation(translation);
 	    sun.transform.rotate(1, 1, 1, 0.01f);
 	    sun.transform.setTranslation(x, y, pz);
+	    
+	    cloud.transform.setToTranslation(px,0,pz);
 
 	    Hpb.render(sun);
 	    Hpb.render(sky);
+	    Hpb.render(cloud);
 	    //Hpb.render(shield);
+	    
+	    globaltime++;
 	}
 
 	public void addLC(Column c) {
@@ -293,6 +345,7 @@ public class PlayerWorld implements World {// implements RenderableProvider {
 	        return Float.compare(distance2, distance1); // Сортировка в обратном порядке
 	    }
 	};
+	
 	public void render(float deltaTime) {
 		if (Hpb.exit) return;
 

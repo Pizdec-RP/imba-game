@@ -32,6 +32,7 @@ import de.datasecs.hydra.shared.handler.Session;
 import de.datasecs.hydra.shared.protocol.HydraProtocol;
 import de.datasecs.hydra.shared.protocol.packets.Packet;
 import io.netty.channel.ChannelOption;
+import net.pzdcrp.Aselia.data.AnimatedTexture;
 import net.pzdcrp.Aselia.data.Mutex;
 import net.pzdcrp.Aselia.data.Settings;
 import net.pzdcrp.Aselia.data.Vector3D;
@@ -370,6 +371,8 @@ public class Hpb extends ApplicationAdapter {
 	    float textWidth = layout.width;
 		font.draw(spriteBatch, currentText, halfwidth - textWidth / 2, Gdx.graphics.getHeight()*0.2f);
 		currentScreen.render(halfwidth, halfheight);
+		
+		//spriteBatch.draw(mutex.getComplex(), halfwidth, halfheight);
 
 		spriteBatch.end();
 		//конец 2 стадии
@@ -439,6 +442,7 @@ public class Hpb extends ApplicationAdapter {
 					return;
 				}
 				if (world.player == null) return;
+				mutex.tick();
 				renderWorld();
 
 				if (Settings.debug) {
@@ -497,8 +501,14 @@ public class Hpb extends ApplicationAdapter {
 					String key = (String) b.getClass().getField("tname").get(b);
 					GameU.log("got field "+key);
 					Texture texture = new Texture(Gdx.files.internal("textures/blocks/"+key+".png"),Format.RGBA8888,true);
-					//texture.setFilter(TextureFilter.MipMap,TextureFilter.Nearest);
-					mutex.addTexture(texture, key);
+					if (b.animated()) {
+						String parameters = Gdx.files.internal("textures/blocks/"+key+".txt").readString();
+						AnimatedTexture t = new AnimatedTexture(texture, parameters, key);
+						mutex.hookAnimated(t);
+					} else {
+						//texture.setFilter(TextureFilter.MipMap,TextureFilter.Nearest);
+						mutex.addTexture(texture, key);
+					}
 				}
 			}
 
@@ -526,6 +536,7 @@ public class Hpb extends ApplicationAdapter {
 			mutex.end();
 		} catch (Exception e) {
 			e.printStackTrace();
+			GameU.end("unable to properly load textures");
 		}
 	}
 

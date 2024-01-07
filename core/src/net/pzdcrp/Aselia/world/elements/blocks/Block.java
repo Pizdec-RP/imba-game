@@ -64,6 +64,7 @@ public class Block {
 			put(24, new Crate(new Vector3D()));
 			put(25, new OakSlab(new Vector3D(), false));
 			put(26, new OakSlab(new Vector3D(), true));
+			put(27, new Fire(new Vector3D()));
 		}};
 		/**
 		 * правила:
@@ -151,7 +152,10 @@ public class Block {
 
 	    return blockSet.toArray(new Block[0]);
 	}
-
+	
+	public boolean animated() {
+		return false;
+	}
 
 	public static Block getAbstractBlock(int id) {
 		return blocks.get(id);
@@ -340,5 +344,9 @@ public class Block {
 			e.vel.x = MathU.rndf(-0.1f, 0.1f);
 			e.vel.z = MathU.rndf(-0.1f, 0.1f);
 		}*/
+	}
+
+	public void onRandomTick() {
+		
 	}
 }

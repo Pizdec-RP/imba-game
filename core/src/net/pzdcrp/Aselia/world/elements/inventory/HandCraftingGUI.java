@@ -16,25 +16,20 @@ import net.pzdcrp.Aselia.data.TextField;
 import net.pzdcrp.Aselia.multiplayer.packets.client.inventory.ClientCraftRequestPacket;
 import net.pzdcrp.Aselia.multiplayer.packets.server.ingame.ServerNotificationPacket;
 import net.pzdcrp.Aselia.utils.GameU;
-import net.pzdcrp.Aselia.world.elements.inventory.items.CrateItem;
-import net.pzdcrp.Aselia.world.elements.inventory.items.Item;
-import net.pzdcrp.Aselia.world.elements.inventory.items.NoItem;
-import net.pzdcrp.Aselia.world.elements.inventory.items.OakLogItem;
-import net.pzdcrp.Aselia.world.elements.inventory.items.OakSlabItem;
-import net.pzdcrp.Aselia.world.elements.inventory.items.PlanksItem;
+import net.pzdcrp.Aselia.world.elements.inventory.items.*;
 
 public class HandCraftingGUI {
-	static int ri = 0;//im lazy. i just want to copy/paste code
+	static int ri = 0;
 	public static final List<Recipe> x22 = new ArrayList<>() {{
 		add(new Recipe(ri++, new PlanksItem(4), new Item[] {new OakLogItem(1)}));
 		add(new Recipe(ri++, new CrateItem(1), new Item[] {new PlanksItem(10)}));
 		add(new Recipe(ri++, new OakSlabItem(2), new Item[] {new PlanksItem(1)}));
+		add(new Recipe(ri++, new DirtItem(1), new Item[] {new MudItem(4)}));
 	}};
 	private boolean needupdate = false;
 	private Texture background;
 	private float insideAlignedHeightIndex = 0, xPosOfRecipeInfo = 0, width = 0, height = 0, recipeInfoWidth = 0;
 	PlayerInventory host;
-
 
 	public HandCraftingGUI(PlayerInventory host) {
 		this.host = host;
